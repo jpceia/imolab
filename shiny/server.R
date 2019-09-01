@@ -8,10 +8,27 @@
 #
 
 library(shiny)
+library(leaflet)
+
+
+remove_outliers <- function(df, col_name, trunc)
+{
+  q <- as.numeric(trunc) / 100.0
+  quantiles <- quantile(pull(df, col_name), probs=c(q, 1 - q))
+  df %>%
+    dplyr::filter(!!as.name(col_name) > quantiles[1]) %>%
+    dplyr::filter(!!as.name(col_name) < quantiles[2])
+}
+
 
 # Define server logic required to draw a histogram
 shinyServer(function(input, output) {
-   
+  
+  geo_names <- reactive({
+    fname <- "geo_names.csv"
+    df <- readr::read_csv(fname, colClasses=c(terrain_area="numerical"))
+  })
+  
   dataset <- reactive({
     fname <- "short_summary_20190826.csv"
     df <- readr::read_csv(fname)
@@ -86,4 +103,30 @@ shinyServer(function(input, output) {
   output$ParetoArea <- renderPlot({
   })
   
+  output$CategoriesEnergyCertificate <- renderPlot({
+    df <- filtered_dataset() %>%
+      select(energy_certificate, price_m2) %>%
+      remove_outliers("price_m2", input$truncation)
+    
+    ggplot(na.omit(df), aes(x=energy_certificate, y=price_m2, color=energy_certificate)) +
+      geom_boxplot()
+  })
+  
+  output$CategoriesRooms <- renderPlot({
+    df <- filtered_dataset() %>%
+      select(rooms, price_m2) %>%
+      remove_outliers("price_m2", input$truncation)
+    
+    ggplot(na.omit(df), aes(x=rooms, y=price_m2, fill=rooms)) +
+      geom_bar(stat = "summary", fun.y = "mean")
+  })
+  
+  output$CategoriesRoomsArea <- renderPlot({
+    df <- filtered_dataset() %>%
+      select(rooms, area) %>%
+      remove_outliers("area", input$truncation)
+    
+    ggplot(na.omit(df), aes(x=rooms, y=area, fill=rooms)) +
+      geom_bar(stat = "summary", fun.y = "mean")
+  })
 })

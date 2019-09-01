@@ -10,6 +10,8 @@
 library(shiny)
 library(shinydashboard)
 library(tidyverse)
+#library(leaflet)
+#library(ggiraph)
 
 # TODO's
 #  * adicionar city / parish
@@ -17,49 +19,18 @@ library(tidyverse)
 #      - datapoints
 #      - median
 #      - quantiles
-
-# What make us different
+# Waiting time
+# Warning quando há poucos datapoints (<25)
 
 # Interactive Pareto Curve
 
 # Categories
 #  * Energy Certificates
+#  * n_rooms
 
 
-districts <- c(
-  "ALL",
-  'Aveiro',
-  'Beja',
-  'Braga',
-  'Braganca',
-  'Castelo Branco',
-  'Coimbra',
-  'Evora',
-  'Faro',
-  'Guarda',
-  'Leiria',
-  'Lisboa',
-  'Portalegre',
-  'Porto',
-  'Santarem',
-  'Setubal',
-  'Viana do Castelo',
-  'Vila Real',
-  'Viseu'
-)
-
-
-prop_types <- c(
-  'Apartment',
-  'House',
-  'Terrain',
-  'Store',
-  'Warehouse',
-  'Garage',
-  'Office',
-  'Building',
-  'Farm'
-)
+# shinythemes
+# shinyjs
 
 
 sideBar <- dashboardSidebar(
@@ -88,7 +59,9 @@ sideBar <- dashboardSidebar(
     selectInput("prop_type", "Property Type", prop_types,
                 selected = "Apartment", multiple = FALSE),
     selectInput("district", "District", districts,
-                selected = "Lisboa", multiple = FALSE),
+                selected = " ", multiple = FALSE),
+    selectInput("city", "City", c(" ")),
+    selectInput("parish", "Parish", c(" ")),
     radioButtons("truncation", "Truncation",
                  choiceNames = c("1%", "0.1%", "0.01%"),
                  choiceValues = c(1.0, 0.1, 0.01),
@@ -107,29 +80,59 @@ body <- dashboardBody(
     tabItem(
       tabName = "histogramsTab",
       box(
-      tabsetPanel(
-        type="tabs",
-        tabPanel(
-          "Price / m2",
-          fluidRow(
-            column(8, plotOutput("HistogramPrice_m2"))
+        tabsetPanel(
+          type="tabs",
+          tabPanel(
+            "Price / m2",
+            fluidRow(
+              column(7, plotOutput("HistogramPrice_m2"))
+            )
+          ),
+          tabPanel(
+            "Prices",
+            fluidRow(
+              column(7, plotOutput("HistogramPrice"))
+            )
+          ),
+          tabPanel(
+            "Areas",
+            fluidRow(
+              column(7, plotOutput("HistogramArea"))
+            )
           )
         ),
-        tabPanel(
-          "Prices",
-          fluidRow(
-            column(8, plotOutput("HistogramPrice"))
+        width=12
+      )
+    ),
+    tabItem(
+      tabName = "categoriesTab",
+      box(
+        tabsetPanel(
+          type="tabs",
+          tabPanel(
+            "Energy Certificate",
+            fluidRow(
+              column(7, plotOutput("CategoriesEnergyCertificate"))
+            )
+          ),
+          tabPanel(
+            "#Rooms",
+            fluidRow(
+              column(7, plotOutput("CategoriesRooms"))
+            ),
+            fluidRow(),
+            fluidRow(
+              column(7, plotOutput("CategoriesRoomsArea"))
+            )
           )
         ),
-        tabPanel(
-          "Areas",
-          fluidRow(
-            column(8, plotOutput("HistogramArea"))
-          ))
-      ),
-      width=12
+        width=12
+      )
+    ),
+    tabItem(
+      tabName = "territoryTab"#, leafletOutput("mymap")
     )
-    )
+    
   )
 )
 
@@ -139,6 +142,7 @@ body <- dashboardBody(
 # Define UI for application that draws a histogram
 shinyUI(
   dashboardPage(
+    skin = "blue",
     dashboardHeader(title = "IMO Lab"),
     sideBar,
     body
