@@ -1,76 +1,96 @@
-#
-# This is the user-interface definition of a Shiny web application. You can
-# run the application by clicking 'Run App' above.
-#
-# Find out more about building applications with Shiny here:
-# 
-#    http://shiny.rstudio.com/
-#
-
 library(shiny)
+library(shinycssloaders)
 library(shinydashboard)
 library(tidyverse)
-#library(leaflet)
-#library(ggiraph)
+library(dplyr)
 
-# TODO's
-#  * adicionar city / parish
-#  * adicionar estatisticas ao lado do grafico, c possibilidade de fazer download
-#      - datapoints
-#      - median
-#      - quantiles
-# Waiting time
-# Warning quando há poucos datapoints (<25)
-
-# Interactive Pareto Curve
-
-# Categories
-#  * Energy Certificates
-#  * n_rooms
+# category -> 
+# * cert energ
+# * rooms
+# * bathrooms
+# * geo (hide freg)
 
 
-# shinythemes
-# shinyjs
+SPINNER_TYPE <- 4
+
 
 
 sideBar <- dashboardSidebar(
   sidebarMenu(
-    menuItem("Exploration",
-             tabName = "explorationTab", #icon=icon("wpexplorer"),
+    id = "sidebarmenu",
+    # menuItem("Home", tabName = "homeTab"),
+    menuItem("Exploration", icon = icon("poll"),
+             #tabName = "explorationTab", #icon=icon("wpexplorer"),
              menuSubItem("Histograms",
                          tabName = "histogramsTab"),
-             menuSubItem("Pareto",
-                         tabName = "paretoTab"),
              menuSubItem("Categories",
                          tabName = "categoriesTab")),
-    menuItem("Territory", tabName = "territoryTab"#, icon = icon("globe-africa")
+    menuItem("Territory", tabName = "territoryTab", icon = icon("globe-africa")
     ),
-    menuItem("Simulator",
-             # tabName = "simulatorTab",
-             icon = icon("dashboard"),
+    menuItem("Data Sources", icon = icon("table"),
+             menuSubItem("Imovirtual",
+                         tabName= "rawdataTab")),
+    menuItem("Valuation", icon = icon("brain"),
+             tabName = "valuationTab",
+             # icon = icon("dashboard"),
              badgeLabel = "Beta",
              badgeColor = "blue"),
     
     hr(),
-    radioButtons("is_sale", NULL,
-                 choiceNames = c("Sale", "Rent"),
-                 choiceValues = c(TRUE, FALSE),
-                 inline = TRUE),
-    selectInput("prop_type", "Property Type", prop_types,
-                selected = "Apartment", multiple = FALSE),
-    selectInput("district", "District", districts,
-                selected = " ", multiple = FALSE),
-    selectInput("city", "City", c(" ")),
-    selectInput("parish", "Parish", c(" ")),
-    radioButtons("truncation", "Truncation",
-                 choiceNames = c("1%", "0.1%", "0.01%"),
-                 choiceValues = c(1.0, 0.1, 0.01),
-                 inline = TRUE),
-    radioButtons("granularity", "Granularity",
-                 choiceNames = c("High", "Medium", "Low"),
-                 choiceValues = c(100, 30, 10),
-                 selected=30,
-                 inline = TRUE)
+    conditionalPanel(
+      condition = "['histogramsTab', 'categoriesTab', 'territoryTab'].indexOf(input.sidebarmenu) >= 0",
+      selectizeInput("prop_type", NULL, prop_types,
+                     multiple = TRUE,
+                     options = list(
+                       placeholder = "Property Type",
+                       onInitialize = I('function() { this.setValue("Apartment"); }')
+                     )
+      ),
+      radioButtons("is_sale", NULL,
+                   choiceNames = c("Sale", "Rent"),
+                   choiceValues = c(TRUE, FALSE),
+                   inline = TRUE)
+    ),
+    conditionalPanel(
+      condition = "['histogramsTab', 'categoriesTab'].indexOf(input.sidebarmenu) >= 0",
+      selectizeInput("district", "Location", district_list,#,  district
+                     size = 3,
+                     options = list(
+                       placeholder = 'District',
+                       onInitialize = I('function() { this.setValue(""); }')
+                     )),
+      selectizeInput("city", NULL, c(" "),
+                     options = list(
+                       placeholder = 'Municipality',
+                       onInitialize = I('function() { this.setValue(""); }')
+                     )),
+      selectizeInput("parish", NULL, c(" "),
+                     multiple = FALSE,
+                     options = list(
+                       placeholder = 'Parish',
+                       onInitialize = I('function() { this.setValue(""); }')
+                     ))
+    ),
+    conditionalPanel(
+      condition = "['categoriesTab'].indexOf(input.sidebarmenu) >= 0",
+      selectInput("category", "Category", c("energy_certificate", "condition",	"rooms", "bathrooms"))
+    ),
+    conditionalPanel(
+      condition = "['histogramsTab', 'categoriesTab'].indexOf(input.sidebarmenu) >= 0",
+      radioButtons("truncation", "Truncation",
+                   choiceNames = c("5%", "1%", "0.1%"),
+                   choiceValues = c(5.0, 1.0, 0.1),
+                   selected = 1.0,
+                   inline = TRUE)
+    ),
+    conditionalPanel(
+      condition = "['histogramsTab'].indexOf(input.sidebarmenu) >= 0",
+      radioButtons("granularity", "Granularity",
+                   choiceNames = c("High", "Medium", "Low"),
+                   choiceValues = c(100, 30, 10),
+                   selected = 30,
+                   inline = TRUE)
+    )
   )
 )
 
@@ -79,25 +99,35 @@ body <- dashboardBody(
   tabItems(
     tabItem(
       tabName = "histogramsTab",
+      h2('Price and Area distributions'),
       box(
         tabsetPanel(
           type="tabs",
           tabPanel(
             "Price / m2",
             fluidRow(
-              column(7, plotOutput("HistogramPrice_m2"))
+              column(7, plotOutput("HistogramPrice_m2") %>% withSpinner(type=SPINNER_TYPE)),
+              column(2, offset=1, tableOutput("tablePrice_m2"))
             )
           ),
           tabPanel(
             "Prices",
             fluidRow(
-              column(7, plotOutput("HistogramPrice"))
+              column(7, plotOutput("HistogramPrice") %>% withSpinner(type=SPINNER_TYPE)),
+              column(2, offset=1, tableOutput("tablePrice"))
             )
           ),
           tabPanel(
             "Areas",
             fluidRow(
-              column(7, plotOutput("HistogramArea"))
+              column(7, plotOutput("HistogramArea") %>% withSpinner(type=SPINNER_TYPE)),
+              column(2, offset=1, tableOutput("tableArea"))
+            )
+          ),
+          tabPanel(
+            "Price vs Area",
+            fluidRow(
+              column(7, plotOutput("ScatterPriceArea") %>% withSpinner(type=SPINNER_TYPE))
             )
           )
         ),
@@ -106,33 +136,86 @@ body <- dashboardBody(
     ),
     tabItem(
       tabName = "categoriesTab",
-      box(
-        tabsetPanel(
-          type="tabs",
-          tabPanel(
-            "Energy Certificate",
-            fluidRow(
-              column(7, plotOutput("CategoriesEnergyCertificate"))
-            )
-          ),
-          tabPanel(
-            "#Rooms",
-            fluidRow(
-              column(7, plotOutput("CategoriesRooms"))
-            ),
-            fluidRow(),
-            fluidRow(
-              column(7, plotOutput("CategoriesRoomsArea"))
-            )
-          )
+      h2("Categories"),
+      fluidRow(
+        box(
+          fluidRow(
+            column(12, plotOutput("CategoriesBoxPlot") %>% withSpinner(type=SPINNER_TYPE))
+          ), width = 6
         ),
-        width=12
+        box(
+          fluidRow(
+            column(12, plotOutput("CategoriesCount") %>% withSpinner(type=SPINNER_TYPE))
+          ), width = 6
+        )
+      ),
+      fluidRow(
+        box(
+          column(12, tableOutput("tableCategories")),
+          width = 12
+        )
       )
     ),
     tabItem(
       tabName = "territoryTab"#, leafletOutput("mymap")
+    ),
+    tabItem(
+      tabName = "rawdataTab",
+      h2('Imovirtual database'),
+      box(
+        DT::dataTableOutput("imovirtualDataTable") %>% withSpinner(type=SPINNER_TYPE),
+        width = 12
+      )
+    ),
+    tabItem(
+      tabName = "valuationTab",
+      h2('Valuation'),
+      box(
+        box(
+          selectizeInput("prop_type_val", "Property Type", prop_types, selected = "Apartment"),
+          radioButtons("is_sale_val", NULL,
+                       choiceNames = c("Sale", "Rent"),
+                       choiceValues = c(TRUE, FALSE),
+                       inline = TRUE),
+          numericInput("net_area_val", "Net Area", NULL, min=0, step=1),
+          numericInput("gross_area_val", "Gross Area", NULL, min=0, step=1),
+          numericInput("terrain_area_val", "Terrain Area", NULL, min=0, step=1),
+          numericInput("rooms_val", "#Rooms", NULL, min=0, max=10, step=1),
+          numericInput("bathrooms_val", "#Bathrooms", NULL, min=0, max=4, step=1),
+          selectInput("condition_val", "Condition", choices=condition_levels),
+          width = 3,
+          status = "warning",
+          offset = 1
+        ),
+        box(
+
+          selectizeInput("district_val", "Location", district_list,#,  district
+                         size = 3,
+                         options = list(
+                           placeholder = 'District',
+                           onInitialize = I('function() { this.setValue(""); }')
+                         )),
+          selectizeInput("city_val", NULL, c(" "),
+                         options = list(
+                           placeholder = 'Municipality',
+                           onInitialize = I('function() { this.setValue(""); }')
+                         )),
+          selectizeInput("parish_val", NULL, c(" "),
+                         multiple = FALSE,
+                         options = list(
+                           placeholder = 'Parish',
+                           onInitialize = I('function() { this.setValue(""); }')
+                         )),
+          width=3,
+          status = "warning"
+        ),
+        box(
+          width=6,
+          status = "primary"
+        ),
+        width = 12
+      )
     )
-    
   )
 )
 
