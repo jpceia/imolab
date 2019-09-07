@@ -243,7 +243,6 @@ shinyServer(function(input, output, session) {
       geom_boxplot(aes_string(x=cat_col, y="price_m2", fill=cat_col), size=.5) +
       scale_x_discrete(drop=FALSE) +
       scale_y_continuous(trans='log10', limits=quantiles) +
-      #geom_bar(aes(x=energy_certificate), stat="count", width=0.7, size=1) + 
       theme(legend.position="bottom") +
       coord_flip()
   })
@@ -262,7 +261,6 @@ shinyServer(function(input, output, session) {
     
     ggplot(df) +
       geom_bar(aes_string(x=cat_col, fill=cat_col)) +
-      #geom_bar(aes(x=energy_certificate), , width=0.7, size=1) + 
       scale_x_discrete(drop=FALSE) +
       theme(legend.position="bottom") +
       coord_flip()
@@ -274,5 +272,20 @@ shinyServer(function(input, output, session) {
     
   })
   
-  output$imovirtualDataTable<- DT::renderDataTable(dataset(), filter = 'top', options = list(scrollX = TRUE))
+  # ----------------------------------------------------------------------------------------
+  # RAW DATA SECTION
+  
+  output$imovirtualDataTable <- DT::renderDataTable(dataset(), filter = 'top', options = list(scrollX = TRUE))
+  
+  # ----------------------------------------------------------------------------------------
+  # VALUATION SECTION
+  
+  output$valuationOutput <- renderHighchart({
+    
+    highchart() %>%
+         hc_chart(type = "waterfall") %>% 
+         hc_xAxis(categories = c("area", "location", "condition", "rooms", "energy_certificate")) %>% 
+         hc_add_series(c(10,19.4,21.1, 14.4, 6.5), showInLegend = FALSE) 
+    
+  })
 })
