@@ -59,20 +59,26 @@ sideBar <- dashboardSidebar(
                        placeholder = 'District',
                        onInitialize = I('function() { this.setValue(""); }')
                      )),
-      selectizeInput("city", NULL, c(" "),
-                     options = list(
-                       placeholder = 'Municipality',
-                       onInitialize = I('function() { this.setValue(""); }')
-                     )),
-      selectizeInput("parish", NULL, c(" "),
-                     multiple = FALSE,
-                     options = list(
-                       placeholder = 'Parish',
-                       onInitialize = I('function() { this.setValue(""); }')
-                     ))
+      conditionalPanel(
+        condition = "input.district != ''",
+        selectizeInput("city", NULL, c(" "),
+                       options = list(
+                         placeholder = 'Municipality',
+                         onInitialize = I('function() { this.setValue(""); }')
+                       )),
+        conditionalPanel(
+          condition = "input.city != ''",
+          selectizeInput("parish", NULL, c(" "),
+                         multiple = FALSE,
+                         options = list(
+                           placeholder = 'Parish',
+                           onInitialize = I('function() { this.setValue(""); }')
+                         ))           
+        )
+      )
     ),
     conditionalPanel(
-      condition = "['categoriesTab'].indexOf(input.sidebarmenu) >= 0",
+      condition = "input.sidebarmenu == 'categoriesTab'",
       selectInput("category", "Category", c("energy_certificate", "condition",	"rooms", "bathrooms"))
     ),
     conditionalPanel(
@@ -84,7 +90,7 @@ sideBar <- dashboardSidebar(
                    inline = TRUE)
     ),
     conditionalPanel(
-      condition = "['histogramsTab'].indexOf(input.sidebarmenu) >= 0",
+      condition = "input.sidebarmenu == 'histogramsTab'",
       radioButtons("granularity", "Granularity",
                    choiceNames = c("High", "Medium", "Low"),
                    choiceValues = c(100, 30, 10),
