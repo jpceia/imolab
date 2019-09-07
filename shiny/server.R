@@ -1,7 +1,7 @@
 library(shiny)
 library(grid)
 library(highcharter)
-#library(leaflet)
+library(leaflet)
 
 
 remove_outliers <- function(df, col_name, trunc)
@@ -19,7 +19,7 @@ shinyServer(function(input, output, session) {
   
   
   observe({
-    city_list <- c(" ")
+    city_list <- c("")
     df <- city_meta() %>% filter(code1 == input$district)
     
     if(nrow(df) > 0) {
@@ -28,12 +28,12 @@ shinyServer(function(input, output, session) {
     }
 
     updateSelectInput(session, "city", choices=city_list)
-    updateSelectInput(session, "parish", choices=c(" "))
+    updateSelectInput(session, "parish", choices=c(""))
   })
   
   
   observe({
-    parish_list <- c(" ")
+    parish_list <- c("")
     df <- parish_meta() %>% filter(code1 == input$city)
     
     if(nrow(df) > 0) {
@@ -69,24 +69,38 @@ shinyServer(function(input, output, session) {
   
     
   dataset <- reactive({
+    
     fname <- "short_summary_20190826.csv"
     df <- readr::read_csv(fname, col_types=c(
+      terrain_area="d",
       district="f",
       city="f",
       freg="f",
-      terrain_area="d",
       energy_certificate="f",
       rooms="f",
       bathrooms="f",
       condition="f"
       ))
-    df$energy_certificate <- factor(df$energy_certificate, levels=energy_certificate_levels)
-    df$rooms <- factor(df$rooms, levels=rooms_levels)
+    
+    # https://stackoverflow.com/questions/18456968/how-do-i-map-a-vector-of-values-to-another-vector-with-my-own-custom-map-in-r
+    # http://blog.ephorie.de/hash-me-if-you-can
+    
+    df$energy_certificate <- factor(
+      df$energy_certificate,
+      levels=energy_certificate_levels)
+    
+    df$rooms <- factor(
+      df$rooms,
+      levels=rooms_levels)
     levels(df$rooms)[11] <- "10+"
+    
     df$bathrooms <- factor(df$bathrooms, levels=bathrooms_levels)
     levels(df$bathrooms)[4] <- "4+"
+    
     df$condition <- factor(df$condition, levels=condition_levels)
+    
     df$price_m2 <- df$price / df$area
+    
     return(df)
   })
   
@@ -206,12 +220,7 @@ shinyServer(function(input, output, session) {
       xlab("Area (m2)") +
       ylab("Price (Eur)")
   })
-  
-  output$ParetoPrice <- renderPlot({
-  })
-  
-  output$ParetoArea <- renderPlot({
-  })
+
   
   output$CategoriesBoxPlot <- renderPlot({
     
@@ -261,7 +270,7 @@ shinyServer(function(input, output, session) {
   })
   
   
-  output$tableCategoriesEnergyCertificate <- renderTable({
+  output$tableCategories <- renderTable({
     
   })
   

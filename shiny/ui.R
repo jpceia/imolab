@@ -3,6 +3,8 @@ library(shinycssloaders)
 library(shinydashboard)
 library(tidyverse)
 library(dplyr)
+library(highcharter)
+library(leaflet)
 
 # category -> 
 # * cert energ
