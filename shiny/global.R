@@ -7,18 +7,18 @@ library(tidyverse)
 library(dplyr)
 
 
+
 dataFolder <- "C:/Users/joaop/OneDrive - insidemedia.net/Data/1 - Houses"
 district_meta <- read_csv(
   file.path(dataFolder, "geodata", "district_meta.csv"),
+  col_types = c(Designacao="f"),
   locale = readr::locale(encoding = "latin1")
   ) %>%
   filter(Continente) %>%
   select(Dicofre, Designacao)
 
-
 district_list <- district_meta$Dicofre
 names(district_list) <- district_meta$Designacao
-district_list[' '] <- 0  # all
 
 
 energy_certificate_levels = c("Isento", "G", "F", "E", "D", "C", "B-", "B", "A", "A+")

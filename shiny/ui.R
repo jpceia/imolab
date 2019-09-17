@@ -55,7 +55,7 @@ sideBar <- dashboardSidebar(
     ),
     conditionalPanel(
       condition = "['histogramsTab', 'categoriesTab'].indexOf(input.sidebarmenu) >= 0",
-      selectizeInput("district", "Location", district_list,#,  district
+      selectizeInput("district", "Location", district_list,
                      size = 3,
                      options = list(
                        placeholder = 'District',
@@ -118,22 +118,28 @@ body <- dashboardBody(
           tabPanel(
             "Price / m2",
             fluidRow(
-              column(7, plotOutput("HistogramPrice_m2") %>% withSpinner(type=SPINNER_TYPE)),
-              column(2, offset=1, tableOutput("tablePrice_m2"))
+               highchartOutput("HistogramPrice_m2") %>% withSpinner(type=SPINNER_TYPE)
+            ),
+            fluidRow(
+              tableOutput("tablePrice_m2")
             )
           ),
           tabPanel(
             "Prices",
             fluidRow(
-              column(7, plotOutput("HistogramPrice") %>% withSpinner(type=SPINNER_TYPE)),
-              column(2, offset=1, tableOutput("tablePrice"))
+              highchartOutput("HistogramPrice") %>% withSpinner(type=SPINNER_TYPE)
+            ),
+            fluidRow(
+              tableOutput("tablePrice") %>% withSpinner(type=SPINNER_TYPE)
             )
           ),
           tabPanel(
             "Areas",
             fluidRow(
-              column(7, plotOutput("HistogramArea") %>% withSpinner(type=SPINNER_TYPE)),
-              column(2, offset=1, tableOutput("tableArea"))
+              highchartOutput("HistogramArea") %>% withSpinner(type=SPINNER_TYPE)
+            ),
+            fluidRow(
+              tableOutput("tableArea") %>% withSpinner(type=SPINNER_TYPE)
             )
           ),
           tabPanel(
@@ -163,7 +169,7 @@ body <- dashboardBody(
       ),
       fluidRow(
         box(
-          column(12, tableOutput("tableCategories")),
+          column(12, tableOutput("tableCategories") %>% withSpinner(type=SPINNER_TYPE)),
           width = 12
         )
       )

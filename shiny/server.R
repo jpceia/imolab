@@ -2,21 +2,85 @@ library(shiny)
 library(grid)
 library(highcharter)
 library(leaflet)
+library(ggthemes)
+library(Cairo)
+options(shiny.usecairo=TRUE)
 
 
 remove_outliers <- function(df, col_name, trunc)
 {
   q <- as.numeric(trunc) / 100.0
   quantiles <- quantile(pull(df, col_name), probs=c(q, 1 - q))
-  df %>%
-    dplyr::filter(!!as.name(col_name) > quantiles[1]) %>%
-    dplyr::filter(!!as.name(col_name) < quantiles[2])
+
+  df %>% filter(!!between(as.name(col_name), quantiles[1], quantiles[2]))
 }
 
 
-# Define server logic required to draw a histogram
+hc_hist <- function(df, col_name, xunits, xlabel, truncation = 1)
+{
+  max_row <- 25000
+  if(nrow(df) > max_row)
+  {
+    set.seed(0)
+    df <- df[sample(nrow(df), max_row), ]
+  }
+  q <- as.numeric(truncation) / 100.0
+  quantiles <- as.numeric(quantile(df[[col_name]], probs=c(q, 1 - q)))
+  formatter <- sprintf("function() {
+                          if (this.series.name == 'ecdf'){
+                            return this.y + '%%<br/>' + this.x + ' %s';
+                          }
+                          else return 'Count: ' + this.y + '<br/>' + this.key;
+                        }", xunits, xunits)
+  
+  g <- hchart(df[[col_name]]) %>%
+    hc_xAxis(min = quantiles[1], max=quantiles[2]) %>%
+    hc_xAxis(title=list(text=xunits)) %>%
+    hc_yAxis_multiples(
+      list(
+        title=list(text="Count")
+      ),
+      list(
+        min=0, max=100,
+        tickInterval=25,
+        title=list(text="Cumulative percentage"),
+        labels = list(format = "{value}%"),
+        opposite=TRUE)) %>%
+    hc_legend(enabled=FALSE) %>%
+    hc_title(text = xlabel)
+  
+  step <- g$x$hc_opts$series[[1]]$pointRange
+  start <- round(quantiles[1] / step) * step
+  end <- round(quantiles[2] / step) * step
+  nsteps <- 2 * as.integer((end - start) / step)
+  
+  x <- start + (step / 2) * (1 : nsteps - 1)
+  y <- round(100 * ecdf(df[[col_name]])(x), 2)
+  
+  g <- g %>%
+    hc_add_series(
+      data.frame(x = x, y = y),
+      hcaes(name=x),
+      type = "line",
+      color = "red",
+      name = "ecdf",
+      yAxis = 1) %>%
+    hc_tooltip(useHTML = TRUE, formatter = JS(formatter)) %>% #formatter = JS(formatter)
+    hc_plotOptions(line=list(marker=list(enabled=FALSE))) %>%
+    hc_boost(boost = FALSE)
+  
+  return(g)
+}
+
+
+# ----------------------------------------------------------------------------------------
+#                                         SERVER
+# ----------------------------------------------------------------------------------------
+
+
 shinyServer(function(input, output, session) {
   
+  session$onSessionEnded(stopApp)
   
   observe({
     city_list <- c("")
@@ -48,6 +112,7 @@ shinyServer(function(input, output, session) {
   city_meta <- reactive({
     read_csv(
       file.path(dataFolder, "geodata", "concelho_meta.csv"),
+      col_types = c(Designacao="f"),
       locale = readr::locale(encoding = "latin1")
     ) %>%
       mutate(code1 = stringr::str_sub(as.character(Dicofre), 0, -3)) %>%
@@ -59,6 +124,7 @@ shinyServer(function(input, output, session) {
   parish_meta <- reactive({
     read_csv(
       file.path(dataFolder, "geodata", "freguesias_meta.csv"),
+      col_types = c(Designacao="f"),
       locale = readr::locale(encoding = "latin1")
     ) %>%
       mutate(
@@ -82,8 +148,7 @@ shinyServer(function(input, output, session) {
       condition="f"
       ))
     
-    # https://stackoverflow.com/questions/18456968/how-do-i-map-a-vector-of-values-to-another-vector-with-my-own-custom-map-in-r
-    # http://blog.ephorie.de/hash-me-if-you-can
+    df <- df %>% select(-createdDays, -modifiedDays)
     
     df$energy_certificate <- factor(
       df$energy_certificate,
@@ -99,13 +164,34 @@ shinyServer(function(input, output, session) {
     
     df$condition <- factor(df$condition, levels=condition_levels)
     
-    df$price_m2 <- df$price / df$area
+    df <- add_column(df, price_m2 = round(df$price / df$area, 2), .after="price")
+    df <- add_column(df, district_name = district_meta$Designacao[match(df$district, district_meta$Dicofre)], .after="district")
+    df <- add_column(df, city_name = city_meta()$Designacao[match(df$city, city_meta()$Dicofre)], .after="city")
+    df <- add_column(df, parish_name = parish_meta()$Designacao[match(df$freg, parish_meta()$Dicofre)], .after="freg")
+    
+    return(df)
+  })
+  
+  filtered_dataset_cat <- reactive({
+    df <- dataset()
+    
+    df <- df %>%
+      dplyr::filter(PropType %in% input$prop_type) %>%
+      dplyr::filter(Sale == input$is_sale) %>%
+      dplyr::filter(district %in% district_meta$Dicofre)
+    
+    # if less then 10 datapoints, do not display data
+    
+    validate(
+      need(nrow(df) > 10, "Not enough datapoints")
+    )
     
     return(df)
   })
   
   filtered_dataset <- reactive({
-    df <- dataset()
+    
+    df <- filtered_dataset_cat()
     
     if(input$district != "")
     {
@@ -126,10 +212,6 @@ shinyServer(function(input, output, session) {
       }
     }
     
-    df <- df %>%
-      dplyr::filter(PropType %in% input$prop_type) %>%
-      dplyr::filter(Sale == input$is_sale)
-    
     # if less then 10 datapoints, do not display data
     
     validate(
@@ -139,45 +221,27 @@ shinyServer(function(input, output, session) {
     return(df)
   })
   
+  # ----------------------------------------------------------------------------------------
+  #                                     NUMERICAL SECTION
+  # ----------------------------------------------------------------------------------------
   
-  output$HistogramPrice_m2 <- renderPlot({
+  output$HistogramPrice_m2 <- renderHighchart({
     df <- filtered_dataset()
-    
-    q <- as.numeric(input$truncation) / 100.0
-    quantiles <- quantile(df$price_m2, probs = c(q, 1 - q))
-    
-    g1 <- ggplot(df, aes(x=price_m2)) +
-      geom_histogram(bins=input$granularity) +
-      scale_x_continuous(trans='log10', limits=quantiles) +
-      ggtitle('Price/m2 distribution') +
-      xlab('Price/Area (€/m2)')
-    
-    g2 <- ggplot(df, aes(x=price_m2)) +
-      stat_ecdf(color="red", size=1.5) + 
-      scale_x_continuous(trans='log10', limits=quantiles) +
-      ggtitle('Price/m2 distribution') +
-      xlab('Price/Area (€/m2)')
-    
-    grid.newpage()
-    grid.draw(rbind(ggplotGrob(g1), ggplotGrob(g2), size="last"))
+    hc_hist(df, "price_m2", "EUR/m2", "Price/m2 distribution", input$truncation)
   })
   
   output$tablePrice_m2 <- renderTable({
     df <- filtered_dataset()
     quantiles <- c(.01, .05, .1, .25, .4, .5, .75, .9, .95, .99)
     values <- quantile(pull(df, "price_m2"), probs=quantiles, na.rm=TRUE)
-    data.frame(quantile=paste(quantiles * 100, "%", sep=""), "price/m2"=values)
+    table <- data.frame("price/m2"=values)
+    row.names(table) <- paste(quantiles * 100, "%", sep="")
+    return (t(table))
   }, align="c", digits=0)
   
-  output$HistogramPrice <- renderPlot({
+  output$HistogramPrice <- renderHighchart({
     df <- filtered_dataset()
-    q <- as.numeric(input$truncation) / 100.0
-    quantiles <- quantile(df$price, probs = c(q, 1 - q))
-    ggplot(df, aes(x=price)) +
-      geom_histogram(aes(y=..density..), bins=input$granularity) +
-      scale_x_continuous(trans='log10', limits=quantiles) +
-      ggtitle("Price distribution") +
-      xlab("Price (€)")
+    hc_hist(df, "price", "EUR", "Price distribution", input$truncation)
   })
   
   output$tablePrice <- renderTable({
@@ -187,17 +251,11 @@ shinyServer(function(input, output, session) {
     data.frame(quantile=paste(quantiles * 100, "%", sep=""), "price"=values)
   }, align="c", digits=0)
   
-  output$HistogramArea <- renderPlot({
-    df <- filtered_dataset()
-    q <- as.numeric(input$truncation) / 100.0
-    quantiles <- quantile(df$area, probs = c(q, 1 - q))
-    ggplot(df, aes(x=area)) +
-      geom_histogram(bins=input$granularity) +
-      scale_x_continuous(trans='log10', limits=quantiles) +
-      ggtitle("Area distribution") +
-      xlab("Area (m2)")
-  })
   
+  output$HistogramArea <- renderHighchart({
+    df <- filtered_dataset()
+    hc_hist(df, "area", "m2", "Area distribution", input$truncation)
+  })
   
   output$tableArea <- renderTable({
     df <- filtered_dataset()
@@ -206,14 +264,23 @@ shinyServer(function(input, output, session) {
     data.frame(quantile=paste(quantiles * 100, "%", sep=""), area=values)
   }, align="c", digits=0)
   
+  
   output$ScatterPriceArea <- renderPlot({
     df <- filtered_dataset()
+    max_row <- 1000
+    if(nrow(df) > max_row)
+    {
+      set.seed(0)
+      df <- df[sample(nrow(df), max_row), ]
+    }
+    
     q <- as.numeric(input$truncation) / 100.0
     quantiles_area <- quantile(df$area, probs = c(q, 1 - q))
     quantiles_price <- quantile(df$price, probs = c(q, 1 - q))
-    ggplot(df, aes(x=area, y=price)) +
-      geom_bin2d(bins=20) + 
-      geom_smooth(method=lm, se=FALSE, fullrange=TRUE, color="red") +
+    
+    ggplot(df, aes(x=area, y=price, color=PropType)) +
+      geom_jitter(shape=21) + 
+      geom_smooth(method=lm, se=TRUE, fullrange=TRUE) +
       scale_x_continuous(limits=quantiles_area) + # trans='log10', 
       scale_y_continuous(limits=quantiles_price) +
       ggtitle("Area distribution") +
@@ -221,13 +288,16 @@ shinyServer(function(input, output, session) {
       ylab("Price (Eur)")
   })
 
+
+  # ----------------------------------------------------------------------------------------
+  #                                    CATEGORIES SECTION
+  # ----------------------------------------------------------------------------------------
   
   output$CategoriesBoxPlot <- renderPlot({
     
     # https://cran.r-project.org/web/packages/egg/vignettes/Ecosystem.html
     
     cat_col <- input$category
-    #target_col <- input$target
     
     df <- filtered_dataset()
     df <- df[!is.na(df[[cat_col]]), ]
@@ -243,7 +313,7 @@ shinyServer(function(input, output, session) {
       geom_boxplot(aes_string(x=cat_col, y="price_m2", fill=cat_col), size=.5) +
       scale_x_discrete(drop=FALSE) +
       scale_y_continuous(trans='log10', limits=quantiles) +
-      theme(legend.position="bottom") +
+      theme(legend.position="none") +
       coord_flip()
   })
   
@@ -254,17 +324,15 @@ shinyServer(function(input, output, session) {
     df <- filtered_dataset()
     df <- df[!is.na(df[[cat_col]]), ]
     
-    
     validate(
       need(nrow(df) > 10, "Filtering too narrow: not enough datapoints")
     )
     
     ggplot(df) +
-      geom_bar(aes_string(x=cat_col, fill=cat_col)) +
+      geom_bar(aes_string(x=cat_col, fill=cat_col), color="black") +
       scale_x_discrete(drop=FALSE) +
-      theme(legend.position="bottom") +
+      theme(legend.position="none") +
       coord_flip()
-    
   })
   
   
@@ -273,12 +341,14 @@ shinyServer(function(input, output, session) {
   })
   
   # ----------------------------------------------------------------------------------------
-  # RAW DATA SECTION
+  #                                   DATA SOURCES SECTION
+  # ----------------------------------------------------------------------------------------
   
   output$imovirtualDataTable <- DT::renderDataTable(dataset(), filter = 'top', options = list(scrollX = TRUE))
   
   # ----------------------------------------------------------------------------------------
-  # VALUATION SECTION
+  #                                     VALUATION SECTION
+  # ----------------------------------------------------------------------------------------
   
   output$valuationOutput <- renderHighchart({
     
