@@ -1,7 +1,3 @@
-library(shiny)
-library(highcharter)
-library(leaflet)
-library(rpivotTable)
 library(ggthemes)
 library(Cairo)
 options(shiny.usecairo=TRUE)
@@ -290,12 +286,10 @@ shinyServer(function(input, output, session) {
 
 
   # ----------------------------------------------------------------------------------------
-  #                                    CATEGORIES SECTION
+  #                                   CATEGORIES SECTION
   # ----------------------------------------------------------------------------------------
   
   output$CategoriesBoxPlot <- renderPlot({
-    
-    # https://cran.r-project.org/web/packages/egg/vignettes/Ecosystem.html
     
     cat_col <- input$category
     
@@ -341,7 +335,7 @@ shinyServer(function(input, output, session) {
   })
   
   # ----------------------------------------------------------------------------------------
-  #                                   DATA SOURCES SECTION
+  #                                    DATA SOURCES SECTION
   # ----------------------------------------------------------------------------------------
   
   output$rawDataTable <- DT::renderDataTable(
@@ -370,7 +364,6 @@ shinyServer(function(input, output, session) {
     highchart() %>%
          hc_chart(type = "waterfall") %>% 
          hc_xAxis(categories = c("area", "location", "condition", "rooms", "energy_certificate")) %>% 
-         hc_add_series(c(10,19.4,21.1, 14.4, 6.5), showInLegend = FALSE) 
-    
+         hc_add_series(c(10,19.4,21.1, 14.4, 6.5), showInLegend = FALSE)
   })
 })

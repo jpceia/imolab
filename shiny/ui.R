@@ -1,29 +1,14 @@
-library(shiny)
-library(shinycssloaders)
-library(shinydashboard)
-library(tidyverse)
-library(dplyr)
-library(highcharter)
-library(leaflet)
-library(rpivotTable)
-
-# category -> 
-# * cert energ
-# * rooms
-# * bathrooms
-# * geo (hide freg)
 
 
-SPINNER_TYPE <- 4
-
-
+# ----------------------------------------------------------------------------------------
+#                                        SIDE BAR
+# ----------------------------------------------------------------------------------------
 
 sideBar <- dashboardSidebar(
   sidebarMenu(
     id = "sidebarmenu",
     # menuItem("Home", tabName = "homeTab"),
     menuItem("Exploration", icon = icon("poll"),
-             #tabName = "explorationTab", #icon=icon("wpexplorer"),
              menuSubItem("Histograms",
                          tabName = "histogramsTab"),
              menuSubItem("Categories",
@@ -35,7 +20,6 @@ sideBar <- dashboardSidebar(
              menuSubItem("Pivots", tabName = "pivotTableTab")),
     menuItem("Valuation", icon = icon("brain"),
              tabName = "valuationTab",
-             # icon = icon("dashboard"),
              badgeLabel = "Beta",
              badgeColor = "blue"),
     
@@ -98,6 +82,12 @@ sideBar <- dashboardSidebar(
     )
   )
 )
+
+
+
+# ----------------------------------------------------------------------------------------
+#                                          BODY
+# ----------------------------------------------------------------------------------------
 
 
 body <- dashboardBody(
@@ -168,7 +158,7 @@ body <- dashboardBody(
       )
     ),
     tabItem(
-      tabName = "territoryTab"#, leafletOutput("mymap")
+      tabName = "territoryTab"
     ),
     tabItem(
       tabName = "rawdataTab",
@@ -242,6 +232,9 @@ body <- dashboardBody(
 )
 
 
+# ----------------------------------------------------------------------------------------
+#                                           UI
+# ----------------------------------------------------------------------------------------
   
 
 # Define UI for application that draws a histogram
