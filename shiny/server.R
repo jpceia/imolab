@@ -1,7 +1,7 @@
 library(shiny)
-library(grid)
 library(highcharter)
 library(leaflet)
+library(rpivotTable)
 library(ggthemes)
 library(Cairo)
 options(shiny.usecairo=TRUE)
@@ -344,7 +344,22 @@ shinyServer(function(input, output, session) {
   #                                   DATA SOURCES SECTION
   # ----------------------------------------------------------------------------------------
   
-  output$imovirtualDataTable <- DT::renderDataTable(dataset(), filter = 'top', options = list(scrollX = TRUE))
+  output$rawDataTable <- DT::renderDataTable(
+    dataset() %>%
+      select(-district, -city, -freg) %>%
+      rename(district=district_name, city=city_name, parish=parish_name),
+    filter = 'top', options = list(scrollX = TRUE))
+  
+  output$pivotTable <- renderRpivotTable({
+     rpivotTable(
+       dataset(),
+       rows = "district_name",
+       cols = c("Sale", "PropType"),
+       aggregatorName = "Median",
+       vals = "price_m2",
+       rendererName = "Col Heatmap") 
+  })
+  
   
   # ----------------------------------------------------------------------------------------
   #                                     VALUATION SECTION

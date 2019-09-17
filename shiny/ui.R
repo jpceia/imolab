@@ -5,6 +5,7 @@ library(tidyverse)
 library(dplyr)
 library(highcharter)
 library(leaflet)
+library(rpivotTable)
 
 # category -> 
 # * cert energ
@@ -30,8 +31,8 @@ sideBar <- dashboardSidebar(
     menuItem("Territory", tabName = "territoryTab", icon = icon("globe-africa")
     ),
     menuItem("Data Sources", icon = icon("table"),
-             menuSubItem("Imovirtual",
-                         tabName= "rawdataTab")),
+             menuSubItem("Raw Data", tabName= "rawdataTab"),
+             menuSubItem("Pivots", tabName = "pivotTableTab")),
     menuItem("Valuation", icon = icon("brain"),
              tabName = "valuationTab",
              # icon = icon("dashboard"),
@@ -89,14 +90,6 @@ sideBar <- dashboardSidebar(
                    choiceNames = c("5%", "1%", "0.1%"),
                    choiceValues = c(5.0, 1.0, 0.1),
                    selected = 1.0,
-                   inline = TRUE)
-    ),
-    conditionalPanel(
-      condition = "input.sidebarmenu == 'histogramsTab'",
-      radioButtons("granularity", "Granularity",
-                   choiceNames = c("High", "Medium", "Low"),
-                   choiceValues = c(100, 30, 10),
-                   selected = 30,
                    inline = TRUE)
     ),
     conditionalPanel(
@@ -181,9 +174,14 @@ body <- dashboardBody(
       tabName = "rawdataTab",
       h2('Imovirtual database'),
       box(
-        DT::dataTableOutput("imovirtualDataTable") %>% withSpinner(type=SPINNER_TYPE),
+        DT::dataTableOutput("rawDataTable") %>% withSpinner(type=SPINNER_TYPE),
         width = 12
       )
+    ),
+    tabItem(
+      tabName = "pivotTableTab",
+      h2("Pivot Table"),
+      rpivotTableOutput("pivotTable") %>% withSpinner(type=SPINNER_TYPE)
     ),
     tabItem(
       tabName = "valuationTab",
