@@ -71,8 +71,8 @@ sideBar <- dashboardSidebar(
     conditionalPanel(
       condition = "['histogramsTab', 'categoriesTab'].indexOf(input.sidebarmenu) >= 0",
       radioButtons("truncation", "Truncation",
-                   choiceNames = c("5%", "1%", "0.1%"),
-                   choiceValues = c(5.0, 1.0, 0.1),
+                   choiceNames = c("2.5%", "1%", "0.5%"),
+                   choiceValues = c(2.5, 1.0, 0.5),
                    selected = 1.0,
                    inline = TRUE)
     ),
