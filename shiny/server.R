@@ -3,71 +3,6 @@ library(Cairo)
 options(shiny.usecairo=TRUE)
 
 
-remove_outliers <- function(df, col_name, trunc)
-{
-  q <- as.numeric(trunc) / 100.0
-  quantiles <- quantile(pull(df, col_name), probs=c(q, 1 - q))
-
-  df %>% filter(!!between(as.name(col_name), quantiles[1], quantiles[2]))
-}
-
-
-hc_hist <- function(df, col_name, xunits, xlabel, truncation = 1)
-{
-  max_row <- 25000
-  if(nrow(df) > max_row)
-  {
-    set.seed(0)
-    df <- df[sample(nrow(df), max_row), ]
-  }
-  q <- as.numeric(truncation) / 100.0
-  quantiles <- as.numeric(quantile(df[[col_name]], probs=c(q, 1 - q)))
-  formatter <- sprintf("function() {
-                          if (this.series.name == 'ecdf'){
-                            return this.y + '%%<br/>' + this.x + ' %s';
-                          }
-                          else return 'Count: ' + this.y + '<br/>' + this.key;
-                        }", xunits, xunits)
-  
-  g <- hchart(df[[col_name]]) %>%
-    hc_xAxis(min = quantiles[1], max=quantiles[2]) %>%
-    hc_xAxis(title=list(text=xunits)) %>%
-    hc_yAxis_multiples(
-      list(
-        title=list(text="Count")
-      ),
-      list(
-        min=0, max=100,
-        tickInterval=25,
-        title=list(text="Cumulative percentage"),
-        labels = list(format = "{value}%"),
-        opposite=TRUE)) %>%
-    hc_legend(enabled=FALSE) %>%
-    hc_title(text = xlabel)
-  
-  step <- g$x$hc_opts$series[[1]]$pointRange
-  start <- round(quantiles[1] / step) * step
-  end <- round(quantiles[2] / step) * step
-  nsteps <- 2 * as.integer((end - start) / step)
-  
-  x <- start + (step / 2) * (1 : nsteps - 1)
-  y <- round(100 * ecdf(df[[col_name]])(x), 2)
-  
-  g <- g %>%
-    hc_add_series(
-      data.frame(x = x, y = y),
-      hcaes(name=x),
-      type = "line",
-      color = "red",
-      name = "ecdf",
-      yAxis = 1) %>%
-    hc_tooltip(useHTML = TRUE, formatter = JS(formatter)) %>% #formatter = JS(formatter)
-    hc_plotOptions(line=list(marker=list(enabled=FALSE))) %>%
-    hc_boost(boost = FALSE)
-  
-  return(g)
-}
-
 
 # ----------------------------------------------------------------------------------------
 #                                         SERVER
@@ -94,7 +29,7 @@ shinyServer(function(input, output, session) {
   
   observe({
     parish_list <- c("")
-    df <- parish_meta() %>% filter(code1 == input$city)
+    df <- parish_meta %>% filter(code1 == input$city)
     
     if(nrow(df) > 0) {
       parish_list <- df$Dicofre
@@ -103,80 +38,13 @@ shinyServer(function(input, output, session) {
     
     updateSelectInput(session, "parish", choices=parish_list)
   })
-
-  
-  city_meta <- reactive({
-    read_csv(
-      file.path(dataFolder, "geodata", "concelho_meta.csv"),
-      col_types = c(Designacao="f"),
-      locale = readr::locale(encoding = "latin1")
-    ) %>%
-      mutate(code1 = stringr::str_sub(as.character(Dicofre), 0, -3)) %>%
-      filter(code1 %in% district_meta$Dicofre) %>%
-      select(code1, Dicofre, Designacao)
-  })
-
-  
-  parish_meta <- reactive({
-    read_csv(
-      file.path(dataFolder, "geodata", "freguesias_meta.csv"),
-      col_types = c(Designacao="f"),
-      locale = readr::locale(encoding = "latin1")
-    ) %>%
-      mutate(
-        code1 = stringr::str_sub(as.character(Dicofre), 0, -3)) %>%
-      filter(code1 %in% city_meta()$Dicofre) %>%
-      select(code1, Dicofre, Designacao)
-  })
-  
-    
-  dataset <- reactive({
-    
-    fname <- "short_summary_20190826.csv"
-    df <- readr::read_csv(fname, col_types=c(
-      terrain_area="d",
-      district="f",
-      city="f",
-      freg="f",
-      energy_certificate="f",
-      rooms="f",
-      bathrooms="f",
-      condition="f"
-      ))
-    
-    df <- df %>% select(-createdDays, -modifiedDays)
-    
-    df$energy_certificate <- factor(
-      df$energy_certificate,
-      levels=energy_certificate_levels)
-    
-    df$rooms <- factor(
-      df$rooms,
-      levels=rooms_levels)
-    levels(df$rooms)[11] <- "10+"
-    
-    df$bathrooms <- factor(df$bathrooms, levels=bathrooms_levels)
-    levels(df$bathrooms)[4] <- "4+"
-    
-    df$condition <- factor(df$condition, levels=condition_levels)
-    
-    df <- add_column(df, price_m2 = round(df$price / df$area, 2), .after="price")
-    df <- add_column(df, district_name = district_meta$Designacao[match(df$district, district_meta$Dicofre)], .after="district")
-    df <- add_column(df, city_name = city_meta()$Designacao[match(df$city, city_meta()$Dicofre)], .after="city")
-    df <- add_column(df, parish_name = parish_meta()$Designacao[match(df$freg, parish_meta()$Dicofre)], .after="freg")
-    
-    return(df)
-  })
   
   filtered_dataset_cat <- reactive({
-    df <- dataset()
-    
-    df <- df %>%
-      dplyr::filter(PropType %in% input$prop_type) %>%
-      dplyr::filter(Sale == input$is_sale) %>%
-      dplyr::filter(district %in% district_meta$Dicofre)
-    
-    # if less then 10 datapoints, do not display data
+
+    df <- dataset %>%
+      filter(PropType %in% input$prop_type) %>%
+      filter(Sale == input$is_sale) %>%
+      filter(district %in% district_meta$Dicofre)
     
     validate(
       need(nrow(df) > 10, "Not enough datapoints")
@@ -261,9 +129,11 @@ shinyServer(function(input, output, session) {
   }, align="c", digits=0)
   
   
+  # -------------------------------------- SCATTERPLOT -------------------------------------
+  
   output$ScatterPriceArea <- renderPlot({
     df <- filtered_dataset()
-    max_row <- 1000
+    max_row <- 5000
     if(nrow(df) > max_row)
     {
       set.seed(0)
@@ -274,7 +144,7 @@ shinyServer(function(input, output, session) {
     quantiles_area <- quantile(df$area, probs = c(q, 1 - q))
     quantiles_price <- quantile(df$price, probs = c(q, 1 - q))
     
-    ggplot(df, aes(x=area, y=price, color=PropType)) +
+    ggplot(df, aes(x=area, y=price)) +
       geom_jitter(shape=21) + 
       geom_smooth(method=lm, se=TRUE, fullrange=TRUE) +
       scale_x_continuous(limits=quantiles_area) + # trans='log10', 
@@ -288,6 +158,8 @@ shinyServer(function(input, output, session) {
   # ----------------------------------------------------------------------------------------
   #                                   CATEGORIES SECTION
   # ----------------------------------------------------------------------------------------
+  
+  output$categoryText <- renderText(input$category)
   
   output$CategoriesBoxPlot <- renderPlot({
     
@@ -339,14 +211,14 @@ shinyServer(function(input, output, session) {
   # ----------------------------------------------------------------------------------------
   
   output$rawDataTable <- DT::renderDataTable(
-    dataset() %>%
+    dataset %>%
       select(-district, -city, -freg) %>%
       rename(district=district_name, city=city_name, parish=parish_name),
     filter = 'top', options = list(scrollX = TRUE))
   
   output$pivotTable <- renderRpivotTable({
      rpivotTable(
-       dataset(),
+       dataset,
        rows = "district_name",
        cols = c("Sale", "PropType"),
        aggregatorName = "Median",
