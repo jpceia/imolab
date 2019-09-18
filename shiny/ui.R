@@ -101,10 +101,10 @@ body <- dashboardBody(
           tabPanel(
             "Price / m2",
             fluidRow(
-              column(12, highchartOutput("HistogramPrice_m2") %>% withSpinner(type=SPINNER_TYPE))
+               highchartOutput("HistogramPrice_m2") %>% withSpinner(type=SPINNER_TYPE)
             ),
             fluidRow(
-              column(12, DT::dataTableOutput("tablePrice_m2"))
+              tableOutput("tablePrice_m2")
             )
           ),
           tabPanel(
@@ -113,8 +113,7 @@ body <- dashboardBody(
               highchartOutput("HistogramPrice") %>% withSpinner(type=SPINNER_TYPE)
             ),
             fluidRow(
-              column(6, verbatimTextOutput("textReport2")),
-              column(6, formattableOutput("tablePrice"))
+              tableOutput("tablePrice") %>% withSpinner(type=SPINNER_TYPE)
             )
           ),
           tabPanel(
@@ -123,8 +122,7 @@ body <- dashboardBody(
               highchartOutput("HistogramArea") %>% withSpinner(type=SPINNER_TYPE)
             ),
             fluidRow(
-              column(6, verbatimTextOutput("textReport3")),
-              column(6, formattableOutput("tableArea"))
+              tableOutput("tableArea") %>% withSpinner(type=SPINNER_TYPE)
             )
           ),
           tabPanel(
