@@ -11,6 +11,7 @@ library(dplyr)
 library(highcharter)
 library(leaflet)
 library(rpivotTable)
+library(rapportools) # is.empty
 
 
 source("utils.R")

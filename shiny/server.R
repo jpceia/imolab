@@ -14,8 +14,8 @@ shinyServer(function(input, output, session) {
   session$onSessionEnded(stopApp)
   
   observe({
-    city_list <- c("")
-    df <- city_meta() %>% filter(code1 == input$district)
+    city_list <- c(NULL)
+    df <- city_meta %>% filter(code1 == input$district)
     
     if(nrow(df) > 0) {
       city_list <- df$Dicofre
@@ -23,12 +23,12 @@ shinyServer(function(input, output, session) {
     }
 
     updateSelectInput(session, "city", choices=city_list)
-    updateSelectInput(session, "parish", choices=c(""))
+    updateSelectInput(session, "parish", choices=c(NULL))
   })
   
   
   observe({
-    parish_list <- c("")
+    parish_list <- c(NULL)
     df <- parish_meta %>% filter(code1 == input$city)
     
     if(nrow(df) > 0) {
@@ -57,24 +57,17 @@ shinyServer(function(input, output, session) {
     
     df <- filtered_dataset_cat()
     
-    if(input$district != "")
-    {
-      if(input$city != "")
-      {
-        if(input$parish != "")
-        {
-          df <- df %>% dplyr::filter(freg == input$parish)
-        }
+    if(!is.empty(input$district)) {
+      if(!is.empty(input$city)) {
+        if(!is.empty(input$parish))
+          df <- df %>% filter(freg == input$parish)
         else
-        {
-          df <- df %>% dplyr::filter(city == input$city)
-        }
+          df <- df %>% filter(city == input$city)
       }
       else
-      {
-        df <- df %>% dplyr::filter(district == input$district)
-      }
+        df <- df %>% filter(district == input$district)
     }
+
     
     validate(
       need(nrow(df) > MIN_DATAPOINTS, "Not enough datapoints")
@@ -87,6 +80,8 @@ shinyServer(function(input, output, session) {
   #                                     NUMERICAL SECTION
   # ----------------------------------------------------------------------------------------
   
+  # --------------------------------------- HIGHCHARTS -------------------------------------
+
   output$HistogramPrice_m2 <- renderHighchart({
     df <- filtered_dataset()
     hc_hist(df, "price_m2", "EUR/m2", "Price/m2 distribution", input$truncation)
