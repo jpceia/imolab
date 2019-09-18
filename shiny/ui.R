@@ -137,7 +137,7 @@ body <- dashboardBody(
     ),
     tabItem(
       tabName = "categoriesTab",
-      h2("Categories"),
+      h2(textOutput("categoryText")),
       fluidRow(
         box(
           fluidRow(
