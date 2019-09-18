@@ -21,6 +21,8 @@ source("utils.R")
 # ----------------------------------------------------------------------------------------
 
 SPINNER_TYPE <- 8
+MIN_DATAPOINTS <- 5
+
 
 dataFolder <- "C:/Users/joaop/OneDrive - insidemedia.net/Data/1 - Houses"
 

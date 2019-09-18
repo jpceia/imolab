@@ -47,7 +47,7 @@ shinyServer(function(input, output, session) {
       filter(district %in% district_meta$Dicofre)
     
     validate(
-      need(nrow(df) > 10, "Not enough datapoints")
+      need(nrow(df) > MIN_DATAPOINTS, "Not enough datapoints")
     )
     
     return(df)
@@ -76,10 +76,8 @@ shinyServer(function(input, output, session) {
       }
     }
     
-    # if less then 10 datapoints, do not display data
-    
     validate(
-      need(nrow(df) > 10, "Not enough datapoints")
+      need(nrow(df) > MIN_DATAPOINTS, "Not enough datapoints")
     )
     
     return(df)
@@ -169,7 +167,7 @@ shinyServer(function(input, output, session) {
     df <- df[!is.na(df[[cat_col]]), ]
     
     validate(
-      need(nrow(df) > 10, "Filtering too narrow: not enough datapoints")
+      need(nrow(df) > MIN_DATAPOINTS, "Filtering too narrow: not enough datapoints")
     )
     
     q <- as.numeric(input$truncation) / 100.0
@@ -191,7 +189,7 @@ shinyServer(function(input, output, session) {
     df <- df[!is.na(df[[cat_col]]), ]
     
     validate(
-      need(nrow(df) > 10, "Filtering too narrow: not enough datapoints")
+      need(nrow(df) > MIN_DATAPOINTS, "Filtering too narrow: not enough datapoints")
     )
     
     ggplot(df) +
