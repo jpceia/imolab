@@ -17,13 +17,13 @@ shinyServer(function(input, output, session) {
     city_list <- c(NULL)
     df <- city_meta %>% filter(code1 == input$district)
     
-    if(nrow(df) > 0) {
+    if (nrow(df) > 0) {
       city_list <- df$Dicofre
       names(city_list) <- df$Designacao
     }
-
-    updateSelectInput(session, "city", choices=city_list)
-    updateSelectInput(session, "parish", choices=c(NULL))
+    
+    updateSelectInput(session, "city", choices = city_list)
+    updateSelectInput(session, "parish", choices = c(NULL))
   })
   
   
@@ -31,12 +31,12 @@ shinyServer(function(input, output, session) {
     parish_list <- c(NULL)
     df <- parish_meta %>% filter(code1 == input$city)
     
-    if(nrow(df) > 0) {
+    if (nrow(df) > 0) {
       parish_list <- df$Dicofre
       names(parish_list) <- df$Designacao
     }
     
-    updateSelectInput(session, "parish", choices=parish_list)
+    updateSelectInput(session, "parish", choices = parish_list)
   })
   
   filtered_dataset_cat <- reactive({
@@ -46,9 +46,7 @@ shinyServer(function(input, output, session) {
       filter(Sale == input$is_sale) %>%
       filter(district %in% district_meta$Dicofre)
     
-    validate(
-      need(nrow(df) > MIN_DATAPOINTS, "Not enough datapoints")
-    )
+    validate(need(nrow(df) > MIN_DATAPOINTS, "Not enough datapoints"))
     
     return(df)
   })
@@ -57,9 +55,9 @@ shinyServer(function(input, output, session) {
     
     df <- filtered_dataset_cat()
     
-    if(!is.empty(input$district)) {
-      if(!is.empty(input$city)) {
-        if(!is.empty(input$parish))
+    if (!is.empty(input$district)) {
+      if (!is.empty(input$city)) {
+        if (!is.empty(input$parish))
           df <- df %>% filter(freg == input$parish)
         else
           df <- df %>% filter(city == input$city)
@@ -69,9 +67,7 @@ shinyServer(function(input, output, session) {
     }
 
     
-    validate(
-      need(nrow(df) > MIN_DATAPOINTS, "Not enough datapoints")
-    )
+    validate(need(nrow(df) > MIN_DATAPOINTS, "Not enough datapoints"))
     
     return(df)
   })
@@ -82,44 +78,17 @@ shinyServer(function(input, output, session) {
   
   # --------------------------------------- HIGHCHARTS -------------------------------------
 
-  output$HistogramPrice_m2 <- renderHighchart({
-    df <- filtered_dataset()
-    hc_hist(df, "price_m2", "EUR/m2", "Price/m2 distribution", input$truncation)
-  })
+  output$HistogramPrice_m2 <- renderHighchart(
+    filtered_dataset() %>% hc_hist("price_m2", "EUR/m2", "", input$truncation)
+  )
   
-  output$tablePrice_m2 <- renderTable({
-    df <- filtered_dataset()
-    quantiles <- c(.01, .05, .1, .25, .4, .5, .75, .9, .95, .99)
-    values <- quantile(pull(df, "price_m2"), probs=quantiles, na.rm=TRUE)
-    table <- data.frame("price/m2"=values)
-    row.names(table) <- paste(quantiles * 100, "%", sep="")
-    return (t(table))
-  }, align="c", digits=0)
+  output$HistogramPrice <- renderHighchart(
+    filtered_dataset() %>% hc_hist("price", "EUR", "", input$truncation)
+  )
   
-  output$HistogramPrice <- renderHighchart({
-    df <- filtered_dataset()
-    hc_hist(df, "price", "EUR", "Price distribution", input$truncation)
-  })
-  
-  output$tablePrice <- renderTable({
-    df <- filtered_dataset()
-    quantiles <- c(.01, .05, .1, .25, .4, .5, .75, .9, .95, .99)
-    values <- quantile(pull(df, "price"), probs=quantiles, na.rm=TRUE)
-    data.frame(quantile=paste(quantiles * 100, "%", sep=""), "price"=values)
-  }, align="c", digits=0)
-  
-  
-  output$HistogramArea <- renderHighchart({
-    df <- filtered_dataset()
-    hc_hist(df, "area", "m2", "Area distribution", input$truncation)
-  })
-  
-  output$tableArea <- renderTable({
-    df <- filtered_dataset()
-    quantiles <- c(.01, .05, .1, .25, .4, .5, .75, .9, .95, .99)
-    values <- quantile(pull(df, "area"), probs=quantiles, na.rm=TRUE)
-    data.frame(quantile=paste(quantiles * 100, "%", sep=""), area=values)
-  }, align="c", digits=0)
+  output$HistogramArea <- renderHighchart(
+    filtered_dataset() %>% hc_hist("area", "m2", "", input$truncation)
+  )
   
   
   # -------------------------------------- SCATTERPLOT -------------------------------------
@@ -127,10 +96,10 @@ shinyServer(function(input, output, session) {
   output$ScatterPriceArea <- renderPlot({
     df <- filtered_dataset()
     max_row <- 5000
-    if(nrow(df) > max_row)
+    if (nrow(df) > max_row)
     {
       set.seed(0)
-      df <- df[sample(nrow(df), max_row), ]
+      df <- df[sample(nrow(df), max_row),]
     }
     
     q <- as.numeric(input$truncation) / 100.0
@@ -161,18 +130,20 @@ shinyServer(function(input, output, session) {
     df <- filtered_dataset()
     df <- df[!is.na(df[[cat_col]]), ]
     
-    validate(
-      need(nrow(df) > MIN_DATAPOINTS, "Filtering too narrow: not enough datapoints")
-    )
+    validate(need(
+      nrow(df) > MIN_DATAPOINTS,
+      "Filtering too narrow: not enough datapoints"
+    ))
     
     q <- as.numeric(input$truncation) / 100.0
     quantiles <- quantile(df$price_m2, probs = c(q, 1 - q))
     
     ggplot(df) +
-      geom_boxplot(aes_string(x=cat_col, y="price_m2", fill=cat_col), size=.5) +
-      scale_x_discrete(drop=FALSE) +
-      scale_y_continuous(trans='log10', limits=quantiles) +
-      theme(legend.position="none") +
+      geom_boxplot(aes_string(x = cat_col, y = "price_m2", fill = cat_col), size = 0.5) +
+      scale_x_discrete(drop = FALSE) +
+      scale_y_continuous(trans = 'log10', limits = quantiles) +
+      theme_minimal() +
+      theme(legend.position = "none") #+
       coord_flip()
   })
   
@@ -183,14 +154,18 @@ shinyServer(function(input, output, session) {
     df <- filtered_dataset()
     df <- df[!is.na(df[[cat_col]]), ]
     
-    validate(
-      need(nrow(df) > MIN_DATAPOINTS, "Filtering too narrow: not enough datapoints")
-    )
+    validate(need(
+      nrow(df) > MIN_DATAPOINTS,
+      "Filtering too narrow: not enough datapoints"
+    ))
     
     ggplot(df) +
       geom_bar(aes_string(x=cat_col, fill=cat_col), color="black") +
       scale_x_discrete(drop=FALSE) +
-      theme(legend.position="none") +
+               size = 0.5) +
+      scale_x_discrete(drop = FALSE) +
+      theme_minimal() +
+      theme(legend.position = "none")# +
       coord_flip()
   })
   
@@ -205,8 +180,8 @@ shinyServer(function(input, output, session) {
   
   output$rawDataTable <- DT::renderDataTable(
     dataset %>%
-      select(-district, -city, -freg) %>%
-      rename(district=district_name, city=city_name, parish=parish_name),
+      select(-district, -city, -freg),# %>%
+      #rename(district=district_name, city=city_name, parish=parish_name),
     filter = 'top', options = list(scrollX = TRUE))
   
   output$pivotTable <- renderRpivotTable({
@@ -227,8 +202,8 @@ shinyServer(function(input, output, session) {
   output$valuationOutput <- renderHighchart({
     
     highchart() %>%
-         hc_chart(type = "waterfall") %>% 
-         hc_xAxis(categories = c("area", "location", "condition", "rooms", "energy_certificate")) %>% 
-         hc_add_series(c(10,19.4,21.1, 14.4, 6.5), showInLegend = FALSE)
+      hc_chart(type = "waterfall") %>%
+      hc_xAxis(categories = c("area", "location", "condition", "rooms", "energy_certificate")) %>%
+      hc_add_series(c(10, 19.4, 21.1, 14.4, 6.5), showInLegend = FALSE)
   })
 })
