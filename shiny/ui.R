@@ -12,8 +12,10 @@ sideBar <- dashboardSidebar(
              menuSubItem("Histograms",
                          tabName = "histogramsTab"),
              menuSubItem("Categories",
-                         tabName = "categoriesTab")),
-    menuItem("Territory", tabName = "territoryTab", icon = icon("globe-africa")),
+                         tabName = "categoriesTab"),
+             menuSubItem("Territory",
+                         tabName = "territoryTab")
+    ),
     menuItem("Data Sources", icon = icon("table"),
              menuSubItem("Raw Data", tabName = "rawdataTab"),
              menuSubItem("Pivots", tabName = "pivotTableTab")),
@@ -96,43 +98,42 @@ body <- dashboardBody(
   tabItems(
     tabItem(
       tabName = "histogramsTab",
-      h2('Price and Area distributions'),
-      fluidRow(
-        box(
+      tags$h2(tags$strong('Price and Area distributions')),
+      
+      
+      navbarPage("",
+        tabPanel(
           title = tags$strong("Price / m2"),
-          status = "primary",
-          #solidHeader = TRUE,
-          collapsible = TRUE,
-          collapsed = FALSE,
-          highchartOutput("HistogramPrice_m2") %>% withSpinner(type=SPINNER_TYPE),
-          width = 12
-        )
-      ),
-      fluidRow(
-        box(
+          fluidRow(
+            box(
+              highchartOutput("HistogramPrice_m2") %>% withSpinner(type=SPINNER_TYPE),
+              width = 12
+            )
+          )
+        ),
+        tabPanel(
           title = tags$strong("Price"),
-          status = "primary",
-          #solidHeader = TRUE,
-          collapsible = TRUE,
-          collapsed = TRUE,
-          highchartOutput("HistogramPrice") %>% withSpinner(type=SPINNER_TYPE),
-          width = 12
-        )  
-      ),
-      fluidRow(
-        box(
+          fluidRow(
+            box(
+              highchartOutput("HistogramPrice") %>% withSpinner(type=SPINNER_TYPE),
+              width = 12
+            )
+          )
+        ),
+        tabPanel(
           title = tags$strong("Area"),
-          status = "primary",
-          #solidHeader = TRUE,
-          collapsible = TRUE,
-          collapsed = TRUE,
-          highchartOutput("HistogramArea") %>% withSpinner(type=SPINNER_TYPE),
-          width = 12
+          fluidRow(
+            box(
+              highchartOutput("HistogramArea") %>% withSpinner(type=SPINNER_TYPE),
+              width = 12
+            )
+          )
         )
       ),
       fluidRow(
         box(
           title = tags$strong("Quantiles"),
+          status = "primary",
           collapsible = TRUE,
           collapsed = TRUE,
           formattableOutput("tableQuantiles"),
@@ -152,7 +153,7 @@ body <- dashboardBody(
     ),
     tabItem(
       tabName = "categoriesTab",
-      h2(textOutput("categoryText")),
+      tags$h2(tags$strong(textOutput("categoryText"))),
       fluidRow(
         box(
           fluidRow(
@@ -177,80 +178,87 @@ body <- dashboardBody(
     ),
     tabItem(
       tabName = "rawdataTab",
-      h2('Imovirtual database'),
+      tags$h2(tags$strong('Raw Data')),
       box(
+        title = tags$strong("Imovirtual database"),
+        solidHeader = TRUE,
+        status = "primary",
+        collapsible = TRUE,
+        collapsed = FALSE,
         DT::dataTableOutput("rawDataTable") %>% withSpinner(type=SPINNER_TYPE),
         width = 12
       )
     ),
     tabItem(
       tabName = "pivotTableTab",
-      h2("Pivot Table"),
+      tags$h2(tags$strong("Pivot Table")),
+      tags$h3("Imovirtual database"),
       rpivotTableOutput("pivotTable") %>% withSpinner(type=SPINNER_TYPE)
     ),
     tabItem(
       tabName = "valuationTab",
-      # h2('Valuation'),
-      navbarPage("", id="valuation_tabs",
-        tabPanel(
-          tabName = "valuationInputs",
-          title = "Inputs",
+      tags$h2(tags$strong('Valuation')),
+      fluidRow(
+        box(
+          title = tags$strong("Inputs"),
+          solidHeader = TRUE,
           status = "primary",
-          box(
-            fluidRow(
-              column(4,
-                     selectizeInput("prop_type_val", "Property Type", prop_types, selected = "Apartment"),
-                     radioButtons("is_sale_val", NULL,
-                                  choiceNames = c("Sale", "Rent"),
-                                  choiceValues = c(TRUE, FALSE),
-                                  inline = TRUE),
-                     selectInput("condition_val",
-                                 "Condition",
-                                 selected = "usado",
-                                 choices = condition_levels),
-                     selectInput("energy_certificate_val",
-                                 "Energy Certificate", "D",
-                                 choices = energy_certificate_levels)
-              ),
-              column(4,
-                     numericInput("net_area_val",           "Net Area",     100, min=0, step=1),
-                     numericInput("gross_area_val",         "Gross Area",   115, min=0, step=1),
-                     numericInput("terrain_area_val",       "Terrain Area", NULL, min=0, step=1),
-                     numericInput("rooms_val",              "#Rooms",       2, min=0, max=10, step=1),
-                     numericInput("bathrooms_val",          "#Bathrooms",   1, min=0, max=4, step=1)
-              ),
-              column(4,
-                     selectizeInput("district_val", "Location", district_list,#,  district
-                                    size = 3,
-                                    options = list(
-                                      placeholder = 'District',
-                                      onInitialize = I('function() { this.setValue(""); }')
-                                    )),
-                     selectizeInput("city_val", NULL, c(" "),
-                                    options = list(
-                                      placeholder = 'Municipality',
-                                      onInitialize = I('function() { this.setValue(""); }')
-                                    )),
-                     selectizeInput("parish_val", NULL, c(" "),
-                                    multiple = FALSE,
-                                    options = list(
-                                      placeholder = 'Parish',
-                                      onInitialize = I('function() { this.setValue(""); }')
-                                    ))
-              )
+          collapsible = TRUE,
+          collapsed = FALSE,
+          fluidRow(
+            column(4,
+                   selectizeInput("prop_type_val", "Property Type", prop_types, selected = "Apartment"),
+                   radioButtons("is_sale_val", NULL,
+                                choiceNames = c("Sale", "Rent"),
+                                choiceValues = c(TRUE, FALSE),
+                                inline = TRUE),
+                   selectInput("condition_val",
+                               "Condition",
+                               selected = "usado",
+                               choices = condition_levels),
+                   selectInput("energy_certificate_val",
+                               "Energy Certificate", "D",
+                               choices = energy_certificate_levels)
             ),
-            width = 12
-          )
-        ),
-        tabPanel(
-          tabName = "valuationResults",
-          title = "Simulation Results",
-          icon = icon("calculator"),
-          status = "primary",
-          box(
-            verbatimTextOutput("valuationResult"),
-            width = 12
-          )
+            column(4,
+                   numericInput("net_area_val",           "Net Area",     100, min=0, step=1),
+                   numericInput("gross_area_val",         "Gross Area",   115, min=0, step=1),
+                   numericInput("terrain_area_val",       "Terrain Area", NULL, min=0, step=1),
+                   numericInput("rooms_val",              "#Rooms",       2, min=0, max=10, step=1),
+                   numericInput("bathrooms_val",          "#Bathrooms",   1, min=0, max=4, step=1)
+            ),
+            column(4,
+                   selectizeInput("district_val", "Location", district_list,#,  district
+                                  size = 3,
+                                  options = list(
+                                    placeholder = 'District',
+                                    onInitialize = I('function() { this.setValue(""); }')
+                                  )),
+                   selectizeInput("city_val", NULL, c(" "),
+                                  options = list(
+                                    placeholder = 'Municipality',
+                                    onInitialize = I('function() { this.setValue(""); }')
+                                  )),
+                   selectizeInput("parish_val", NULL, c(" "),
+                                  multiple = FALSE,
+                                  options = list(
+                                    placeholder = 'Parish',
+                                    onInitialize = I('function() { this.setValue(""); }')
+                                  ))
+            )
+          ),
+          width = 12
+        )
+      ),
+      fluidRow(
+        box(
+          title = tags$strong("Simulation Results"),
+          #status = "primary",
+          solidHeader = TRUE,
+          collapsible = TRUE,
+          collapsed = TRUE,
+          verbatimTextOutput("valuationResult"),
+          width = 12
         )
       )
     )
