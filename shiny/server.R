@@ -279,9 +279,9 @@ shinyServer(function(input, output, session) {
 
   
   
-  output$valuationResult <- renderText({
+  output$valuationResult <- renderFormattable({
     
-    df <- list(
+    row <- list(
       Sale = input$is_sale_val,
       PropType = input$prop_type_val,
       
@@ -299,25 +299,69 @@ shinyServer(function(input, output, session) {
       terrain_area = input$terrain_area_val
     )
     
-    df <- data.frame(lapply(df, function(x) ifelse(is.null(x), NA, x)))
-    df <- df %>% tbl_df() %>%
+    row <- data.frame(lapply(row, function(x) ifelse(is.null(x), NA, x)))
+    row <- row %>% tbl_df() %>%
       mutate(
         area = as.double(area),
         gross_area = as.double(gross_area),
         terrain_area = as.double(terrain_area)
       )
-
+    
+    ### DROPDOWN
+    
+    df <- row
+    
+    drop_cols <- c(
+      "bathrooms",
+      "rooms",
+      "energy_certificate",
+      "condition",
+      "terrain_area",
+      "gross_area",
+      #"area",
+      "freg",
+      "city",
+      "district"
+    )
+    
+    drop_cols_final <- NULL
+    for(c in drop_cols)
+    {
+      if(!is.na(df[1, c]))
+      {
+        row[, c] <- NA
+        drop_cols_final <- rbind(drop_cols_final, c)
+        df <- rbind(df, row)
+      }
+    }
+    
+    drop_cols_final <- rev(rbind(drop_cols_final, "Property and Deal Type"))
+    
+    
+    df <- df %>% map_df(rev)
+    
     X <- get_features(df, match_tables)
 
-    pred_price_m2 <- 10 ^ (predict(xgb$price_m2, xgb.DMatrix(data = as.matrix(X))))[1]
-    pred_price <- 10 ^ (predict(xgb$price, xgb.DMatrix(data = as.matrix(X))))[1]
+    pred_price_m2 <- 10 ^ (predict(xgb$price_m2, xgb.DMatrix(data = as.matrix(X))))
+    #pred_price <- 10 ^ (predict(xgb$price, xgb.DMatrix(data = as.matrix(X))))
     
-    paste(
-      c("Price_m2:", as.character(pred_price_m2), "\n",
-        "Price:", as.character(pred_price_m2 * input$net_area_val), "\n",
-        "Price:", as.character(pred_price)
+    data.frame(
+      Characteristic = drop_cols_final,
+      price_m2 = currency(pred_price_m2, "", 0),
+      price = currency(pred_price_m2 * input$net_area_val, "", 0),
+      impact = accounting((pred_price_m2 - lag(pred_price_m2)) * input$net_area_val),
+      row.names = NULL
+    ) %>%
+      formattable(
+        align = c("l", "r", "r", "r"),
+        list(
+          area(col = "Characteristic") ~ formatter(
+            "span", style = ~style(color = "grey", font.weight = "bold")),
+          price_m2 = normalize_bar("pink", 0.2),
+          impact = formatter(
+            "span", style = x ~ style(color = ifelse(x < 0, "red", "green")))
+        )
       )
-    )
   })
   
   output$valuationOutput <- renderHighchart({

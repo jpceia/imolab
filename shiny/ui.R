@@ -207,8 +207,8 @@ body <- dashboardBody(
     ),
     tabItem(
       tabName = "pivotTableTab",
-      tags$h2(tags$strong("Pivot Table")),
-      tags$h3("Imovirtual database"),
+      #tags$h2(tags$strong("Pivot Table")),
+      #tags$h3("Imovirtual database"),
       rpivotTableOutput("pivotTable") %>% withSpinner(type=SPINNER_TYPE)
     ),
     tabItem(
@@ -273,7 +273,7 @@ body <- dashboardBody(
           solidHeader = TRUE,
           collapsible = TRUE,
           collapsed = TRUE,
-          verbatimTextOutput("valuationResult"),
+          formattableOutput("valuationResult"),
           width = 12
         )
       )
