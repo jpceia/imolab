@@ -183,10 +183,10 @@ shinyServer(function(input, output, session) {
       "Filtering too narrow: not enough datapoints"
     ))
     
-    ggplot(df) +
-      geom_bar(aes_string(x = cat_col, fill = cat_col),
-               color = "black",
-               size = 0.5) +
+    ggplot(df, aes_string(x = cat_col, fill = cat_col)) +
+      geom_bar(color = "black", size = 0.5) +
+      geom_text(stat='count', aes(label=..count..),
+                label.size = 2, hjust=-0.3, check_overlap = TRUE) +
       scale_x_discrete(drop = FALSE) +
       theme(legend.position = "none") +
       coord_flip()
@@ -200,7 +200,7 @@ shinyServer(function(input, output, session) {
         "25%"=currency(quantile(price_m2, probs=0.25), "", 2),
         median=currency(quantile(price_m2, probs=0.50), "", 2),
         "75%"=currency(quantile(price_m2, probs=0.75), "", 2)) %>%
-      drop_na() %>%
+      drop_na() %>% map_df(rev) %>%
       formattable(
         align = c("l", "r", "r", "r", "r"),
         list(
@@ -263,9 +263,6 @@ shinyServer(function(input, output, session) {
   })
   
 
-  observeEvent(input$calculate_val, {
-    updateNavbarPage(session = session, inputId = "valuation_tabs", selected = "Simulation Results")
-  })
   
   
   output$valuationResult <- renderText({
