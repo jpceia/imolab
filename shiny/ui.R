@@ -65,10 +65,10 @@ sideBar <- dashboardSidebar(
         )
       )
     ),
-    conditionalPanel(
-      condition = "input.sidebarmenu == 'categoriesTab'",
-      selectInput("category", "Category", c("energy_certificate", "condition",	"rooms", "bathrooms"))
-    ),
+    # conditionalPanel(
+    #  condition = "input.sidebarmenu == 'categoriesTab'",
+    #  selectInput("category", "Category", c("energy_certificate", "condition",	"rooms", "bathrooms"))
+    # ),
     conditionalPanel(
       condition = "['histogramsTab', 'categoriesTab'].indexOf(input.sidebarmenu) >= 0",
       radioButtons(
@@ -93,13 +93,41 @@ sideBar <- dashboardSidebar(
 #                                          BODY
 # ----------------------------------------------------------------------------------------
 
+categoryTab <- function(id, title = NULL) {
+  if(is.null(title))
+  {
+    title = id
+  }
+  
+  tabPanel(
+    title = tags$strong(title),
+    fluidRow(
+      box(
+        fluidRow(
+          column(12, plotOutput(paste(id, "BoxPlot", sep = "")) %>% withSpinner(type=SPINNER_TYPE))
+        ), width = 6
+      ),
+      box(
+        fluidRow(
+          column(12, plotOutput(paste(id, "Count", sep = "")) %>% withSpinner(type=SPINNER_TYPE))
+        ), width = 6
+      )
+    ),
+    fluidRow(
+      box(
+        column(12, formattableOutput(paste(id, "Table", sep = ""))),
+        width = 12
+      )
+    )
+  )
+}
+
 
 body <- dashboardBody(
   tabItems(
     tabItem(
       tabName = "histogramsTab",
       tags$h2(tags$strong('Price and Area distributions')),
-      
       
       navbarPage("",
         tabPanel(
@@ -153,24 +181,12 @@ body <- dashboardBody(
     ),
     tabItem(
       tabName = "categoriesTab",
-      tags$h2(tags$strong(textOutput("categoryText"))),
-      fluidRow(
-        box(
-          fluidRow(
-            column(12, plotOutput("CategoriesBoxPlot") %>% withSpinner(type=SPINNER_TYPE))
-          ), width = 6
-        ),
-        box(
-          fluidRow(
-            column(12, plotOutput("CategoriesCount") %>% withSpinner(type=SPINNER_TYPE))
-          ), width = 6
-        )
-      ),
-      fluidRow(
-        box(
-          column(12, formattableOutput("tableCategories")),
-          width = 12
-        )
+      tags$h2(tags$strong("Categories")),
+      navbarPage("",
+         categoryTab("EnergyCertificate", "Energy Certificate"),
+         categoryTab("Condition"),
+         categoryTab("Rooms", "#Rooms"),
+         categoryTab("Bathrooms", "#Bathrooms")
       )
     ),
     tabItem(

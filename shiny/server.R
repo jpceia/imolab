@@ -146,11 +146,7 @@ shinyServer(function(input, output, session) {
   #                                   CATEGORIES SECTION
   # ----------------------------------------------------------------------------------------
   
-  output$categoryText <- renderText(input$category)
-  
-  output$CategoriesBoxPlot <- renderPlot({
-    
-    cat_col <- input$category
+  F_catBoxPlot <- function(cat_col, target_col = "price_m2") {
     
     df <- filtered_dataset()
     df <- df[!is.na(df[[cat_col]]), ]
@@ -161,19 +157,17 @@ shinyServer(function(input, output, session) {
     ))
     
     q <- as.numeric(input$truncation) / 100.0
-    quantiles <- quantile(df$price_m2, probs = c(q, 1 - q))
+    quantiles <- quantile(df[[target_col]], probs = c(q, 1 - q))
     
     ggplot(df) +
-      geom_boxplot(aes_string(x = cat_col, y = "price_m2", fill = cat_col), size = 0.5) +
+      geom_boxplot(aes_string(x = cat_col, y = target_col, fill = cat_col), size = 0.5) +
       scale_x_discrete(drop = FALSE) +
       scale_y_continuous(trans = 'log10', limits = quantiles) +
       theme(legend.position = "none") +
       coord_flip()
-  })
+  }
   
-  output$CategoriesCount <- renderPlot({
-
-    cat_col <- input$category
+  F_catCount <- function(cat_col) {
     
     df <- filtered_dataset()
     df <- df[!is.na(df[[cat_col]]), ]
@@ -190,11 +184,11 @@ shinyServer(function(input, output, session) {
       scale_x_discrete(drop = FALSE) +
       theme(legend.position = "none") +
       coord_flip()
-  })
+  }
   
-  output$tableCategories <- renderFormattable({
+  F_catTable <- function(cat_col) {
     filtered_dataset() %>%
-      group_by_at(vars(one_of(input$category))) %>%
+      group_by_at(vars(one_of(cat_col))) %>%
       summarize(
         count=n(price_m2),
         "25%"=currency(quantile(price_m2, probs=0.25), "", 2),
@@ -204,12 +198,32 @@ shinyServer(function(input, output, session) {
       formattable(
         align = c("l", "r", "r", "r", "r"),
         list(
-          area(col = input$category) ~ formatter(
+          area(col = cat_col) ~ formatter(
             "span", style = ~style(color = "grey", font.weight = "bold")),
           count = normalize_bar("pink", 0.2),
           median = normalize_bar("lightblue", 0.2)
-      ))
-  })
+        ))
+  }
+  
+  
+  output$categoryText <- renderText(input$category)
+  
+  output$EnergyCertificateBoxPlot <- renderPlot(F_catBoxPlot("energy_certificate", "price_m2"))
+  output$EnergyCertificateCount <- renderPlot(F_catCount("energy_certificate"))
+  output$EnergyCertificateTable <- renderFormattable(F_catTable("energy_certificate"))
+  
+  output$ConditionBoxPlot <- renderPlot(F_catBoxPlot("condition", "price_m2"))
+  output$ConditionCount <- renderPlot(F_catCount("condition"))
+  output$ConditionTable <- renderFormattable(F_catTable("condition"))
+  
+  output$RoomsBoxPlot <- renderPlot(F_catBoxPlot("rooms", "price_m2"))
+  output$RoomsCount <- renderPlot(F_catCount("rooms"))
+  output$RoomsTable <- renderFormattable(F_catTable("rooms"))
+  
+  output$BathroomsBoxPlot <- renderPlot(F_catBoxPlot("bathrooms", "price_m2"))
+  output$BathroomsCount <- renderPlot(F_catCount("bathrooms"))
+  output$BathroomsTable <- renderFormattable(F_catTable("bathrooms"))
+  
   
   # ----------------------------------------------------------------------------------------
   #                                    DATA SOURCES SECTION
