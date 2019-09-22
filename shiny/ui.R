@@ -175,57 +175,68 @@ body <- dashboardBody(
     ),
     tabItem(
       tabName = "valuationTab",
-      h2('Valuation'),
-      box(
-        column(3,
-               box(
-                 selectizeInput("prop_type_val", "Property Type", prop_types, selected = "Apartment"),
-                 radioButtons("is_sale_val", NULL,
-                              choiceNames = c("Sale", "Rent"),
-                              choiceValues = c(TRUE, FALSE),
-                              inline = TRUE),
-                 numericInput("net_area_val", "Net Area", NULL, min=0, step=1),
-                 numericInput("gross_area_val", "Gross Area", NULL, min=0, step=1),
-                 numericInput("terrain_area_val", "Terrain Area", NULL, min=0, step=1),
-                 numericInput("rooms_val", "#Rooms", NULL, min=0, max=10, step=1),
-                 numericInput("bathrooms_val", "#Bathrooms", NULL, min=0, max=4, step=1),
-                 selectInput("condition_val", "Condition", choices=condition_levels),
-                 width = 12,
-                 status = "warning"
-               )
+      # h2('Valuation'),
+      navbarPage("", id="valuation_tabs",
+        tabPanel(
+          tabName = "valuationInputs",
+          title = "Inputs",
+          status = "primary",
+          box(
+            fluidRow(
+              column(4,
+                     selectizeInput("prop_type_val", "Property Type", prop_types, selected = "Apartment"),
+                     radioButtons("is_sale_val", NULL,
+                                  choiceNames = c("Sale", "Rent"),
+                                  choiceValues = c(TRUE, FALSE),
+                                  inline = TRUE),
+                     selectInput("condition_val",
+                                 "Condition",
+                                 selected = "usado",
+                                 choices = condition_levels),
+                     selectInput("energy_certificate_val",
+                                 "Energy Certificate", "D",
+                                 choices = energy_certificate_levels)
+              ),
+              column(4,
+                     numericInput("net_area_val",           "Net Area",     100, min=0, step=1),
+                     numericInput("gross_area_val",         "Gross Area",   115, min=0, step=1),
+                     numericInput("terrain_area_val",       "Terrain Area", NULL, min=0, step=1),
+                     numericInput("rooms_val",              "#Rooms",       2, min=0, max=10, step=1),
+                     numericInput("bathrooms_val",          "#Bathrooms",   1, min=0, max=4, step=1)
+              ),
+              column(4,
+                     selectizeInput("district_val", "Location", district_list,#,  district
+                                    size = 3,
+                                    options = list(
+                                      placeholder = 'District',
+                                      onInitialize = I('function() { this.setValue(""); }')
+                                    )),
+                     selectizeInput("city_val", NULL, c(" "),
+                                    options = list(
+                                      placeholder = 'Municipality',
+                                      onInitialize = I('function() { this.setValue(""); }')
+                                    )),
+                     selectizeInput("parish_val", NULL, c(" "),
+                                    multiple = FALSE,
+                                    options = list(
+                                      placeholder = 'Parish',
+                                      onInitialize = I('function() { this.setValue(""); }')
+                                    ))
+              )
+            ),
+            width = 12
+          )
         ),
-        column(3,
-               box(
-                 
-                 selectizeInput("district_val", "Location", district_list,#,  district
-                                size = 3,
-                                options = list(
-                                  placeholder = 'District',
-                                  onInitialize = I('function() { this.setValue(""); }')
-                                )),
-                 selectizeInput("city_val", NULL, c(" "),
-                                options = list(
-                                  placeholder = 'Municipality',
-                                  onInitialize = I('function() { this.setValue(""); }')
-                                )),
-                 selectizeInput("parish_val", NULL, c(" "),
-                                multiple = FALSE,
-                                options = list(
-                                  placeholder = 'Parish',
-                                  onInitialize = I('function() { this.setValue(""); }')
-                                )),
-                 width = 12,
-                 status = "warning"
-               )
-        ),
-        column(6,
-               box(
-                 highchartOutput("valuationOutput"),
-                 width = 12,
-                 status = "primary"
-               )
-        ),
-        width = 12
+        tabPanel(
+          tabName = "valuationResults",
+          title = "Simulation Results",
+          icon = icon("calculator"),
+          status = "primary",
+          box(
+            verbatimTextOutput("valuationResult"),
+            width = 12
+          )
+        )
       )
     )
   )

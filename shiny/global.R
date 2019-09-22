@@ -12,6 +12,7 @@ library(highcharter)
 library(leaflet)
 library(rpivotTable)
 library(rapportools) # is.empty
+library(xgboost)
 
 
 source("utils.R")
@@ -27,11 +28,10 @@ MIN_DATAPOINTS <- 5
 
 dataFolder <- "C:/Users/joaop/OneDrive - insidemedia.net/Data/1 - Houses"
 
-dataset <- load_dataset()
-
-# ----------------------------------------- MODEL ----------------------------------------
-
-
+energy_certificate_levels <- c("Isento", "G", "F", "E", "D", "C", "B-", "B", "A", "A+")
+bathrooms_levels <- c("1", "2", "3", "4")
+rooms_levels <- 0:10
+condition_levels <- c("ruina", "para_recuperar", "usado", "em_construcao", "renovado", "novo")
 
 
 # ------------------------------------- LOCATION DATA ------------------------------------
@@ -68,11 +68,6 @@ parish_meta <- read_csv(
 district_list <- district_meta$Dicofre
 names(district_list) <- district_meta$Designacao
 
-energy_certificate_levels = c("Isento", "G", "F", "E", "D", "C", "B-", "B", "A", "A+")
-bathrooms_levels = c("1", "2", "3", "4")
-rooms_levels = 0:10
-condition_levels = c("ruina", "para_recuperar", "usado", "em_construcao", "renovado", "novo")
-
 
 prop_types <- c(
   'Apartment',
@@ -85,3 +80,84 @@ prop_types <- c(
   'Building',
   'Farm'
 )
+
+
+
+dataset <- load_dataset()
+
+
+
+# ------------------------------------- XGBOOST MODEL ------------------------------------
+
+
+match_tables <- list()
+
+# cat
+# cat - district
+# cat - district - city
+# cat - district - city - freg
+# cat - energy_certificate
+# cat - condition
+
+match_tables$mean.enc.cat <- dataset %>%
+  group_by(Sale, PropType) %>% summarize(median.enc.cat = median(price_m2)) %>% na.omit()
+match_tables$mean.enc.cat.district <- dataset %>%
+  group_by(Sale, PropType, district) %>% summarize(mean.enc.cat.district = median(price_m2)) %>% na.omit()
+match_tables$mean.enc.cat.city <- dataset %>%
+  group_by(Sale, PropType, district, city) %>% summarize(mean.enc.cat.city = median(price_m2)) %>% na.omit()
+match_tables$mean.enc.cat.parish <- dataset %>%
+  group_by(Sale, PropType, district, city, freg) %>% summarize(mean.enc.cat.parish = median(price_m2)) %>% na.omit()
+match_tables$mean.enc.cat.energy_certificate <- dataset %>%
+  group_by(Sale, PropType, energy_certificate) %>% summarize(mean.enc.cat.energy_certificate = median(price_m2)) %>% na.omit()
+match_tables$mean.enc.cat.condition <- dataset %>%
+  group_by(Sale, PropType, condition) %>% summarize(mean.enc.cat.condition = median(price_m2)) %>% na.omit()
+
+X <- get_features(dataset, match_tables)
+
+cat("Started XGBoost training\n")
+
+xgb <- list()
+
+fairobj <- function(preds, dtrain) {
+  labels <- getinfo(dtrain, "label")
+  c <- 2 #the lower the "slower/smoother" the loss is. Cross-Validate.
+  x <-  preds-labels
+  grad <- c*x / (abs(x)+c)
+  hess <- c^2 / (abs(x)+c)^2
+  return(list(grad = grad, hess = hess))
+}
+
+y <- log10(dataset$price_m2)
+xgb$price_m2 <- xgb.train(
+  data = xgb.DMatrix(data = as.matrix(X), label = y),
+  #eta = 0.30,
+  #max.depth = 6,
+  nround = 50,
+  seed = 0,
+  nthread = 4,
+  objective = fairobj , #"reg:squarederror",
+  #eval.metric = "rmse",
+  eval.metric = "mae",
+  verbose = 2
+)
+
+y <- log10(dataset$price)
+xgb$price <- xgb.train(
+  data = xgb.DMatrix(data = as.matrix(X), label = y),
+  #eta = 0.30,
+  #max.depth = 6,
+  nround = 50,
+  seed = 0,
+  nthread = 4,
+  objective = fairobj , #"reg:squarederror",
+  #eval.metric = "rmse",
+  eval.metric = "mae",
+  verbose = 2
+)
+
+
+# removing variables to clean memory
+rm(X)
+rm(y)
+
+cat("Ended XGBoost training\n")

@@ -75,18 +75,20 @@ hc_hist <- function(df, col_name, xunits, xlabel, truncation = 1)
 load_dataset <- function() {
   
   fname <- "short_summary_20190826.csv"
-  df <- readr::read_csv(fname, col_types=c(
-    terrain_area="d",
-    district="f",
-    city="f",
-    freg="f",
-    energy_certificate="f",
-    rooms="f",
-    bathrooms="f",
-    condition="f"
+  df <- readr::read_csv(file.path("data", fname), col_types=c(
+    Sale = "f",
+    PropType = "f",
+    terrain_area = "d",
+    district = "f",
+    city = "f",
+    freg = "f",
+    energy_certificate = "f",
+    rooms = "f",
+    bathrooms = "f",
+    condition = "f"
   ))
-  
   df <- df %>% select(-createdDays, -modifiedDays)
+
   
   df$energy_certificate <- factor(
     df$energy_certificate,
@@ -107,5 +109,42 @@ load_dataset <- function() {
   df <- add_column(df, city_name = city_meta$Designacao[match(df$city, city_meta$Dicofre)], .after="city")
   df <- add_column(df, parish_name = parish_meta$Designacao[match(df$freg, parish_meta$Dicofre)], .after="freg")
   
+  df <- df %>% filter(!is.na(price_m2) & (price_m2 > 0))
+  
+  return(df)
+}
+
+
+get_features <- function(df, match_tables) {
+  df <- df %>%
+    select(
+      Sale, PropType,
+      district, city, freg,
+      area, gross_area, terrain_area,
+      rooms, bathrooms,
+      condition, energy_certificate
+    ) %>%
+    mutate(
+      Sale = as.factor(Sale),
+      PropType = as.factor(PropType),
+      district = as.factor(district),
+      city = as.factor(city),
+      freg = as.factor(freg),
+      condition = as.factor(condition),
+      energy_certificate = as.factor(energy_certificate)
+    ) %>%
+    left_join(match_tables$mean.enc.cat) %>%
+    left_join(match_tables$mean.enc.cat.district) %>%
+    left_join(match_tables$mean.enc.cat.city) %>%
+    left_join(match_tables$mean.enc.cat.parish) %>%
+    left_join(match_tables$mean.enc.cat.energy_certificate) %>%
+    left_join(match_tables$mean.enc.cat.condition) %>%
+    mutate(
+      rooms = as.integer(rooms),
+      bathrooms = as.integer(bathrooms)) %>%
+    select(
+      -district, -city, -freg,
+      -Sale, -PropType,
+      -condition, -energy_certificate)
   return(df)
 }

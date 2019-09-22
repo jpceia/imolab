@@ -199,6 +199,79 @@ shinyServer(function(input, output, session) {
   #                                     VALUATION SECTION
   # ----------------------------------------------------------------------------------------
   
+  observe({
+    city_list <- c(NULL)
+    df <- city_meta %>% filter(code1 == input$district_val)
+    
+    if (nrow(df) > 0) {
+      city_list <- df$Dicofre
+      names(city_list) <- df$Designacao
+    }
+    
+    updateSelectInput(session, "city_val", choices = city_list)
+    updateSelectInput(session, "parish_val", choices = c(" "))
+  })
+  
+  
+  observe({
+    parish_list <- c(NULL)
+    df <- parish_meta %>% filter(code1 == input$city_val)
+    
+    if (nrow(df) > 0) {
+      parish_list <- df$Dicofre
+      names(parish_list) <- df$Designacao
+    }
+    
+    updateSelectInput(session, "parish_val", choices = parish_list)
+  })
+  
+
+  observeEvent(input$calculate_val, {
+    updateNavbarPage(session = session, inputId = "valuation_tabs", selected = "Simulation Results")
+  })
+  
+  
+  output$valuationResult <- renderText({
+    
+    df <- list(
+      Sale = input$is_sale_val,
+      PropType = input$prop_type_val,
+      
+      district = input$district_val,
+      city = input$city_val,
+      freg = input$parish_val,
+      
+      energy_certificate = input$energy_certificate_val,
+      condition = input$condition_val,
+      rooms = input$rooms_val,
+      bathrooms = input$bathrooms_val,
+      
+      area = input$net_area_val,
+      gross_area = input$gross_area_val,
+      terrain_area = input$terrain_area_val
+    )
+    
+    df <- data.frame(lapply(df, function(x) ifelse(is.null(x), NA, x)))
+    df <- df %>% tbl_df() %>%
+      mutate(
+        area = as.double(area),
+        gross_area = as.double(gross_area),
+        terrain_area = as.double(terrain_area)
+      )
+
+    X <- get_features(df, match_tables)
+
+    pred_price_m2 <- 10 ^ (predict(xgb$price_m2, xgb.DMatrix(data = as.matrix(X))))[1]
+    pred_price <- 10 ^ (predict(xgb$price, xgb.DMatrix(data = as.matrix(X))))[1]
+    
+    paste(
+      c("Price_m2:", as.character(pred_price_m2), "\n",
+        "Price:", as.character(pred_price_m2 * input$net_area_val), "\n",
+        "Price:", as.character(pred_price)
+      )
+    )
+  })
+  
   output$valuationOutput <- renderHighchart({
     
     highchart() %>%
