@@ -13,15 +13,14 @@ sideBar <- dashboardSidebar(
                          tabName = "histogramsTab"),
              menuSubItem("Categories",
                          tabName = "categoriesTab")),
-    menuItem("Territory", tabName = "territoryTab", icon = icon("globe-africa")
-    ),
+    menuItem("Territory", tabName = "territoryTab", icon = icon("globe-africa")),
     menuItem("Data Sources", icon = icon("table"),
-             menuSubItem("Raw Data", tabName= "rawdataTab"),
+             menuSubItem("Raw Data", tabName = "rawdataTab"),
              menuSubItem("Pivots", tabName = "pivotTableTab")),
     menuItem("Valuation", icon = icon("brain"),
              tabName = "valuationTab",
              badgeLabel = "Beta",
-             badgeColor = "blue"),
+             badgeColor = "blue"), 
     
     hr(),
     conditionalPanel(
@@ -39,7 +38,7 @@ sideBar <- dashboardSidebar(
                    inline = TRUE)
     ),
     conditionalPanel(
-      condition = "['histogramsTab', 'categoriesTab'].indexOf(input.sidebarmenu) >= 0",
+      condition = "['histogramsTab', 'categoriesTab'].indexOf(input.sidebarmenu) >= 0", 
       selectizeInput("district", "Location", district_list,
                      size = 3,
                      options = list(
@@ -70,11 +69,14 @@ sideBar <- dashboardSidebar(
     ),
     conditionalPanel(
       condition = "['histogramsTab', 'categoriesTab'].indexOf(input.sidebarmenu) >= 0",
-      radioButtons("truncation", "Truncation",
-                   choiceNames = c("2.5%", "1%", "0.5%"),
-                   choiceValues = c(2.5, 1.0, 0.5),
-                   selected = 1.0,
-                   inline = TRUE)
+      radioButtons(
+        "truncation",
+        "Truncation",
+        choiceNames = c("2.5%", "1%", "0.5%"),
+        choiceValues = c(2.5, 1.0, 0.5),
+        selected = 1.0,
+        inline = TRUE
+      )
     ),
     conditionalPanel(
       condition = "input.sidebarmenu == 'valuationTab'",
@@ -95,45 +97,58 @@ body <- dashboardBody(
     tabItem(
       tabName = "histogramsTab",
       h2('Price and Area distributions'),
-      box(
-        tabsetPanel(
-          type="tabs",
-          tabPanel(
-            "Price / m2",
-            fluidRow(
-               highchartOutput("HistogramPrice_m2") %>% withSpinner(type=SPINNER_TYPE)
-            ),
-            fluidRow(
-              tableOutput("tablePrice_m2")
-            )
-          ),
-          tabPanel(
-            "Prices",
-            fluidRow(
-              highchartOutput("HistogramPrice") %>% withSpinner(type=SPINNER_TYPE)
-            ),
-            fluidRow(
-              tableOutput("tablePrice") %>% withSpinner(type=SPINNER_TYPE)
-            )
-          ),
-          tabPanel(
-            "Areas",
-            fluidRow(
-              highchartOutput("HistogramArea") %>% withSpinner(type=SPINNER_TYPE)
-            ),
-            fluidRow(
-              tableOutput("tableArea") %>% withSpinner(type=SPINNER_TYPE)
-            )
-          ),
-          tabPanel(
-            "Price vs Area",
-            fluidRow(
-              column(7, plotOutput("ScatterPriceArea") %>% withSpinner(type=SPINNER_TYPE))
-            )
-          )
-        ),
-        width=12
+      fluidRow(
+        box(
+          title = tags$strong("Price / m2"),
+          status = "primary",
+          #solidHeader = TRUE,
+          collapsible = TRUE,
+          collapsed = FALSE,
+          highchartOutput("HistogramPrice_m2") %>% withSpinner(type=SPINNER_TYPE),
+          width = 12
+        )
+      ),
+      fluidRow(
+        box(
+          title = tags$strong("Price"),
+          status = "primary",
+          #solidHeader = TRUE,
+          collapsible = TRUE,
+          collapsed = TRUE,
+          highchartOutput("HistogramPrice") %>% withSpinner(type=SPINNER_TYPE),
+          width = 12
+        )  
+      ),
+      fluidRow(
+        box(
+          title = tags$strong("Area"),
+          status = "primary",
+          #solidHeader = TRUE,
+          collapsible = TRUE,
+          collapsed = TRUE,
+          highchartOutput("HistogramArea") %>% withSpinner(type=SPINNER_TYPE),
+          width = 12
+        )
+      ),
+      fluidRow(
+        box(
+          title = tags$strong("Quantiles"),
+          collapsible = TRUE,
+          collapsed = TRUE,
+          formattableOutput("tableQuantiles"),
+          width = 12
+        )
       )
+      #,
+      #fluidRow(
+      #  box(
+      #    title = h3("Price vs Area"),
+      #    status = "primary",
+      #    column(7, plotOutput("ScatterPriceArea") %>% withSpinner(type=SPINNER_TYPE)),
+      #    width = 12
+      #  )  
+      #)
+      # idea: Add Histograms and Quantiles tab
     ),
     tabItem(
       tabName = "categoriesTab",
@@ -152,7 +167,7 @@ body <- dashboardBody(
       ),
       fluidRow(
         box(
-          column(12, tableOutput("tableCategories") %>% withSpinner(type=SPINNER_TYPE)),
+          column(12, formattableOutput("tableCategories")),
           width = 12
         )
       )

@@ -115,6 +115,31 @@ shinyServer(function(input, output, session) {
       xlab("Area (m2)") +
       ylab("Price (Eur)")
   })
+  
+  # -------------------------------------- FORMATTABLE -------------------------------------
+  
+  output$tableQuantiles <- renderFormattable({
+    df <-filtered_dataset() 
+    probs <- c(0.95, 0.90, 0.75, 0.50, 0.25, 0.10, 0.05)
+    table <- data.frame(
+      quantile = percent(probs, 0),
+      price = currency(quantile(df$price, probs = probs), "", 0),
+      area = currency(quantile(df$area, probs = probs), "", 0),
+      price_m2 = currency(quantile(df$price_m2, probs = probs), "", 0)
+    )
+    row.names(table) <- NULL
+    
+    formattable(
+      table,
+      align = c("c", "r", "r", "r"),
+      list(
+        quantile =  formatter("span", style = ~style(color = "grey", font.weight = "bold")),
+        price = normalize_bar("lightpink", 0.2),
+        area = normalize_bar("lightpink", 0.2),
+        price_m2 = normalize_bar("lightblue", 0.2)
+      )
+    )
+  })
 
 
   # ----------------------------------------------------------------------------------------
@@ -142,8 +167,7 @@ shinyServer(function(input, output, session) {
       geom_boxplot(aes_string(x = cat_col, y = "price_m2", fill = cat_col), size = 0.5) +
       scale_x_discrete(drop = FALSE) +
       scale_y_continuous(trans = 'log10', limits = quantiles) +
-      theme_minimal() +
-      theme(legend.position = "none") #+
+      theme(legend.position = "none") +
       coord_flip()
   })
   
@@ -160,18 +184,31 @@ shinyServer(function(input, output, session) {
     ))
     
     ggplot(df) +
-      geom_bar(aes_string(x=cat_col, fill=cat_col), color="black") +
-      scale_x_discrete(drop=FALSE) +
+      geom_bar(aes_string(x = cat_col, fill = cat_col),
+               color = "black",
                size = 0.5) +
       scale_x_discrete(drop = FALSE) +
-      theme_minimal() +
-      theme(legend.position = "none")# +
+      theme(legend.position = "none") +
       coord_flip()
   })
   
-  
-  output$tableCategories <- renderTable({
-    
+  output$tableCategories <- renderFormattable({
+    filtered_dataset() %>%
+      group_by_at(vars(one_of(input$category))) %>%
+      summarize(
+        count=n(price_m2),
+        "25%"=currency(quantile(price_m2, probs=0.25), "", 2),
+        median=currency(quantile(price_m2, probs=0.50), "", 2),
+        "75%"=currency(quantile(price_m2, probs=0.75), "", 2)) %>%
+      drop_na() %>%
+      formattable(
+        align = c("l", "r", "r", "r", "r"),
+        list(
+          area(col = input$category) ~ formatter(
+            "span", style = ~style(color = "grey", font.weight = "bold")),
+          count = normalize_bar("pink", 0.2),
+          median = normalize_bar("lightblue", 0.2)
+      ))
   })
   
   # ----------------------------------------------------------------------------------------

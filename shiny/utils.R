@@ -17,7 +17,7 @@ remove_outliers <- function(df, col_name, trunc)
 
 hc_hist <- function(df, col_name, xunits, xlabel, truncation = 1)
 {
-  max_row <- 25000
+  max_row <- 5000
   if(nrow(df) > max_row)
   {
     set.seed(0)
@@ -33,6 +33,8 @@ hc_hist <- function(df, col_name, xunits, xlabel, truncation = 1)
 }", xunits, xunits)
   
   g <- hchart(df[[col_name]]) %>%
+    hc_plotOptions(histogram = list(turboThreshold=1000)) %>%
+    hc_boost(boost = TRUE) %>%
     hc_xAxis(min = quantiles[1], max=quantiles[2]) %>%
     hc_xAxis(title=list(text=xunits)) %>%
     hc_yAxis_multiples(
@@ -65,8 +67,9 @@ hc_hist <- function(df, col_name, xunits, xlabel, truncation = 1)
       name = "ecdf",
       yAxis = 1) %>%
     hc_tooltip(useHTML = TRUE, formatter = JS(formatter)) %>% #formatter = JS(formatter)
-    hc_plotOptions(line=list(marker=list(enabled=FALSE))) %>%
-    hc_boost(boost = FALSE)
+    hc_plotOptions(
+      series = list(turboThreshold = 5000),
+      line = list(marker = list(enabled = FALSE))
   
   return(g)
   }
