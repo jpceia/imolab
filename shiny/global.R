@@ -27,8 +27,6 @@ SPINNER_TYPE <- 8
 MIN_DATAPOINTS <- 5
 
 
-dataFolder <- "C:/Users/joaop/OneDrive - insidemedia.net/Data/1 - Houses"
-
 energy_certificate_levels <- c("Isento", "G", "F", "E", "D", "C", "B-", "B", "A", "A+")
 bathrooms_levels <- c("1", "2", "3", "4")
 rooms_levels <- 0:10
@@ -38,7 +36,7 @@ condition_levels <- c("ruina", "para_recuperar", "usado", "em_construcao", "reno
 # ------------------------------------- LOCATION DATA ------------------------------------
 
 district_meta <- read_csv(
-    file.path(dataFolder, "geodata", "district_meta.csv"),
+    file.path("data", "geodata", "district_meta.csv"),
     col_types = c(Designacao="f"),
     locale = readr::locale(encoding = "latin1")
   ) %>%
@@ -47,7 +45,7 @@ district_meta <- read_csv(
 
 
 city_meta <- read_csv(
-    file.path(dataFolder, "geodata", "concelho_meta.csv"),
+    file.path("data", "geodata", "concelho_meta.csv"),
     col_types = c(Designacao="f"),
     locale = readr::locale(encoding = "latin1")
   ) %>%
@@ -57,7 +55,7 @@ city_meta <- read_csv(
 
 
 parish_meta <- read_csv(
-    file.path(dataFolder, "geodata", "freguesias_meta.csv"),
+    file.path("data", "geodata", "freguesias_meta.csv"),
     col_types = c(Designacao="f"),
     locale = readr::locale(encoding = "latin1")
   ) %>%
