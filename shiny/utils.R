@@ -15,7 +15,7 @@ remove_outliers <- function(df, col_name, trunc)
 }
 
 
-hc_hist <- function(df, col_name, xunits, xlabel, truncation = 1)
+hc_hist <- function(df, col_name, xunits, xlabel = "", truncation = 1)
 {
   max_row <- 5000
   if(nrow(df) > max_row)
@@ -47,8 +47,10 @@ hc_hist <- function(df, col_name, xunits, xlabel, truncation = 1)
         title=list(text="Cumulative percentage"),
         labels = list(format = "{value}%"),
         opposite=TRUE)) %>%
-    hc_legend(enabled=FALSE) %>%
-    hc_title(text = xlabel)
+    hc_legend(enabled=FALSE)
+  
+  if(!is.empty(xlabel))
+    g <- g %>% hc_title(text = xlabel)
   
   step <- g$x$hc_opts$series[[1]]$pointRange
   start <- round(quantiles[1] / step) * step
@@ -70,6 +72,7 @@ hc_hist <- function(df, col_name, xunits, xlabel, truncation = 1)
     hc_plotOptions(
       series = list(turboThreshold = 5000),
       line = list(marker = list(enabled = FALSE))
+    )
   
   return(g)
   }
