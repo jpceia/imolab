@@ -104,13 +104,9 @@ categoryTab <- function(id, title = NULL) {
     fluidRow(
       box(
         fluidRow(
-          column(12, plotOutput(paste(id, "BoxPlot", sep = "")) %>% withSpinner(type=SPINNER_TYPE))
-        ), width = 6
-      ),
-      box(
-        fluidRow(
-          column(12, plotOutput(paste(id, "Count", sep = "")) %>% withSpinner(type=SPINNER_TYPE))
-        ), width = 6
+          column(6, plotOutput(paste(id, "BoxPlot", sep = "")) %>% withSpinner(type=SPINNER_TYPE)),
+          column(6, plotOutput(paste(id, "Count", sep = "")) %>% withSpinner(type=SPINNER_TYPE))
+        ), width = 12
       )
     ),
     fluidRow(
