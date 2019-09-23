@@ -13,70 +13,99 @@ shinyServer(function(input, output, session) {
   
   session$onSessionEnded(stopApp)
   
-  observe({
-    city_list <- c(NULL)
-    df <- city_meta %>% filter(code1 == input$district)
+  rv <- reactiveValues(
+    location_code = NULL,
+    location_type = "Country")
+  
+  observeEvent(input$district, {
     
-    if (nrow(df) > 0) {
+    if(is.empty(input$district))
+    {
+      rv$location_code <- NULL
+      rv$location_type <- "Country"
+      
+      city_list <- c(NULL)
+    }
+    else
+    {
+      rv$location_code <- input$district
+      rv$location_type <- "District"
+      
+      df <- city_meta %>% filter(code1 == input$district)
       city_list <- df$Dicofre
       names(city_list) <- df$Designacao
     }
     
     updateSelectInput(session, "city", choices = city_list)
     updateSelectInput(session, "parish", choices = c(NULL))
-  })
+  }, ignoreInit = TRUE)
   
   
-  observe({
-    parish_list <- c(NULL)
-    df <- parish_meta %>% filter(code1 == input$city)
-    
-    if (nrow(df) > 0) {
+  observeEvent(input$city, {
+
+    if(is.empty(input$city))
+    {
+      rv$location_code <- input$district
+      rv$location_type <- "District"
+      
+      parish_list <- c(NULL)
+    }
+    else
+    {
+      rv$location_code <- input$city
+      rv$location_type <- "City"
+      
+      df <- parish_meta %>% filter(code1 == input$city)
       parish_list <- df$Dicofre
       names(parish_list) <- df$Designacao
     }
-    
-    updateSelectInput(session, "parish", choices = parish_list)
-  })
-  
-  filtered_dataset_cat <- reactive({
 
-    df <- dataset %>%
-      filter(PropType %in% input$prop_type) %>%
-      filter(Sale == input$is_sale) %>%
-      filter(district %in% district_meta$Dicofre)
+    updateSelectInput(session, "parish", choices = parish_list)
+  }, ignoreInit = TRUE)
+  
+  observeEvent(input$parish, {
     
-    validate(need(nrow(df) > MIN_DATAPOINTS, "Not enough datapoints"))
-    
-    return(df)
-  })
+    if(is.empty(input$parish))
+    {
+      rv$location_code <- input$city
+      rv$location_type <- "City"
+    }
+    else
+    {
+      rv$location_code <- input$parish
+      rv$location_type <- "Parish"
+    }
+  }, ignoreInit = TRUE)
+  
+  
+
   
   filtered_dataset <- reactive({
     
-    df <- filtered_dataset_cat()
+    df <- dataset %>%
+      filter(PropType %in% input$prop_type) %>%
+      filter(Sale == input$is_sale)
     
-    if (!is.empty(input$district)) {
-      if (!is.empty(input$city)) {
-        if (!is.empty(input$parish))
-          df <- df %>% filter(freg == input$parish)
-        else
-          df <- df %>% filter(city == input$city)
-      }
-      else
-        df <- df %>% filter(district == input$district)
-    }
+    df <- switch(
+      rv$location_type,
+      Country = df %>% filter(district %in% district_meta$Dicofre),
+      District = df %>% filter(district == rv$location_code),
+      City = df %>% filter(city == rv$location_code),
+      Parish = df %>% filter(freg == rv$location_code),
+      stop("Invalid data")
+    )
 
-    
     validate(need(nrow(df) > MIN_DATAPOINTS, "Not enough datapoints"))
     
     return(df)
   })
+  
   
   # ----------------------------------------------------------------------------------------
   #                                     NUMERICAL SECTION
   # ----------------------------------------------------------------------------------------
   
-  # --------------------------------------- HIGHCHARTS -------------------------------------
+  # -------------------------------------- HIGHCHARTS --------------------------------------
 
   output$HistogramPrice_m2 <- renderHighchart(
     filtered_dataset() %>% hc_hist("price_m2", "EUR/m2", "", input$truncation)
