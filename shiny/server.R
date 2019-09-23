@@ -428,6 +428,39 @@ shinyServer(function(input, output, session) {
     return(g)
   })
   
+  output$territory_Table <- renderFormattable({
+    
+    cat_col <- switch(rv$location_type,
+                      Country = "district_name",
+                      District = "city_name",
+                      City = "parish_name",
+                      Parish = NULL)
+    
+    df <- filtered_dataset()
+    switch (rv$location_type,
+            Country = df %>% drop_na(district) %>% group_by(district_name),
+            District = df %>% drop_na(city) %>% group_by(city_name),
+            City = df %>% drop_na(freg) %>% group_by(parish_name),
+            Parish = {
+              validate(FALSE, "unavailable data")
+            }
+    ) %>%
+      summarize(
+        count=n(price_m2),
+        "25%"=currency(quantile(price_m2, probs=0.25), "", 2),
+        median=currency(quantile(price_m2, probs=0.50), "", 2),
+        "75%"=currency(quantile(price_m2, probs=0.75), "", 2)) %>%
+      formattable(
+        align = c("l", "r", "r", "r", "r"),
+        list(
+          area(col = cat_col) ~ formatter(
+            "span", style = ~style(color = "grey", font.weight = "bold")),
+          count = normalize_bar("pink", 0.2),
+          median = normalize_bar("lightblue", 0.2)
+        )
+      )
+  })
+  
   
   # ----------------------------------------------------------------------------------------
   #                                    DATA SOURCES SECTION
@@ -436,20 +469,20 @@ shinyServer(function(input, output, session) {
   output$rawDataTable <- DT::renderDataTable(
     dataset %>%
       select(-district, -city, -freg),# %>%
-      #rename(district=district_name, city=city_name, parish=parish_name),
+    #rename(district=district_name, city=city_name, parish=parish_name),
     filter = 'top', options = list(scrollX = TRUE))
   
   output$pivotTable <- renderRpivotTable({
-     rpivotTable(
-       dataset,
-       rows = "district_name",
-       cols = c("Sale", "PropType"),
-       aggregatorName = "Median",
-       vals = "price_m2",
-       rendererName = "Col Heatmap") 
+    rpivotTable(
+      dataset,
+      rows = "district_name",
+      cols = c("Sale", "PropType"),
+      aggregatorName = "Median",
+      vals = "price_m2",
+      rendererName = "Col Heatmap") 
   })
   
-  
+
   # ----------------------------------------------------------------------------------------
   #                                     VALUATION SECTION
   # ----------------------------------------------------------------------------------------

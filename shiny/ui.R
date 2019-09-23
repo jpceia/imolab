@@ -194,6 +194,12 @@ body <- dashboardBody(
           column(6, plotOutput("territory_boxplot")  %>% withSpinner(type=SPINNER_TYPE)),
           width = 12
         )
+      ),
+      fluidRow(
+        box(
+          column(12, formattableOutput("territory_Table")),
+          width = 12
+        )
       )
     ),
     tabItem(
