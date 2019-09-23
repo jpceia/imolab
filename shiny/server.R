@@ -78,7 +78,46 @@ shinyServer(function(input, output, session) {
   }, ignoreInit = TRUE)
   
   
-
+  
+  observeEvent(input$territory_map_shape_click$id, {
+    code <- input$territory_map_shape_click$id
+    rv$location_code <- code
+    
+    if(is.empty(code))
+    {
+      rv$location_type <- "Country"
+    }
+    else
+    {
+      len <- stringr::str_length(code)
+      if(len <= 2) # district
+      {
+        rv$location_type <- "District"
+        df <- city_meta %>% filter(code1 == code)
+        city_list <- df$Dicofre
+        names(city_list) <- df$Designacao
+        updateSelectInput(session, "district", selected = code)
+        updateSelectInput(session, "city", choices = city_list)
+        updateSelectInput(session, "parish", choices = c(NULL))
+      }
+      else if(len <= 4) # city
+      {
+        rv$location_type <- "City"
+        df <- parish_meta %>% filter(code1 == code)
+        parish_list <- df$Dicofre
+        names(parish_list) <- df$Designacao
+        updateSelectInput(session, "city", selected = code)
+        updateSelectInput(session, "parish", choices = parish_list)
+      }
+      else if(len <= 6) # parish
+      {
+        rv$location_type <- "Parish"
+        updateSelectInput(session, "parish", selected = code)
+      }
+    }
+    
+  }, ignoreInit = TRUE)
+  
   
   filtered_dataset <- reactive({
     
@@ -235,8 +274,6 @@ shinyServer(function(input, output, session) {
   }
   
   
-  output$categoryText <- renderText(input$category)
-  
   output$EnergyCertificateBoxPlot <- renderPlot(F_catBoxPlot("energy_certificate", "price_m2"))
   output$EnergyCertificateCount <- renderPlot(F_catCount("energy_certificate"))
   output$EnergyCertificateTable <- renderFormattable(F_catTable("energy_certificate"))
@@ -252,6 +289,144 @@ shinyServer(function(input, output, session) {
   output$BathroomsBoxPlot <- renderPlot(F_catBoxPlot("bathrooms", "price_m2"))
   output$BathroomsCount <- renderPlot(F_catCount("bathrooms"))
   output$BathroomsTable <- renderFormattable(F_catTable("bathrooms"))
+  
+  
+  
+  # ----------------------------------------------------------------------------------------
+  #                                     TERRITORY SECTION
+  # ----------------------------------------------------------------------------------------
+  
+  
+  output$territory_map <- renderLeaflet({
+    
+    df <- filtered_dataset()
+    
+    code <- rv$location_code
+
+    switch (
+      rv$location_type,
+      Country = {
+        df <- df %>%
+          group_by(district) %>%
+          summarize(price_m2=median(price_m2))
+        
+        df_map <- country_map_sh
+        df_map$price_m2 <- df[match(df_map$id, df$district), ]$price_m2
+      },
+      District = {
+        df <- df %>%
+          filter(district == code) %>%
+          group_by(city) %>%
+          summarize(price_m2=median(price_m2))
+        
+        df_map <- district_map_sh %>% filter(CCA_1 == code)
+        
+        df_map$price_m2 <- df[match(df_map$CCA_2, df$city), ]$price_m2
+      },
+      City = {
+        df <- df %>%
+          filter(city == code) %>%
+          group_by(freg) %>%
+          summarize(price_m2=median(price_m2))
+        
+        df_map <- city_map_sh %>% filter(CCA_2 == code)
+        df_map$price_m2 <- df[match(df_map$CCA_3, df$freg), ]$price_m2
+      },
+      Parish = {
+        df_map <- city_map_sh %>% filter(CCA_3 == code)
+        #df_map$price_m2 <- df[match(df_map$CCA_3, df$freg), ]$price_m2
+      }
+    )
+    
+    g <- df_map %>%
+        leaflet(options = leafletOptions(
+          zoomControl = FALSE,  dragging = FALSE, scrollWheelZoom = FALSE)) %>%
+        addTiles()
+    
+    if(rv$location_type != "Parish")
+    {
+      g <- g %>%
+        addPolygons(
+          color = "#444444", weight = 1, smoothFactor = 0.5, label = ~name, layerId = ~id,
+          opacity = 1.0, fillOpacity = 0.75, fillColor = ~colorQuantile("Blues", price_m2)(price_m2),
+          highlightOptions = highlightOptions(color = "white", weight = 2, bringToFront = TRUE))
+    }
+    else
+    {
+      g <- g %>%
+        addPolygons(
+          color = "#444444", weight = 1, smoothFactor = 0.5,
+          opacity = 1.0, fillOpacity = 0.5, fillColor = "cornflowerblue")
+    }
+
+    return(g)
+  })
+  
+  
+  output$territory_boxplot <- renderPlot({
+    
+    df <- filtered_dataset()
+    q <- as.numeric(input$truncation) / 100.0
+
+    
+    g <- switch (
+      rv$location_type,
+        Country = {
+          df %>%
+            drop_na(district) %>%
+            ggplot() +
+            geom_boxplot(
+              aes(
+                x = fct_reorder(district_name, price_m2, .fun = median),
+                y = price_m2
+              ),
+              fill="cornflowerblue", 
+              alpha=0.8,
+              size = 0.5)
+        },
+        District = {
+          df %>%
+            drop_na(city) %>%
+            ggplot() +
+            geom_boxplot(
+              aes(
+                x = reorder(city_name, price_m2, FUN = median, order=TRUE),
+                y = price_m2
+              ),
+              fill="cornflowerblue", 
+              alpha=0.8,
+              size = 0.5)
+        },
+        City = {
+          df %>%
+            drop_na(freg) %>%
+            ggplot() +
+            geom_boxplot(
+              aes(
+                x = str_wrap(reorder(parish_name, price_m2, FUN = median, order=TRUE), 30),
+                y = price_m2
+              ),
+              fill="cornflowerblue", 
+              alpha=0.8,
+              size = 0.5)
+        },
+        Parish = {
+          validate(FALSE, "unavailable data")
+        }
+    )
+    
+    quantiles <- quantile(df$price_m2, probs = c(q, 1 - q))
+    
+    g <- g +
+      #scale_x_discrete(drop = FALSE) +
+      scale_y_continuous(trans = 'log10', limits = quantiles) +
+      theme(axis.title.y=element_blank(), #axis.text.y=element_blank(),
+            axis.ticks.y=element_blank()) +
+      theme(legend.position = "none") +
+      coord_flip()
+    
+    return(g)
+  })
   
   
   # ----------------------------------------------------------------------------------------

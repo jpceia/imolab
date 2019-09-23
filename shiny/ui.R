@@ -40,7 +40,7 @@ sideBar <- dashboardSidebar(
                    inline = TRUE)
     ),
     conditionalPanel(
-      condition = "['histogramsTab', 'categoriesTab'].indexOf(input.sidebarmenu) >= 0", 
+      condition = "['histogramsTab', 'categoriesTab', 'territoryTab'].indexOf(input.sidebarmenu) >= 0", 
       selectizeInput("district", "Location", district_list,
                      size = 3,
                      options = list(
@@ -70,7 +70,7 @@ sideBar <- dashboardSidebar(
     #  selectInput("category", "Category", c("energy_certificate", "condition",	"rooms", "bathrooms"))
     # ),
     conditionalPanel(
-      condition = "['histogramsTab', 'categoriesTab'].indexOf(input.sidebarmenu) >= 0",
+      condition = "['histogramsTab', 'categoriesTab', 'territoryTab'].indexOf(input.sidebarmenu) >= 0",
       radioButtons(
         "truncation",
         "Truncation",
@@ -190,7 +190,15 @@ body <- dashboardBody(
       )
     ),
     tabItem(
-      tabName = "territoryTab"
+      tabName = "territoryTab",
+      tags$h2(tags$strong("Territory")),
+      fluidRow(
+        box(
+          column(6, leafletOutput("territory_map")  %>% withSpinner(type=SPINNER_TYPE)),
+          column(6, plotOutput("territory_boxplot")  %>% withSpinner(type=SPINNER_TYPE)),
+          width = 12
+        )
+      )
     ),
     tabItem(
       tabName = "rawdataTab",
