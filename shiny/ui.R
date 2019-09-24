@@ -154,16 +154,6 @@ body <- dashboardBody(
           width = 12
         )
       )
-      #,
-      #fluidRow(
-      #  box(
-      #    title = h3("Price vs Area"),
-      #    status = "primary",
-      #    column(7, plotOutput("ScatterPriceArea") %>% withSpinner(type=SPINNER_TYPE)),
-      #    width = 12
-      #  )  
-      #)
-      # idea: Add Histograms and Quantiles tab
     ),
     tabItem(
       tabName = "categoriesTab",
@@ -178,19 +168,7 @@ body <- dashboardBody(
     tabItem(
       tabName = "territoryTab",
       tags$h2(tags$strong("Territory")),
-      fluidRow(
-        box(
-          column(6, leafletOutput("territory_map")  %>% withSpinner(type=SPINNER_TYPE)),
-          column(6, plotOutput("territory_boxplot")  %>% withSpinner(type=SPINNER_TYPE)),
-          width = 12
-        )
-      ),
-      fluidRow(
-        box(
-          column(12, formattableOutput("territory_Table")),
-          width = 12
-        )
-      )
+      uiOutput("territory_tab")
     ),
     tabItem(
       tabName = "rawdataTab",

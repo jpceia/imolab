@@ -298,10 +298,42 @@ shinyServer(function(input, output, session) {
   # ----------------------------------------------------------------------------------------
   
   
+  output$territory_tab <- renderUI({
+    if(rv$location_type != "Parish")
+    {
+      html <- fluidRow(
+        box(
+          column(6, leafletOutput("territory_map")  %>% withSpinner(type=SPINNER_TYPE)),
+          column(6, plotOutput("territory_boxplot")  %>% withSpinner(type=SPINNER_TYPE)),
+          width = 12
+        ),
+        box(
+          column(12, formattableOutput("territory_table")),
+          width = 12
+        )
+      )
+    }
+    else
+    {
+      html <- fluidRow(
+        box(
+          leafletOutput("parish_map")  %>% withSpinner(type=SPINNER_TYPE),
+          width = 12
+        ),
+        box(
+          DT::dataTableOutput("filtered_table") %>% withSpinner(type=SPINNER_TYPE),
+          width = 12
+        )
+      )
+    }
+    return(html)
+  })
+  
+  
   output$territory_map <- renderLeaflet({
     
+    # validate(need(rv$location_type != "Parish", "Invalid location"))
     df <- filtered_dataset()
-    
     code <- rv$location_code
 
     switch (
@@ -332,38 +364,48 @@ shinyServer(function(input, output, session) {
         
         df_map <- city_map_sh %>% filter(CCA_2 == code)
         df_map$price_m2 <- df[match(df_map$CCA_3, df$parish_code), ]$price_m2
-      },
-      Parish = {
-        df_map <- city_map_sh %>% filter(CCA_3 == code)
-        #df_map$price_m2 <- df[match(df_map$CCA_3, df$parish), ]$price_m2
+      }, #stop("Invalid data")
+      {
+        return(NULL)
       }
     )
     
-    g <- df_map %>%
-        leaflet(options = leafletOptions(
-          zoomControl = FALSE,
-          attributionControl = FALSE,
-          dragging = FALSE,
-          scrollWheelZoom = FALSE)) %>%
-        addTiles()
+    df_map %>%
+      leaflet(options = leafletOptions(
+        zoomControl = FALSE,
+        attributionControl = FALSE,
+        dragging = FALSE,
+        scrollWheelZoom = FALSE)) %>%
+      addTiles() %>%
+      addPolygons(
+        color = "#444444", weight = 1, smoothFactor = 0.5, label = ~name, layerId = ~id,
+        opacity = 1.0, fillOpacity = 0.75, fillColor = ~colorQuantile("Blues", price_m2)(price_m2),
+        highlightOptions = highlightOptions(color = "white", weight = 2, bringToFront = TRUE))
+  })
+  
+  
+  output$parish_map <- renderLeaflet({
     
-    if(rv$location_type != "Parish")
-    {
-      g <- g %>%
-        addPolygons(
-          color = "#444444", weight = 1, smoothFactor = 0.5, label = ~name, layerId = ~id,
-          opacity = 1.0, fillOpacity = 0.75, fillColor = ~colorQuantile("Blues", price_m2)(price_m2),
-          highlightOptions = highlightOptions(color = "white", weight = 2, bringToFront = TRUE))
-    }
-    else
-    {
-      g <- g %>%
-        addPolygons(
-          color = "#444444", weight = 1, smoothFactor = 0.5,
-          opacity = 1.0, fillOpacity = 0.5, fillColor = "cornflowerblue")
-    }
-
-    return(g)
+    # validate(need(rv$location_type == "Parish", "Invalid location"))
+    df_map <- city_map_sh %>% filter(CCA_3 == rv$location_code)
+    df <- filtered_dataset() %>% select(latitude, longitude, price_m2)
+    
+    df_map %>%
+      leaflet(options = leafletOptions(
+        zoomControl = FALSE,
+        attributionControl = FALSE,
+        dragging = FALSE,
+        scrollWheelZoom = FALSE)) %>%
+      addTiles() %>%
+      addPolygons(
+        color = "#444444", weight = 1, smoothFactor = 0.5,
+        opacity = 1.0, fillOpacity = 0.5, fillColor = "cornflowerblue") %>%
+      addCircleMarkers(
+        data = df,
+        radius = 5, color = "red",
+        lng = ~longitude, lat = ~latitude,
+        stroke = FALSE, fillOpacity = 0.5
+      )
   })
   
   
@@ -371,9 +413,9 @@ shinyServer(function(input, output, session) {
     
     df <- filtered_dataset()
     q <- as.numeric(input$truncation) / 100.0
+    quantiles <- quantile(df$price_m2, probs = c(q, 1 - q))
 
-    
-    g <- switch (
+    switch (
       rv$location_type,
         Country = {
           df %>%
@@ -417,22 +459,16 @@ shinyServer(function(input, output, session) {
         Parish = {
           validate(FALSE, "unavailable data")
         }
-    )
-    
-    quantiles <- quantile(df$price_m2, probs = c(q, 1 - q))
-    
-    g <- g +
+    ) +
       #scale_x_discrete(drop = FALSE) +
       scale_y_continuous(trans = 'log10', limits = quantiles) +
       theme(axis.title.y=element_blank(), #axis.text.y=element_blank(),
             axis.ticks.y=element_blank()) +
       theme(legend.position = "none") +
       coord_flip()
-    
-    return(g)
   })
   
-  output$territory_Table <- renderFormattable({
+  output$territory_table <- renderFormattable({
     
     cat_col <- switch(rv$location_type,
                       Country = "district",
@@ -465,15 +501,23 @@ shinyServer(function(input, output, session) {
       )
   })
   
+  output$filtered_table <- DT::renderDataTable(
+    filtered_dataset() %>% select(-district_code, -city_code, -parish_code),
+    filter = 'top', options = list(scrollX = TRUE)
+  )
+  
   
   # ----------------------------------------------------------------------------------------
   #                                    DATA SOURCES SECTION
   # ----------------------------------------------------------------------------------------
   
   output$rawDataTable <- DT::renderDataTable(
-    dataset %>%
-      select(-district_code, -city_code, -parish_code),# %>%
-    #rename(district=district, city=city, parish=parish),
+    dataset %>% select(
+      -district_code,
+      -city_code,
+      -parish_code,
+      -latitude,
+      -longitude),
     filter = 'top', options = list(scrollX = TRUE))
   
   output$pivotTable <- renderRpivotTable({
