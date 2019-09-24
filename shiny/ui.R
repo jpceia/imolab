@@ -34,13 +34,10 @@ sideBar <- dashboardSidebar(
                        onInitialize = I('function() { this.setValue("Apartment"); }')
                      )
       ),
-      radioButtons("is_sale", NULL,
+      radioButtons("deal_type", NULL,
                    choiceNames = c("Sale", "Rent"),
-                   choiceValues = c(TRUE, FALSE),
-                   inline = TRUE)
-    ),
-    conditionalPanel(
-      condition = "['histogramsTab', 'categoriesTab', 'territoryTab'].indexOf(input.sidebarmenu) >= 0", 
+                   choiceValues = c("Sale", "Rent"),
+                   inline = TRUE),
       selectizeInput("district", "Location", district_list,
                      size = 3,
                      options = list(
@@ -63,14 +60,7 @@ sideBar <- dashboardSidebar(
                            onInitialize = I('function() { this.setValue(""); }')
                          ))           
         )
-      )
-    ),
-    # conditionalPanel(
-    #  condition = "input.sidebarmenu == 'categoriesTab'",
-    #  selectInput("category", "Category", c("energy_certificate", "condition",	"rooms", "bathrooms"))
-    # ),
-    conditionalPanel(
-      condition = "['histogramsTab', 'categoriesTab', 'territoryTab'].indexOf(input.sidebarmenu) >= 0",
+      ),
       radioButtons(
         "truncation",
         "Truncation",
@@ -234,9 +224,9 @@ body <- dashboardBody(
           fluidRow(
             column(4,
                    selectizeInput("prop_type_val", "Property Type", prop_types, selected = "Apartment"),
-                   radioButtons("is_sale_val", NULL,
+                   radioButtons("deal_type_val", NULL,
                                 choiceNames = c("Sale", "Rent"),
-                                choiceValues = c(TRUE, FALSE),
+                                choiceValues = c("Sale", "Rent"),
                                 inline = TRUE),
                    selectInput("condition_val",
                                "Condition",

@@ -80,18 +80,21 @@ hc_hist <- function(df, col_name, xunits, xlabel = "", truncation = 1)
 
 load_dataset <- function() {
   
-  fname <- "short_summary_20190826.csv"
+  fname <- "short_summary_20190921.csv"
   df <- readr::read_csv(file.path("data", fname), col_types=c(
-    Sale = "f",
+    DealType = "f",
     PropType = "f",
     terrain_area = "d",
-    district = "f",
-    city = "f",
-    freg = "f",
+    district_code = "f",
+    city_code = "f",
+    parish_code = "f",
     energy_certificate = "f",
+    construction_year = "d",
     rooms = "f",
     bathrooms = "f",
-    condition = "f"
+    condition = "f",
+    latitude = "d",
+    longitude = "d"
   ))
   df <- df %>% select(-createdDays, -modifiedDays)
 
@@ -111,9 +114,9 @@ load_dataset <- function() {
   df$condition <- factor(df$condition, levels=condition_levels)
   
   df <- add_column(df, price_m2 = round(df$price / df$area, 2), .after="price")
-  df <- add_column(df, district_name = district_meta$Designacao[match(df$district, district_meta$Dicofre)], .after="district")
-  df <- add_column(df, city_name = city_meta$Designacao[match(df$city, city_meta$Dicofre)], .after="city")
-  df <- add_column(df, parish_name = parish_meta$Designacao[match(df$freg, parish_meta$Dicofre)], .after="freg")
+  df <- add_column(df, district = district_meta$Designacao[match(df$district_code, district_meta$Dicofre)], .after="district_code")
+  df <- add_column(df, city = city_meta$Designacao[match(df$city_code, city_meta$Dicofre)], .after="city_code")
+  df <- add_column(df, parish = parish_meta$Designacao[match(df$parish_code, parish_meta$Dicofre)], .after="parish_code")
   
   df <- df %>% filter(!is.na(price_m2) & (price_m2 > 0))
   
@@ -124,18 +127,18 @@ load_dataset <- function() {
 get_features <- function(df, match_tables) {
   df <- df %>%
     select(
-      Sale, PropType,
-      district, city, freg,
+      DealType, PropType,
+      district_code, city_code, parish_code,
       area, gross_area, terrain_area,
       rooms, bathrooms,
       condition, energy_certificate
     ) %>%
     mutate(
-      Sale = as.factor(Sale),
+      DealType = as.factor(DealType),
       PropType = as.factor(PropType),
-      district = as.factor(district),
-      city = as.factor(city),
-      freg = as.factor(freg),
+      district_code = as.factor(district_code),
+      city_code = as.factor(city_code),
+      parish_code = as.factor(parish_code),
       condition = as.factor(condition),
       energy_certificate = as.factor(energy_certificate)
     ) %>%
@@ -149,8 +152,13 @@ get_features <- function(df, match_tables) {
       rooms = as.integer(rooms),
       bathrooms = as.integer(bathrooms)) %>%
     select(
-      -district, -city, -freg,
-      -Sale, -PropType,
-      -condition, -energy_certificate)
-  return(df)
+      area, gross_area, terrain_area,
+      rooms, bathrooms,
+      mean.enc.cat,
+      mean.enc.cat.district,
+      mean.enc.cat.city,
+      mean.enc.cat.parish,
+      mean.enc.cat.energy_certificate,
+      mean.enc.cat.condition
+    )
 }

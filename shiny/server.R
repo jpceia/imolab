@@ -123,14 +123,14 @@ shinyServer(function(input, output, session) {
     
     df <- dataset %>%
       filter(PropType %in% input$prop_type) %>%
-      filter(Sale == input$is_sale)
+      filter(DealType == input$deal_type)
     
     df <- switch(
       rv$location_type,
-      Country = df %>% filter(district %in% district_meta$Dicofre),
-      District = df %>% filter(district == rv$location_code),
-      City = df %>% filter(city == rv$location_code),
-      Parish = df %>% filter(freg == rv$location_code),
+      Country = df %>% filter(district_code %in% district_meta$Dicofre),
+      District = df %>% filter(district_code == rv$location_code),
+      City = df %>% filter(city_code == rv$location_code),
+      Parish = df %>% filter(parish_code == rv$location_code),
       stop("Invalid data")
     )
 
@@ -187,7 +187,7 @@ shinyServer(function(input, output, session) {
   # -------------------------------------- FORMATTABLE -------------------------------------
   
   output$tableQuantiles <- renderFormattable({
-    df <-filtered_dataset() 
+    df <- filtered_dataset() 
     probs <- c(0.95, 0.90, 0.75, 0.50, 0.25, 0.10, 0.05)
     table <- data.frame(
       quantile = percent(probs, 0),
@@ -201,7 +201,8 @@ shinyServer(function(input, output, session) {
       table,
       align = c("c", "r", "r", "r"),
       list(
-        quantile =  formatter("span", style = ~style(color = "grey", font.weight = "bold")),
+        quantile =  formatter(
+          "span", style = ~formattable::style(color = "grey", font.weight = "bold")),
         price = normalize_bar("lightpink", 0.2),
         area = normalize_bar("lightpink", 0.2),
         price_m2 = normalize_bar("lightblue", 0.2)
@@ -267,7 +268,7 @@ shinyServer(function(input, output, session) {
         align = c("l", "r", "r", "r", "r"),
         list(
           area(col = cat_col) ~ formatter(
-            "span", style = ~style(color = "grey", font.weight = "bold")),
+            "span", style = ~formattable::style(color = "grey", font.weight = "bold")),
           count = normalize_bar("pink", 0.2),
           median = normalize_bar("lightblue", 0.2)
         ))
@@ -307,40 +308,43 @@ shinyServer(function(input, output, session) {
       rv$location_type,
       Country = {
         df <- df %>%
-          group_by(district) %>%
+          group_by(district_code) %>%
           summarize(price_m2=median(price_m2))
         
         df_map <- country_map_sh
-        df_map$price_m2 <- df[match(df_map$id, df$district), ]$price_m2
+        df_map$price_m2 <- df[match(df_map$id, df$district_code), ]$price_m2
       },
       District = {
         df <- df %>%
-          filter(district == code) %>%
-          group_by(city) %>%
+          filter(district_code == code) %>%
+          group_by(city_code) %>%
           summarize(price_m2=median(price_m2))
         
         df_map <- district_map_sh %>% filter(CCA_1 == code)
         
-        df_map$price_m2 <- df[match(df_map$CCA_2, df$city), ]$price_m2
+        df_map$price_m2 <- df[match(df_map$CCA_2, df$city_code), ]$price_m2
       },
       City = {
         df <- df %>%
-          filter(city == code) %>%
-          group_by(freg) %>%
+          filter(city_code == code) %>%
+          group_by(parish_code) %>%
           summarize(price_m2=median(price_m2))
         
         df_map <- city_map_sh %>% filter(CCA_2 == code)
-        df_map$price_m2 <- df[match(df_map$CCA_3, df$freg), ]$price_m2
+        df_map$price_m2 <- df[match(df_map$CCA_3, df$parish_code), ]$price_m2
       },
       Parish = {
         df_map <- city_map_sh %>% filter(CCA_3 == code)
-        #df_map$price_m2 <- df[match(df_map$CCA_3, df$freg), ]$price_m2
+        #df_map$price_m2 <- df[match(df_map$CCA_3, df$parish), ]$price_m2
       }
     )
     
     g <- df_map %>%
         leaflet(options = leafletOptions(
-          zoomControl = FALSE,  dragging = FALSE, scrollWheelZoom = FALSE)) %>%
+          zoomControl = FALSE,
+          attributionControl = FALSE,
+          dragging = FALSE,
+          scrollWheelZoom = FALSE)) %>%
         addTiles()
     
     if(rv$location_type != "Parish")
@@ -373,11 +377,11 @@ shinyServer(function(input, output, session) {
       rv$location_type,
         Country = {
           df %>%
-            drop_na(district) %>%
+            drop_na(district_code) %>%
             ggplot() +
             geom_boxplot(
               aes(
-                x = fct_reorder(district_name, price_m2, .fun = median),
+                x = fct_reorder(district, price_m2, .fun = median),
                 y = price_m2
               ),
               fill="cornflowerblue", 
@@ -386,11 +390,11 @@ shinyServer(function(input, output, session) {
         },
         District = {
           df %>%
-            drop_na(city) %>%
+            drop_na(city_code) %>%
             ggplot() +
             geom_boxplot(
               aes(
-                x = reorder(city_name, price_m2, FUN = median, order=TRUE),
+                x = reorder(city, price_m2, FUN = median, order=TRUE),
                 y = price_m2
               ),
               fill="cornflowerblue", 
@@ -399,11 +403,11 @@ shinyServer(function(input, output, session) {
         },
         City = {
           df %>%
-            drop_na(freg) %>%
+            drop_na(parish_code) %>%
             ggplot() +
             geom_boxplot(
               aes(
-                x = str_wrap(reorder(parish_name, price_m2, FUN = median, order=TRUE), 30),
+                x = str_wrap(reorder(parish, price_m2, FUN = median, order=TRUE), 30),
                 y = price_m2
               ),
               fill="cornflowerblue", 
@@ -431,16 +435,16 @@ shinyServer(function(input, output, session) {
   output$territory_Table <- renderFormattable({
     
     cat_col <- switch(rv$location_type,
-                      Country = "district_name",
-                      District = "city_name",
-                      City = "parish_name",
+                      Country = "district",
+                      District = "city",
+                      City = "parish",
                       Parish = NULL)
     
     df <- filtered_dataset()
     switch (rv$location_type,
-            Country = df %>% drop_na(district) %>% group_by(district_name),
-            District = df %>% drop_na(city) %>% group_by(city_name),
-            City = df %>% drop_na(freg) %>% group_by(parish_name),
+            Country = df %>% drop_na(district_code) %>% group_by(district),
+            District = df %>% drop_na(city_code) %>% group_by(city),
+            City = df %>% drop_na(parish_code) %>% group_by(parish),
             Parish = {
               validate(FALSE, "unavailable data")
             }
@@ -454,7 +458,7 @@ shinyServer(function(input, output, session) {
         align = c("l", "r", "r", "r", "r"),
         list(
           area(col = cat_col) ~ formatter(
-            "span", style = ~style(color = "grey", font.weight = "bold")),
+            "span", style = ~formattable::style(color = "grey", font.weight = "bold")),
           count = normalize_bar("pink", 0.2),
           median = normalize_bar("lightblue", 0.2)
         )
@@ -468,15 +472,15 @@ shinyServer(function(input, output, session) {
   
   output$rawDataTable <- DT::renderDataTable(
     dataset %>%
-      select(-district, -city, -freg),# %>%
-    #rename(district=district_name, city=city_name, parish=parish_name),
+      select(-district_code, -city_code, -parish_code),# %>%
+    #rename(district=district, city=city, parish=parish),
     filter = 'top', options = list(scrollX = TRUE))
   
   output$pivotTable <- renderRpivotTable({
     rpivotTable(
       dataset,
-      rows = "district_name",
-      cols = c("Sale", "PropType"),
+      rows = "district",
+      cols = c("DealType", "PropType"),
       aggregatorName = "Median",
       vals = "price_m2",
       rendererName = "Col Heatmap") 
@@ -519,12 +523,12 @@ shinyServer(function(input, output, session) {
   output$valuationResult <- renderFormattable({
     
     row <- list(
-      Sale = input$is_sale_val,
+      DealType = input$deal_type_val,
       PropType = input$prop_type_val,
       
-      district = input$district_val,
-      city = input$city_val,
-      freg = input$parish_val,
+      district_code = input$district_val,
+      city_code = input$city_val,
+      parish_code = input$parish_val,
       
       energy_certificate = input$energy_certificate_val,
       condition = input$condition_val,
@@ -556,9 +560,9 @@ shinyServer(function(input, output, session) {
       "terrain_area",
       "gross_area",
       #"area",
-      "freg",
-      "city",
-      "district"
+      "parish_code",
+      "city_code",
+      "district_code"
     )
     
     drop_cols_final <- NULL
@@ -593,10 +597,10 @@ shinyServer(function(input, output, session) {
         align = c("l", "r", "r", "r"),
         list(
           area(col = "Characteristic") ~ formatter(
-            "span", style = ~style(color = "grey", font.weight = "bold")),
+            "span", style = ~formattable::style(color = "grey", font.weight = "bold")),
           price_m2 = normalize_bar("pink", 0.2),
           impact = formatter(
-            "span", style = x ~ style(color = ifelse(x < 0, "red", "green")))
+            "span", style = x ~ formattable::style(color = ifelse(x < 0, "red", "green")))
         )
       )
   })
