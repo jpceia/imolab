@@ -364,9 +364,9 @@ shinyServer(function(input, output, session) {
         
         df_map <- city_map_sh %>% filter(CCA_2 == code)
         df_map$price_m2 <- df[match(df_map$CCA_3, df$parish_code), ]$price_m2
-      }, #stop("Invalid data")
+      }, 
       {
-        return(NULL)
+        return(NULL) #stop("Invalid data")
       }
     )
     
@@ -388,23 +388,27 @@ shinyServer(function(input, output, session) {
     
     # validate(need(rv$location_type == "Parish", "Invalid location"))
     df_map <- city_map_sh %>% filter(CCA_3 == rv$location_code)
-    df <- filtered_dataset() %>% select(latitude, longitude, price_m2)
+    df <- filtered_dataset() %>% 
+      group_by(latitude, longitude) %>%
+      summarize(price_m2 = round(median(price_m2), 2)) %>%
+      ungroup()
     
     df_map %>%
       leaflet(options = leafletOptions(
         zoomControl = FALSE,
-        attributionControl = FALSE,
-        dragging = FALSE,
-        scrollWheelZoom = FALSE)) %>%
+        attributionControl = FALSE
+        #dragging = FALSE
+      )) %>%
       addTiles() %>%
       addPolygons(
         color = "#444444", weight = 1, smoothFactor = 0.5,
-        opacity = 1.0, fillOpacity = 0.5, fillColor = "cornflowerblue") %>%
+        opacity = 1.0, fillOpacity = 0.25, fillColor = "cornflowerblue") %>%
       addCircleMarkers(
         data = df,
-        radius = 5, color = "red",
+        radius = 5, color = ~colorQuantile(c("red", "green"), price_m2)(price_m2),
         lng = ~longitude, lat = ~latitude,
-        stroke = FALSE, fillOpacity = 0.5
+        popup = ~htmltools::htmlEscape(paste(price_m2, "Eur/m2")),
+        stroke = FALSE, fillOpacity = 0.75
       )
   })
   
