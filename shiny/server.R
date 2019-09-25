@@ -81,7 +81,7 @@ shinyServer(function(input, output, session) {
   
   observeEvent(input$territory_map_shape_click$id, {
     code <- input$territory_map_shape_click$id
-    rv$location_code <- code
+    modify_code <- TRUE
     
     if(is.empty(code))
     {
@@ -111,9 +111,22 @@ shinyServer(function(input, output, session) {
       }
       else if(len <= 6) # parish
       {
-        rv$location_type <- "Parish"
-        updateSelectInput(session, "parish", selected = code)
+        n_points <- nrow(filtered_dataset() %>% filter(parish_code == code))
+        if(n_points < MIN_DATAPOINTS)
+        {
+          modify_code <- FALSE
+        }
+        else
+        {
+          rv$location_type <- "Parish"
+          updateSelectInput(session, "parish", selected = code) 
+        }
       }
+    }
+    
+    if(modify_code)
+    {
+      rv$location_code <- code
     }
     
   }, ignoreInit = TRUE)
@@ -134,7 +147,7 @@ shinyServer(function(input, output, session) {
       stop("Invalid data")
     )
 
-    validate(need(nrow(df) > MIN_DATAPOINTS, "Not enough datapoints"))
+    validate(need(nrow(df) >= MIN_DATAPOINTS, "Not enough datapoints"))
     
     return(df)
   })
@@ -221,7 +234,7 @@ shinyServer(function(input, output, session) {
     df <- df[!is.na(df[[cat_col]]), ]
     
     validate(need(
-      nrow(df) > MIN_DATAPOINTS,
+      nrow(df) >= MIN_DATAPOINTS,
       "Filtering too narrow: not enough datapoints"
     ))
     
@@ -242,7 +255,7 @@ shinyServer(function(input, output, session) {
     df <- df[!is.na(df[[cat_col]]), ]
     
     validate(need(
-      nrow(df) > MIN_DATAPOINTS,
+      nrow(df) >= MIN_DATAPOINTS,
       "Filtering too narrow: not enough datapoints"
     ))
     
