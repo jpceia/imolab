@@ -354,7 +354,11 @@ shinyServer(function(input, output, session) {
       Country = {
         df <- df %>%
           group_by(district_code) %>%
-          summarize(price_m2=median(price_m2))
+          summarize(
+            count = n(price_m2),
+            price_m2 = median(price_m2)
+          ) %>%
+          filter(count >= MIN_DATAPOINTS)
         
         df_map <- country_map_sh
         df_map$price_m2 <- df[match(df_map$id, df$district_code), ]$price_m2
@@ -363,7 +367,11 @@ shinyServer(function(input, output, session) {
         df <- df %>%
           filter(district_code == code) %>%
           group_by(city_code) %>%
-          summarize(price_m2=median(price_m2))
+          summarize(
+            count = n(price_m2),
+            price_m2 = median(price_m2)
+          ) %>%
+          filter(count >= MIN_DATAPOINTS)
         
         df_map <- district_map_sh %>% filter(CCA_1 == code)
         
@@ -373,7 +381,11 @@ shinyServer(function(input, output, session) {
         df <- df %>%
           filter(city_code == code) %>%
           group_by(parish_code) %>%
-          summarize(price_m2=median(price_m2))
+          summarize(
+            count = n(price_m2),
+            price_m2 = median(price_m2)
+          ) %>%
+          filter(count >= MIN_DATAPOINTS)
         
         df_map <- city_map_sh %>% filter(CCA_2 == code)
         df_map$price_m2 <- df[match(df_map$CCA_3, df$parish_code), ]$price_m2
@@ -382,7 +394,8 @@ shinyServer(function(input, output, session) {
         return(NULL) #stop("Invalid data")
       }
     )
-    
+
+
     df_map %>%
       leaflet(options = leafletOptions(
         zoomControl = FALSE,
@@ -443,8 +456,8 @@ shinyServer(function(input, output, session) {
                 x = fct_reorder(district, price_m2, .fun = median),
                 y = price_m2
               ),
-              fill="cornflowerblue", 
-              alpha=0.8,
+              fill = "cornflowerblue", 
+              alpha = 0.8,
               size = 0.5)
         },
         District = {
@@ -456,8 +469,8 @@ shinyServer(function(input, output, session) {
                 x = reorder(city, price_m2, FUN = median, order=TRUE),
                 y = price_m2
               ),
-              fill="cornflowerblue", 
-              alpha=0.8,
+              fill = "cornflowerblue", 
+              alpha = 0.8,
               size = 0.5)
         },
         City = {
@@ -470,7 +483,7 @@ shinyServer(function(input, output, session) {
                 y = price_m2
               ),
               fill="cornflowerblue", 
-              alpha=0.8,
+              alpha = 0.8,
               size = 0.5)
         },
         Parish = {
