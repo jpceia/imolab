@@ -249,8 +249,14 @@ shinyServer(function(input, output, session) {
     q <- as.numeric(input$truncation) / 100.0
     quantiles <- quantile(df[[target_col]], probs = c(q, 1 - q))
     
-    ggplot(df) +
-      geom_boxplot(aes_string(x = cat_col, y = target_col, fill = cat_col), size = 0.5) +
+    df %>% ggplot(
+      aes_string(
+        x = cat_col,
+        y = target_col,
+        fill = cat_col
+      )) +
+      stat_boxplot(geom = "errorbar", width = 0.2) +
+      geom_boxplot(outlier.alpha = 0.5) +
       scale_x_discrete(drop = FALSE) +
       scale_y_continuous(trans = 'log10', limits = quantiles) +
       theme(legend.position = "none") +
