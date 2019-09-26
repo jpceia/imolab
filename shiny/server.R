@@ -412,13 +412,16 @@ shinyServer(function(input, output, session) {
   
   output$parish_map <- renderLeaflet({
     
-    # validate(need(rv$location_type == "Parish", "Invalid location"))
+    validate(need(rv$location_type == "Parish", ""))
     df_map <- city_map_sh %>% filter(CCA_3 == rv$location_code)
     df <- filtered_dataset() %>% 
       group_by(latitude, longitude) %>%
       summarize(price_m2 = round(median(price_m2), 2)) %>%
       ungroup()
     
+    pts <- df %>% sf::st_as_sf(coords = c('longitude', 'latitude'), crs = 4326)
+    df <- df[sf::st_contains(df_map, pts)[[1]], ]
+
     df_map %>%
       leaflet(options = leafletOptions(
         zoomControl = FALSE,
