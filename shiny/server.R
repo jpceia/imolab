@@ -456,6 +456,7 @@ shinyServer(function(input, output, session) {
                 x = fct_reorder(district, price_m2, .fun = median),
                 y = price_m2
               ),
+              outlier.shape = NA,
               fill = "cornflowerblue", 
               alpha = 0.8,
               size = 0.5)
@@ -469,6 +470,7 @@ shinyServer(function(input, output, session) {
                 x = reorder(city, price_m2, FUN = median, order=TRUE),
                 y = price_m2
               ),
+              outlier.shape = NA,
               fill = "cornflowerblue", 
               alpha = 0.8,
               size = 0.5)
@@ -482,6 +484,7 @@ shinyServer(function(input, output, session) {
                 x = str_wrap(reorder(parish, price_m2, FUN = median, order=TRUE), 30),
                 y = price_m2
               ),
+              outlier.shape = NA,
               fill="cornflowerblue", 
               alpha = 0.8,
               size = 0.5)
