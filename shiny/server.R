@@ -102,12 +102,20 @@ shinyServer(function(input, output, session) {
       }
       else if(len <= 4) # city
       {
-        rv$location_type <- "City"
-        df <- parish_meta %>% filter(code1 == code)
-        parish_list <- df$Dicofre
-        names(parish_list) <- df$Designacao
-        updateSelectInput(session, "city", selected = code)
-        updateSelectInput(session, "parish", choices = parish_list)
+        n_points <- nrow(filtered_dataset() %>% filter(city_code == code))
+        if(n_points < MIN_DATAPOINTS)
+        {
+          modify_code <- FALSE
+        }
+        else
+        {
+          rv$location_type <- "City"
+          df <- parish_meta %>% filter(code1 == code)
+          parish_list <- df$Dicofre
+          names(parish_list) <- df$Designacao
+          updateSelectInput(session, "city", selected = code)
+          updateSelectInput(session, "parish", choices = parish_list) 
+        }
       }
       else if(len <= 6) # parish
       {
