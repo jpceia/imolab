@@ -461,55 +461,31 @@ shinyServer(function(input, output, session) {
     df <- filtered_dataset()
     q <- as.numeric(input$truncation) / 100.0
     quantiles <- quantile(df$price_m2, probs = c(q, 1 - q))
-
-    switch (
+    
+    cat_col <- switch(
       rv$location_type,
-        Country = {
-          df %>%
-            drop_na(district_code) %>%
-            ggplot() +
-            geom_boxplot(
-              aes(
-                x = fct_reorder(district, price_m2, .fun = median),
-                y = price_m2
-              ),
-              outlier.shape = NA,
-              fill = "cornflowerblue", 
-              alpha = 0.8,
-              size = 0.5)
-        },
-        District = {
-          df %>%
-            drop_na(city_code) %>%
-            ggplot() +
-            geom_boxplot(
-              aes(
-                x = reorder(city, price_m2, FUN = median, order=TRUE),
-                y = price_m2
-              ),
-              outlier.shape = NA,
-              fill = "cornflowerblue", 
-              alpha = 0.8,
-              size = 0.5)
-        },
-        City = {
-          df %>%
-            drop_na(parish_code) %>%
-            ggplot() +
-            geom_boxplot(
-              aes(
-                x = str_wrap(reorder(parish, price_m2, FUN = median, order=TRUE), 30),
-                y = price_m2
-              ),
-              outlier.shape = NA,
-              fill="cornflowerblue", 
-              alpha = 0.8,
-              size = 0.5)
-        },
-        Parish = {
-          validate(FALSE, "unavailable data")
-        }
-    ) +
+      Country = "district",
+      District = "city",
+      City = "parish",
+      stop("Invalid data")
+    )
+    
+    df <- df[!is.na(df[[paste(cat_col, "code", sep = "_")]]), ]
+    df$cat_col <- stringr::str_wrap(df[[cat_col]], 25)
+    
+    df %>% ggplot(
+      aes(
+        x = fct_reorder(cat_col, price_m2, .fun = median),
+        y = price_m2
+      )) +
+      stat_boxplot(
+        geom = "errorbar",
+        width = 0.2
+      ) +
+      geom_boxplot(
+        outlier.shape = NA,
+        fill = "#8DBEDA"
+      ) +
       #scale_x_discrete(drop = FALSE) +
       scale_y_continuous(trans = 'log10', limits = quantiles) +
       theme(axis.title.y=element_blank(), #axis.text.y=element_blank(),
@@ -539,7 +515,8 @@ shinyServer(function(input, output, session) {
         count=n(price_m2),
         "25%"=currency(quantile(price_m2, probs=0.25), "", 2),
         median=currency(quantile(price_m2, probs=0.50), "", 2),
-        "75%"=currency(quantile(price_m2, probs=0.75), "", 2)) %>%
+        "75%"=currency(quantile(price_m2, probs=0.75), "", 2)
+      ) %>%
       formattable(
         align = c("l", "r", "r", "r", "r"),
         list(
