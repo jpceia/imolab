@@ -17,14 +17,21 @@ remove_outliers <- function(df, col_name, trunc)
 
 hc_hist <- function(df, col_name, xunits, xlabel = "", truncation = 1)
 {
-  max_row <- 5000
-  if(nrow(df) > max_row)
-  {
-    set.seed(0)
-    df <- df[sample(nrow(df), max_row), ]
-  }
+  x <- df[[col_name]]
+  x <- x[!is.na(x)]
+  
   q <- as.numeric(truncation) / 100.0
-  quantiles <- as.numeric(quantile(df[[col_name]], probs=c(q, 1 - q)))
+  quantiles <- as.numeric(quantile(x, probs=c(q, 1 - q), na.rm = TRUE))
+  
+  x <- x[x < quantiles[2] * 1.2]
+  
+  #max_row <- 100000
+  #if(length(x) > max_row)
+  #{
+  #  set.seed(0)
+  #  x <- sample(x, max_row)
+  #}
+  
   formatter <- sprintf("function() {
                        if (this.series.name == 'ecdf'){
                        return this.y + '%%<br/>' + this.x + ' %s';
@@ -32,9 +39,10 @@ hc_hist <- function(df, col_name, xunits, xlabel = "", truncation = 1)
                        else return 'Count: ' + this.y + '<br/>' + this.key;
 }", xunits, xunits)
   
-  g <- hchart(df[[col_name]]) %>%
-    hc_plotOptions(histogram = list(turboThreshold=1000)) %>%
-    hc_boost(boost = TRUE) %>%
+  
+  g <- hchart(x) %>%
+    #hc_plotOptions(histogram = list(turboThreshold=1000)) %>%
+    #hc_boost(boost = TRUE) %>%
     hc_xAxis(min = quantiles[1], max=quantiles[2]) %>%
     hc_xAxis(title=list(text=xunits)) %>%
     hc_yAxis_multiples(
@@ -55,22 +63,28 @@ hc_hist <- function(df, col_name, xunits, xlabel = "", truncation = 1)
   step <- g$x$hc_opts$series[[1]]$pointRange
   start <- round(quantiles[1] / step) * step
   end <- round(quantiles[2] / step) * step
-  nsteps <- 2 * as.integer((end - start) / step)
+  nsteps <- as.integer((end - start) / step)
   
-  x <- start + (step / 2) * (1 : nsteps - 1)
-  y <- round(100 * ecdf(df[[col_name]])(x), 2)
+  if (TRUE) #((nsteps < 50) & (step > 1))
+  {
+    step <- step / 2
+    nsteps <- 2 * nsteps
+  }
+  
+  u <- start + step * (1 : (nsteps + 1) - 1)
+  v <- round(100 * ecdf(x)(u), 2)
   
   g <- g %>%
     hc_add_series(
-      data.frame(x = x, y = y),
-      hcaes(name=x),
+      data.frame(x = u, y = v),
+      #hcaes(name = x),
       type = "line",
       color = "red",
       name = "ecdf",
       yAxis = 1) %>%
     hc_tooltip(useHTML = TRUE, formatter = JS(formatter)) %>% #formatter = JS(formatter)
     hc_plotOptions(
-      series = list(turboThreshold = 5000),
+      #series = list(turboThreshold = 5000),
       line = list(marker = list(enabled = FALSE))
     )
   
