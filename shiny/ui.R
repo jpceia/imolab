@@ -168,6 +168,7 @@ body <- dashboardBody(
     tabItem(
       tabName = "territoryTab",
       tags$h2(tags$strong("Territory")),
+      tags$h5(tags$strong("Price/m2"), style='color:grey'),
       uiOutput("territory_tab")
     ),
     tabItem(
