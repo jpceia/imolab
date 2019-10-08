@@ -15,6 +15,7 @@ library(rapportools) # is.empty
 library(formattable)
 library(xgboost)
 
+require(sf)
 
 source("utils.R")
 
@@ -132,20 +133,49 @@ match_tables$mean.enc.cat <- dataset %>%
   summarize(mean.enc.cat = median(price_m2)) %>%
   na.omit()
 
+match_tables$mean.area.enc.cat <- dataset %>%
+  group_by(DealType, PropType) %>%
+  summarize(mean.area.enc.cat = median(area)) %>%
+  na.omit()
+
+match_tables$count.enc.cat <- dataset %>%
+  group_by(DealType, PropType) %>%
+  summarize(count.enc.cat = n(price_m2)) %>%
+  na.omit()
+
+
 match_tables$mean.enc.cat.district <- dataset %>%
   group_by(DealType, PropType, district_code) %>%
   summarize(mean.enc.cat.district = median(price_m2)) %>%
   na.omit()
+
+match_tables$count.enc.cat.district <- dataset %>%
+  group_by(DealType, PropType, district_code) %>%
+  summarize(count.enc.cat.district = n(price_m2)) %>%
+  na.omit()
+
 
 match_tables$mean.enc.cat.city <- dataset %>%
   group_by(DealType, PropType, district_code, city_code) %>%
   summarize(mean.enc.cat.city = median(price_m2)) %>%
   na.omit()
 
+match_tables$count.enc.cat.city <- dataset %>%
+  group_by(DealType, PropType, district_code, city_code) %>%
+  summarize(count.enc.cat.city = n(price_m2)) %>%
+  na.omit()
+
+
 match_tables$mean.enc.cat.parish <- dataset %>%
   group_by(DealType, PropType, district_code, city_code, parish_code) %>%
   summarize(mean.enc.cat.parish = median(price_m2)) %>%
   na.omit()
+
+match_tables$count.enc.cat.parish <- dataset %>%
+  group_by(DealType, PropType, district_code, city_code, parish_code) %>%
+  summarize(count.enc.cat.parish = n(price_m2)) %>%
+  na.omit()
+
 
 match_tables$mean.enc.cat.energy_certificate <- dataset %>%
   group_by(DealType, PropType, energy_certificate) %>%
