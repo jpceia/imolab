@@ -274,8 +274,8 @@ shinyServer(function(input, output, session) {
     ))
     
     ggplot(df, aes_string(x = cat_col, fill = cat_col)) +
-      geom_bar(color = "black", size = 0.5) +
-      geom_text(stat='count', aes(label=..count..),
+      geom_bar(color = "black", lwd = 0.5) +
+      geom_text(stat = 'count', aes(label=..count..),
                 label.size = 2, hjust=-0.3, check_overlap = TRUE) +
       scale_x_discrete(drop = FALSE) +
       theme(legend.position = "none") +
@@ -405,17 +405,17 @@ shinyServer(function(input, output, session) {
         df_map$price_m2 <- df[match(df_map$CCA_3, df$parish_code), ]$price_m2
       }, 
       {
-        return(NULL) #stop("Invalid data")
+        validate(FALSE, "")
       }
     )
-
 
     df_map %>%
       leaflet(options = leafletOptions(
         zoomControl = FALSE,
         attributionControl = FALSE,
         dragging = FALSE,
-        scrollWheelZoom = FALSE)) %>%
+        scrollWheelZoom = FALSE
+      )) %>%
       addTiles() %>%
       addPolygons(
         color = "#444444", weight = 1, smoothFactor = 0.5, label = ~name, layerId = ~id,
@@ -467,7 +467,7 @@ shinyServer(function(input, output, session) {
       Country = "district",
       District = "city",
       City = "parish",
-      stop("Invalid data")
+      validate(FALSE, "")
     )
     
     df <- df[!is.na(df[[paste(cat_col, "code", sep = "_")]]), ]
@@ -508,7 +508,7 @@ shinyServer(function(input, output, session) {
             District = df %>% drop_na(city_code) %>% group_by(city),
             City = df %>% drop_na(parish_code) %>% group_by(parish),
             Parish = {
-              validate(FALSE, "unavailable data")
+              validate(FALSE, "")
             }
     ) %>%
       summarize(
