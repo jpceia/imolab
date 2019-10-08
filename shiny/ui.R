@@ -69,10 +69,6 @@ sideBar <- dashboardSidebar(
         selected = 1.0,
         inline = TRUE
       )
-    ),
-    conditionalPanel(
-      condition = "input.sidebarmenu == 'valuationTab'",
-      fluidRow(actionButton("calculate_val", tags$strong("Calculate")), align="center")
     )
   )
 )
