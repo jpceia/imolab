@@ -419,7 +419,7 @@ shinyServer(function(input, output, session) {
       addTiles() %>%
       addPolygons(
         color = "#444444", weight = 1, smoothFactor = 0.5, label = ~name, layerId = ~id,
-        opacity = 1.0, fillOpacity = 0.75, fillColor = ~colorQuantile("Blues", price_m2)(price_m2),
+        opacity = 1.0, fillOpacity = 0.75, fillColor = ~qpal("Blues", price_m2),
         highlightOptions = highlightOptions(color = "white", weight = 2, bringToFront = TRUE))
   })
   
@@ -448,7 +448,7 @@ shinyServer(function(input, output, session) {
         opacity = 1.0, fillOpacity = 0.25, fillColor = "cornflowerblue") %>%
       addCircleMarkers(
         data = df,
-        radius = 5, color = ~colorQuantile(c("red", "green"), price_m2)(price_m2),
+        radius = 5, color = ~qpal(c("red", "green"), price_m2),
         lng = ~longitude, lat = ~latitude,
         popup = ~htmltools::htmlEscape(paste(price_m2, "Eur/m2")),
         stroke = FALSE, fillOpacity = 0.75

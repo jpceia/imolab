@@ -5,6 +5,20 @@
 # ----------------------------------------------------------------------------------------
 
 
+qpal <- function(palette, x) {
+  if (max(x) == min(x))
+  {
+    color <- colorQuantile(palette, c(0, 1))(0.5)
+    colors <- x
+    colors[!is.na(colors)] <- color
+  }
+  else
+  {
+    colors <- colorQuantile(palette, unique(x))(x)
+  }
+  return(colors)
+}
+
 
 remove_outliers <- function(df, col_name, trunc)
 {
