@@ -99,37 +99,37 @@ hc_hist <- function(df, col_name, xunits, xlabel = "", truncation = 1)
 load_dataset <- function() {
   
   fname <- "short_summary_20190921.csv"
-  df <- readr::read_csv(file.path("data", fname), col_types=c(
+  col_types <- c(
     DealType = "f",
     PropType = "f",
+    area = "d",
+    gross_area = "d",
     terrain_area = "d",
     district_code = "f",
     city_code = "f",
     parish_code = "f",
     energy_certificate = "f",
     construction_year = "d",
-    rooms = "f",
-    bathrooms = "f",
+    rooms = "i",
+    bathrooms = "i",
     condition = "f",
     latitude = "d",
-    longitude = "d"
-  ))
-  df <- df %>% select(-createdDays, -modifiedDays)
-
+    longitude = "d",
+    price = "d"
+  )
+  
+  df <- readr::read_csv(
+    file.path("data", "sm", fname),
+    col_types = col_types
+  ) %>% select(names(col_types))
   
   df$energy_certificate <- factor(
     df$energy_certificate,
-    levels=energy_certificate_levels)
+    levels = energy_certificate_levels)
   
-  df$rooms <- factor(
-    df$rooms,
-    levels=rooms_levels)
-  #levels(df$rooms)[11] <- "10+"
-  
-  df$bathrooms <- factor(df$bathrooms, levels=bathrooms_levels)
-  #levels(df$bathrooms)[4] <- "4+"
-  
-  df$condition <- factor(df$condition, levels=condition_levels)
+  df$condition <- factor(
+    df$condition,
+    levels = condition_levels)
   
   df <- add_column(df, price_m2 = round(df$price / df$area, 2), .after="price")
   df <- add_column(df, district = district_meta$Designacao[match(df$district_code, district_meta$Dicofre)], .after="district_code")
@@ -170,7 +170,8 @@ get_features <- function(df, match_tables) {
     left_join(match_tables$mean.enc.cat.condition) %>%
     mutate(
       rooms = as.integer(rooms),
-      bathrooms = as.integer(bathrooms)) %>%
+      bathrooms = as.integer(bathrooms)
+    ) %>%
     select(
       area, gross_area, terrain_area,
       rooms, bathrooms,

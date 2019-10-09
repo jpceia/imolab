@@ -29,7 +29,7 @@ MIN_DATAPOINTS <- 5
 
 
 energy_certificate_levels <- c("isento", "g", "f", "e", "d", "c", "bminus", "b", "a", "aplus")
-bathrooms_levels <- c("1", "2", "3", "4")
+bathrooms_levels <- 1:4
 rooms_levels <- 0:10
 condition_levels <- c("ruina", "para_recuperar", "usado", "em_construcao", "renovado", "novo")
 

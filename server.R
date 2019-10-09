@@ -223,6 +223,11 @@ shinyServer(function(input, output, session) {
     q <- as.numeric(input$truncation) / 100.0
     quantiles <- quantile(df[[target_col]], probs = c(q, 1 - q))
     
+    if (is.numeric(df[[cat_col]]))
+    {
+      df[[cat_col]] <- as.factor(df[[cat_col]])
+    }
+    
     df %>% ggplot(
       aes_string(
         x = cat_col,
@@ -246,6 +251,11 @@ shinyServer(function(input, output, session) {
       nrow(df) >= MIN_DATAPOINTS,
       "Filtering too narrow: not enough datapoints"
     ))
+    
+    if (is.numeric(df[[cat_col]]))
+    {
+      df[[cat_col]] <- as.factor(df[[cat_col]])
+    }
     
     ggplot(df, aes_string(x = cat_col, fill = cat_col)) +
       geom_bar(color = "black", lwd = 0.5) +
