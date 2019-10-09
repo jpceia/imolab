@@ -39,13 +39,6 @@ hc_hist <- function(df, col_name, xunits, xlabel = "", truncation = 1)
   
   x <- x[x < quantiles[2] * 1.2]
   
-  #max_row <- 100000
-  #if(length(x) > max_row)
-  #{
-  #  set.seed(0)
-  #  x <- sample(x, max_row)
-  #}
-  
   formatter <- sprintf("function() {
                        if (this.series.name == 'ecdf'){
                        return this.y + '%%<br/>' + this.x + ' %s';
@@ -55,8 +48,6 @@ hc_hist <- function(df, col_name, xunits, xlabel = "", truncation = 1)
   
   
   g <- hchart(x) %>%
-    #hc_plotOptions(histogram = list(turboThreshold=1000)) %>%
-    #hc_boost(boost = TRUE) %>%
     hc_xAxis(min = quantiles[1], max=quantiles[2]) %>%
     hc_xAxis(title=list(text=xunits)) %>%
     hc_yAxis_multiples(
@@ -96,9 +87,8 @@ hc_hist <- function(df, col_name, xunits, xlabel = "", truncation = 1)
       color = "red",
       name = "ecdf",
       yAxis = 1) %>%
-    hc_tooltip(useHTML = TRUE, formatter = JS(formatter)) %>% #formatter = JS(formatter)
+    hc_tooltip(useHTML = TRUE, formatter = JS(formatter)) %>%
     hc_plotOptions(
-      #series = list(turboThreshold = 5000),
       line = list(marker = list(enabled = FALSE))
     )
   
