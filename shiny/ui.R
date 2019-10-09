@@ -203,13 +203,15 @@ body <- dashboardBody(
                                 choiceNames = c("Sale", "Rent"),
                                 choiceValues = c("Sale", "Rent"),
                                 inline = TRUE),
+                   selectInput("energy_certificate_val",
+                               "Energy Certificate", "d",
+                               choices = energy_certificate_levels),
                    selectInput("condition_val",
                                "Condition",
                                selected = "usado",
                                choices = condition_levels),
-                   selectInput("energy_certificate_val",
-                               "Energy Certificate", "D",
-                               choices = energy_certificate_levels)
+                   numericInput("construction_year_val",
+                                "Construction Year", 1990, min=0, max=2020)
             ),
             column(4,
                    numericInput("net_area_val",           "Net Area",     100, min=0, step=1),
@@ -265,7 +267,7 @@ body <- dashboardBody(
 # Define UI for application that draws a histogram
 shinyUI(
   dashboardPage(
-    skin = "blue",
+    #skin = "blue",
     dashboardHeader(title = "IMO Lab"),
     sideBar,
     body

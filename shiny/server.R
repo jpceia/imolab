@@ -601,6 +601,7 @@ shinyServer(function(input, output, session) {
       city_code = input$city_val,
       parish_code = input$parish_val,
       
+      construction_year = input$construction_year_val,
       energy_certificate = input$energy_certificate_val,
       condition = input$condition_val,
       rooms = input$rooms_val,
@@ -626,11 +627,12 @@ shinyServer(function(input, output, session) {
     drop_cols <- c(
       "bathrooms",
       "rooms",
+      "construction_year",
       "energy_certificate",
       "condition",
       "terrain_area",
       "gross_area",
-      #"area",
+      "area",
       "parish_code",
       "city_code",
       "district_code"

@@ -105,7 +105,8 @@ district_map_sh$CCA_2 <- as.factor(as.integer(district_map_sh$CCA_2))
 district_map_sh$id <- district_map_sh$CCA_2
 district_map_sh$name <- district_map_sh$NAME_2
 
-
+## LOADING PARISH DATA
+# https://dados.gov.pt/s/resources/freguesias-de-portugal/20181112-195834/cont-aad-caop2017.zip
 city_map_sh <- sf::read_sf(file.path("data", "geodata", "cont-aad-caop2017", "Cont_AAD_CAOP2017.shp"))
 city_map_sh <- rmapshaper::ms_simplify(city_map_sh)
 city_map_sh$CCA_1 <- as.factor(as.integer(stringr::str_sub(city_map_sh $Dicofre, 1, -5)))
@@ -207,21 +208,7 @@ xgb$price_m2 <- xgb.train(
   data = xgb.DMatrix(data = as.matrix(X), label = y),
   #eta = 0.30,
   #max.depth = 6,
-  nround = 50,
-  seed = 0,
-  nthread = 4,
-  objective = fairobj , #"reg:squarederror",
-  #eval.metric = "rmse",
-  eval.metric = "mae",
-  verbose = 2
-)
-
-y <- log10(dataset$price)
-xgb$price <- xgb.train(
-  data = xgb.DMatrix(data = as.matrix(X), label = y),
-  #eta = 0.30,
-  #max.depth = 6,
-  nround = 50,
+  nround = 100,
   seed = 0,
   nthread = 4,
   objective = fairobj , #"reg:squarederror",
@@ -231,7 +218,6 @@ xgb$price <- xgb.train(
 )
 
 
-# removing variables to clean memory
 rm(X)
 rm(y)
 

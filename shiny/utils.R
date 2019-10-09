@@ -159,7 +159,8 @@ get_features <- function(df, match_tables) {
       district_code, city_code, parish_code,
       area, gross_area, terrain_area,
       rooms, bathrooms,
-      condition, energy_certificate
+      condition, energy_certificate,
+      construction_year
     ) %>%
     mutate(
       DealType = as.factor(DealType),
@@ -171,6 +172,7 @@ get_features <- function(df, match_tables) {
       energy_certificate = as.factor(energy_certificate)
     ) %>%
     left_join(match_tables$mean.enc.cat) %>%
+    left_join(match_tables$mean.area.enc.cat) %>%
     left_join(match_tables$mean.enc.cat.district) %>%
     left_join(match_tables$mean.enc.cat.city) %>%
     left_join(match_tables$mean.enc.cat.parish) %>%
@@ -182,11 +184,27 @@ get_features <- function(df, match_tables) {
     select(
       area, gross_area, terrain_area,
       rooms, bathrooms,
+      construction_year,
       mean.enc.cat,
+      mean.area.enc.cat,
       mean.enc.cat.district,
       mean.enc.cat.city,
       mean.enc.cat.parish,
       mean.enc.cat.energy_certificate,
-      mean.enc.cat.condition
+      mean.enc.cat.condition,
     )
+  
+  filt <- is.na(df$mean.enc.cat.district)
+  df$mean.enc.cat.district[filt] <- df$mean.enc.cat[filt]
+  
+  filt <- is.na(df$mean.enc.cat.city)
+  df$mean.enc.cat.city[filt] <- df$mean.enc.cat.district[filt]
+  
+  filt <- is.na(df$mean.enc.cat.parish)
+  df$mean.enc.cat.parish[filt] <- df$mean.enc.cat.city[filt]
+  
+  filt <- is.na(df$area)
+  df$area[filt] <- df$mean.area.enc.cat[filt]
+  
+  return(df)
 }
