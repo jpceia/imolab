@@ -134,10 +134,10 @@ load_dataset <- function() {
   df$rooms <- factor(
     df$rooms,
     levels=rooms_levels)
-  levels(df$rooms)[11] <- "10+"
+  #levels(df$rooms)[11] <- "10+"
   
   df$bathrooms <- factor(df$bathrooms, levels=bathrooms_levels)
-  levels(df$bathrooms)[4] <- "4+"
+  #levels(df$bathrooms)[4] <- "4+"
   
   df$condition <- factor(df$condition, levels=condition_levels)
   
