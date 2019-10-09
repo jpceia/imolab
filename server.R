@@ -179,32 +179,6 @@ shinyServer(function(input, output, session) {
     filtered_dataset() %>% hc_hist("area", "m2", "", input$truncation)
   )
   
-  
-  # -------------------------------------- SCATTERPLOT -------------------------------------
-  
-  output$ScatterPriceArea <- renderPlot({
-    df <- filtered_dataset()
-    max_row <- 5000
-    if (nrow(df) > max_row)
-    {
-      set.seed(0)
-      df <- df[sample(nrow(df), max_row),]
-    }
-    
-    q <- as.numeric(input$truncation) / 100.0
-    quantiles_area <- quantile(df$area, probs = c(q, 1 - q))
-    quantiles_price <- quantile(df$price, probs = c(q, 1 - q))
-    
-    ggplot(df, aes(x=area, y=price)) +
-      geom_jitter(shape=21) + 
-      geom_smooth(method=lm, se=TRUE, fullrange=TRUE) +
-      scale_x_continuous(limits=quantiles_area) + # trans='log10', 
-      scale_y_continuous(limits=quantiles_price) +
-      ggtitle("Area distribution") +
-      xlab("Area (m2)") +
-      ylab("Price (Eur)")
-  })
-  
   # -------------------------------------- FORMATTABLE -------------------------------------
   
   output$tableQuantiles <- renderFormattable({
