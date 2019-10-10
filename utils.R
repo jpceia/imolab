@@ -130,6 +130,7 @@ load_dataset <- function() {
   levels(df$condition) <- condition_levels
   
   df <- add_column(df, price_m2 = round(df$price / df$area, 2), .after="price")
+  df <- add_column(df, construction_decade = cut(df$construction_year, decades, decades_labels), .after="construction_year")
   df <- add_column(df, district = district_meta$Designacao[match(df$district_code, district_meta$Dicofre)], .after="district_code")
   df <- add_column(df, city = city_meta$Designacao[match(df$city_code, city_meta$Dicofre)], .after="city_code")
   df <- add_column(df, parish = parish_meta$Designacao[match(df$parish_code, parish_meta$Dicofre)], .after="parish_code")

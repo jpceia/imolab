@@ -54,6 +54,11 @@ condition_levels <- list(
   Novo = "novo"
 )
 
+decades <- c(-Inf, as.integer(seq(1900, 2020, 10)))
+decades_labels <- sapply(decades, function(x) paste("[", x, ", ", x + 10, "[", sep=""))
+decades_labels[1] <- "< 1900"
+decades_labels <- decades_labels[1: length(decades_labels) - 1]
+
 
 # ------------------------------------- LOCATION DATA ------------------------------------
 
@@ -227,13 +232,12 @@ fairobj <- function(preds, dtrain) {
 y <- log10(dataset$price_m2)
 xgb$price_m2 <- xgb.train(
   data = xgb.DMatrix(data = as.matrix(X), label = y),
-  #eta = 0.30,
-  #max.depth = 6,
+  eta = 0.30,
+  max.depth = 6,
   nround = 100,
   seed = 0,
   nthread = 4,
   objective = fairobj , #"reg:squarederror",
-  #eval.metric = "rmse",
   eval.metric = "mae",
   verbose = 2
 )

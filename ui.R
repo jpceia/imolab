@@ -157,8 +157,9 @@ body <- dashboardBody(
       navbarPage("",
          categoryTab("EnergyCertificate", "Energy Certificate"),
          categoryTab("Condition"),
-         categoryTab("Rooms", "#Rooms"),
-         categoryTab("Bathrooms", "#Bathrooms")
+         categoryTab("Rooms",             "#Rooms"),
+         categoryTab("Bathrooms",         "#Bathrooms"),
+         categoryTab("ConstructionYear",  "Construction decade")
       )
     ),
     tabItem(

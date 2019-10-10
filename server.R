@@ -302,6 +302,9 @@ shinyServer(function(input, output, session) {
   output$BathroomsCount <- renderPlot(F_catCount("bathrooms"))
   output$BathroomsTable <- renderFormattable(F_catTable("bathrooms"))
   
+  output$ConstructionYearBoxPlot <- renderPlot(F_catBoxPlot("construction_decade", "price_m2"))
+  output$ConstructionYearCount <- renderPlot(F_catCount("construction_decade"))
+  output$ConstructionYearTable <- renderFormattable(F_catTable("construction_decade"))
   
   
   # ----------------------------------------------------------------------------------------
