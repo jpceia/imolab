@@ -28,10 +28,31 @@ SPINNER_TYPE <- 8
 MIN_DATAPOINTS <- 5
 
 
-energy_certificate_levels <- c("isento", "g", "f", "e", "d", "c", "bminus", "b", "a", "aplus")
+energy_certificate_levels <- list(
+  Isento = "isento",
+  G = "g",
+  `F` = "f",
+  E = "e",
+  D = "d",
+  C = "c",
+  `B-` = "bminus",
+  B = "b",
+  A = "a", 
+  `A+` = "aplus"
+)
+
 bathrooms_levels <- 1:4
+
 rooms_levels <- 0:10
-condition_levels <- c("ruina", "para_recuperar", "usado", "em_construcao", "renovado", "novo")
+
+condition_levels <- list(
+  Ruina = "ruina",
+  `Para recuperar` = "para_recuperar",
+  Usado = "usado",
+  `Em construcao` = "em_construcao",
+  Renovado = "renovado", 
+  Novo = "novo"
+)
 
 
 # ------------------------------------- LOCATION DATA ------------------------------------

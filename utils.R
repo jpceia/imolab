@@ -123,13 +123,11 @@ load_dataset <- function() {
     col_types = col_types
   ) %>% select(names(col_types))
   
-  df$energy_certificate <- factor(
-    df$energy_certificate,
-    levels = energy_certificate_levels)
+  df$energy_certificate <- factor(df$energy_certificate)
+  levels(df$energy_certificate) <- energy_certificate_levels
   
-  df$condition <- factor(
-    df$condition,
-    levels = condition_levels)
+  df$condition <- factor(df$condition)
+  levels(df$condition) <- condition_levels
   
   df <- add_column(df, price_m2 = round(df$price / df$area, 2), .after="price")
   df <- add_column(df, district = district_meta$Designacao[match(df$district_code, district_meta$Dicofre)], .after="district_code")
@@ -168,10 +166,6 @@ get_features <- function(df, match_tables) {
     left_join(match_tables$mean.enc.cat.parish) %>%
     left_join(match_tables$mean.enc.cat.energy_certificate) %>%
     left_join(match_tables$mean.enc.cat.condition) %>%
-    mutate(
-      rooms = as.integer(rooms),
-      bathrooms = as.integer(bathrooms)
-    ) %>%
     select(
       area, gross_area, terrain_area,
       rooms, bathrooms,
