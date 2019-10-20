@@ -98,7 +98,7 @@ hc_hist <- function(df, col_name, xunits, xlabel = "", truncation = 1)
 
 load_dataset <- function() {
   
-  fname <- "short_summary_20190921.csv"
+  fname <- "imovirtual_20191001.csv"
   col_types <- c(
     DealType = "f",
     PropType = "f",
@@ -123,6 +123,8 @@ load_dataset <- function() {
     col_types = col_types
   ) %>% select(names(col_types))
   
+  df$DealType <- plyr::mapvalues(df$DealType, 0:1, c("Rent", "Sale"))
+  df$PropType <- plyr::mapvalues(df$PropType, c(1, 2, 4, 5, 6, 7, 8, 9, 11), prop_types)
   
   # df$energy_certificate <- factor(df$energy_certificate)
   levels(df$energy_certificate) <- energy_certificate_levels

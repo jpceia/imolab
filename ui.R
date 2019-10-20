@@ -27,17 +27,8 @@ sideBar <- dashboardSidebar(
     hr(),
     conditionalPanel(
       condition = "['histogramsTab', 'categoriesTab', 'territoryTab'].indexOf(input.sidebarmenu) >= 0",
-      selectizeInput("prop_type", NULL, prop_types,
-                     multiple = TRUE,
-                     options = list(
-                       placeholder = "Property Type",
-                       onInitialize = I('function() { this.setValue("Apartment"); }')
-                     )
-      ),
-      radioButtons("deal_type", NULL,
-                   choiceNames = c("Sale", "Rent"),
-                   choiceValues = c("Sale", "Rent"),
-                   inline = TRUE),
+      selectizeInput("prop_type", NULL, prop_types, selected = "Apartment", multiple = TRUE),
+      radioButtons("deal_type", NULL, c("Sale", "Rent"), inline = TRUE),
       selectizeInput("district", "Location", district_list,
                      size = 3,
                      options = list(
