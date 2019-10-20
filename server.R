@@ -273,8 +273,10 @@ shinyServer(function(input, output, session) {
         count=n(price_m2),
         "25%"=currency(quantile(price_m2, probs=0.25), "", 2),
         median=currency(quantile(price_m2, probs=0.50), "", 2),
-        "75%"=currency(quantile(price_m2, probs=0.75), "", 2)) %>%
-      drop_na() %>% map_df(rev) %>%
+        "75%"=currency(quantile(price_m2, probs=0.75), "", 2)
+      ) %>%
+      arrange(-row_number()) %>%
+      drop_na() %>%
       formattable(
         align = c("l", "r", "r", "r", "r"),
         list(
@@ -516,7 +518,13 @@ shinyServer(function(input, output, session) {
   })
   
   output$filtered_table <- DT::renderDataTable(
-    filtered_dataset() %>% select(-district_code, -city_code, -parish_code),
+    filtered_dataset() %>% select(
+      -district_code,
+      -city_code,
+      -parish_code,
+      -latitude,
+      -longitude,
+      -construction_decade),
     filter = 'top', options = list(scrollX = TRUE)
   )
   
@@ -531,12 +539,21 @@ shinyServer(function(input, output, session) {
       -city_code,
       -parish_code,
       -latitude,
-      -longitude),
+      -longitude,
+      -construction_decade),
     filter = 'top', options = list(scrollX = TRUE))
   
   output$pivotTable <- renderRpivotTable({
+    df <- dataset %>% select(
+      -district_code,
+      -city_code,
+      -parish_code,
+      -latitude,
+      -longitude,
+      -construction_decade)
+    
     rpivotTable(
-      dataset,
+      df,
       rows = "district",
       cols = c("DealType", "PropType"),
       aggregatorName = "Median",
