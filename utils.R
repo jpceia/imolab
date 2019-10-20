@@ -123,12 +123,14 @@ load_dataset <- function() {
     col_types = col_types
   ) %>% select(names(col_types))
   
-  df$energy_certificate <- factor(df$energy_certificate)
+  
+  # df$energy_certificate <- factor(df$energy_certificate)
   levels(df$energy_certificate) <- energy_certificate_levels
+
   
-  df$condition <- factor(df$condition)
+  # df$condition <- factor(df$condition)
   levels(df$condition) <- condition_levels
-  
+
   df <- add_column(df, price_m2 = round(df$price / df$area, 2), .after="price")
   df <- add_column(df, construction_decade = cut(df$construction_year, decades, decades_labels), .after="construction_year")
   df <- add_column(df, district = district_meta$Designacao[match(df$district_code, district_meta$Dicofre)], .after="district_code")
@@ -167,6 +169,18 @@ get_features <- function(df, match_tables) {
     left_join(match_tables$mean.enc.cat.parish) %>%
     left_join(match_tables$mean.enc.cat.energy_certificate) %>%
     left_join(match_tables$mean.enc.cat.condition) %>%
+    left_join(match_tables$count.enc.cat) %>%
+    left_join(match_tables$count.enc.district) %>%
+    left_join(match_tables$count.enc.city) %>%
+    left_join(match_tables$count.enc.parish) %>%
+    left_join(match_tables$count.enc.condition) %>%
+    mutate(
+      count.enc.cat = replace_na(count.enc.cat, 0),
+      count.enc.district = replace_na(count.enc.district, 0),
+      count.enc.city = replace_na(count.enc.city, 0),
+      count.enc.parish = replace_na(count.enc.parish, 0),
+      count.enc.condition = replace_na(count.enc.condition, 0)
+      ) %>%
     select(
       area, gross_area, terrain_area,
       rooms, bathrooms,
@@ -178,6 +192,11 @@ get_features <- function(df, match_tables) {
       mean.enc.cat.parish,
       mean.enc.cat.energy_certificate,
       mean.enc.cat.condition,
+      count.enc.cat,
+      count.enc.district,
+      count.enc.city,
+      count.enc.parish,
+      count.enc.condition
     )
   
   filt <- is.na(df$mean.enc.cat.district)

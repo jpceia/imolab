@@ -161,12 +161,12 @@ match_tables$mean.enc.cat <- dataset %>%
   na.omit()
 
 match_tables$mean.area.enc.cat <- dataset %>%
-  group_by(DealType, PropType) %>%
+  group_by(PropType) %>%
   summarize(mean.area.enc.cat = median(area)) %>%
   na.omit()
 
 match_tables$count.enc.cat <- dataset %>%
-  group_by(DealType, PropType) %>%
+  group_by(PropType) %>%
   summarize(count.enc.cat = n(price_m2)) %>%
   na.omit()
 
@@ -176,9 +176,9 @@ match_tables$mean.enc.cat.district <- dataset %>%
   summarize(mean.enc.cat.district = median(price_m2)) %>%
   na.omit()
 
-match_tables$count.enc.cat.district <- dataset %>%
-  group_by(DealType, PropType, district_code) %>%
-  summarize(count.enc.cat.district = n(price_m2)) %>%
+match_tables$count.enc.district <- dataset %>%
+  group_by(district_code) %>%
+  summarize(count.enc.district = n(price_m2)) %>%
   na.omit()
 
 
@@ -187,9 +187,9 @@ match_tables$mean.enc.cat.city <- dataset %>%
   summarize(mean.enc.cat.city = median(price_m2)) %>%
   na.omit()
 
-match_tables$count.enc.cat.city <- dataset %>%
-  group_by(DealType, PropType, district_code, city_code) %>%
-  summarize(count.enc.cat.city = n(price_m2)) %>%
+match_tables$count.enc.city <- dataset %>%
+  group_by(city_code) %>%
+  summarize(count.enc.city = n(price_m2)) %>%
   na.omit()
 
 
@@ -198,9 +198,9 @@ match_tables$mean.enc.cat.parish <- dataset %>%
   summarize(mean.enc.cat.parish = median(price_m2)) %>%
   na.omit()
 
-match_tables$count.enc.cat.parish <- dataset %>%
-  group_by(DealType, PropType, district_code, city_code, parish_code) %>%
-  summarize(count.enc.cat.parish = n(price_m2)) %>%
+match_tables$count.enc.parish <- dataset %>%
+  group_by(parish_code) %>%
+  summarize(count.enc.parish = n(price_m2)) %>%
   na.omit()
 
 
@@ -209,9 +209,15 @@ match_tables$mean.enc.cat.energy_certificate <- dataset %>%
   summarize(mean.enc.cat.energy_certificate = median(price_m2)) %>%
   na.omit()
 
+
 match_tables$mean.enc.cat.condition <- dataset %>%
   group_by(DealType, PropType, condition) %>%
   summarize(mean.enc.cat.condition = median(price_m2)) %>%
+  na.omit()
+
+match_tables$count.enc.condition <- dataset %>%
+  group_by(condition) %>%
+  summarize(count.enc.condition = n(price_m2)) %>%
   na.omit()
 
 X <- get_features(dataset, match_tables)
