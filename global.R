@@ -37,7 +37,7 @@ energy_certificate_levels <- list(
   C = "c",
   `B-` = "bminus",
   B = "b",
-  A = "a", 
+  A = "a",
   `A+` = "aplus"
 )
 
@@ -55,7 +55,7 @@ condition_levels <- list(
 )
 
 decades <- c(-Inf, as.integer(seq(1900, 2020, 10)))
-decades_labels <- sapply(decades, function(x) paste("[", x, ", ", x + 10, "[", sep=""))
+decades_labels <- as.character(decades)
 decades_labels[1] <- "< 1900"
 decades_labels <- decades_labels[1: length(decades_labels) - 1]
 
