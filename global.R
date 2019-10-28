@@ -228,10 +228,10 @@ xgb <- list()
 
 fairobj <- function(preds, dtrain) {
   labels <- getinfo(dtrain, "label")
-  c <- 2 #the lower the "slower/smoother" the loss is. Cross-Validate.
+  c <- 2 # the lower the "slower/smoother" the loss is. Cross-Validate.
   x <-  preds-labels
-  grad <- c*x / (abs(x)+c)
-  hess <- c^2 / (abs(x)+c)^2
+  grad <- c * x / (abs(x) + c)
+  hess <- c ^ 2 / (abs(x) + c) ^ 2
   return(list(grad = grad, hess = hess))
 }
 
