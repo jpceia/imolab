@@ -195,21 +195,21 @@ body <- dashboardBody(
                                 choices = c("Sale", "Rent"),
                                 inline = TRUE),
                    selectInput("energy_certificate_val",
-                               "Energy Certificate", "D",
+                               "Energy Certificate", NULL,
                                choices = names(energy_certificate_levels)),
                    selectInput("condition_val",
                                "Condition",
-                               selected = "Usado",
+                               selected = NULL,
                                choices = names(condition_levels)),
                    numericInput("construction_year_val",
-                                "Construction Year", 1990, min=0, max=2020)
+                                "Construction Year", NULL, min=0, max=2020)
             ),
             column(4,
-                   numericInput("net_area_val",           "Net Area",     100, min=0, step=1),
-                   numericInput("gross_area_val",         "Gross Area",   115, min=0, step=1),
+                   numericInput("net_area_val",           "Net Area",     NULL, min=0, step=1),
+                   numericInput("gross_area_val",         "Gross Area",   NULL, min=0, step=1),
                    numericInput("terrain_area_val",       "Terrain Area", NULL, min=0, step=1),
-                   numericInput("rooms_val",              "#Rooms",       2, min=0, max=10, step=1),
-                   numericInput("bathrooms_val",          "#Bathrooms",   1, min=0, max=4, step=1)
+                   numericInput("rooms_val",              "#Rooms",       NULL, min=0, max=10, step=1),
+                   numericInput("bathrooms_val",          "#Bathrooms",   NULL, min=0, max=4, step=1)
             ),
             column(4,
                    selectizeInput("district_val", "Location", district_list,#,  district
