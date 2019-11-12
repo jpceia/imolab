@@ -680,7 +680,7 @@ shinyServer(function(input, output, session) {
             "span", style = x ~ formattable::style(color = ifelse(x < 0, "red", "green")))
         )
       )
-  })
+  }, ignoreInit = TRUE)
   
   output$valuationOutput <- renderHighchart({
     
