@@ -61,10 +61,17 @@ sideBar <- dashboardSidebar(
         selected = 1.0,
         inline = TRUE
       )
+    ),
+    conditionalPanel(
+      condition = "['valuationTab'].indexOf(input.sidebarmenu) >= 0",
+      fluidRow(
+        column(12,
+               actionButton("calculate_val", "Calculate"),
+               align = "center")
+      )
     )
   )
 )
-
 
 
 # ----------------------------------------------------------------------------------------
@@ -206,7 +213,7 @@ body <- dashboardBody(
                                 "Construction Year", NULL, min=0, max=2020)
             ),
             column(4,
-                   numericInput("net_area_val",           "Net Area",     NULL, min=0, step=1),
+                   numericInput("net_area_val",           "Net Area",      100, min=0, step=1),
                    numericInput("gross_area_val",         "Gross Area",   NULL, min=0, step=1),
                    numericInput("terrain_area_val",       "Terrain Area", NULL, min=0, step=1),
                    numericInput("rooms_val",              "#Rooms",       NULL, min=0, max=10, step=1),
@@ -240,9 +247,14 @@ body <- dashboardBody(
           title = tags$strong("Simulation Results"),
           #status = "primary",
           solidHeader = TRUE,
-          collapsible = TRUE,
-          collapsed = TRUE,
-          formattableOutput("valuationResult"),
+          #collapsible = TRUE,
+          #collapsed = TRUE,
+          fluidRow(
+            box(
+              formattableOutput("valuationResult") %>% withSpinner(type=SPINNER_TYPE),
+              solidHeader=FALSE,
+              width = 12)
+          ),
           width = 12
         )
       )

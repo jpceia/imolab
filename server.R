@@ -591,11 +591,9 @@ shinyServer(function(input, output, session) {
     
     updateSelectInput(session, "parish_val", choices = parish_list)
   })
-  
 
-  
-  
-  output$valuationResult <- renderFormattable({
+
+  valuationResultTable <- eventReactive(input$calculate_val, {
     
     row <- list(
       DealType = input$deal_type_val,
@@ -659,7 +657,7 @@ shinyServer(function(input, output, session) {
     df <- df %>% map_df(rev)
     
     X <- get_features(df, match_tables)
-
+    
     pred_price_m2 <- 10 ^ (predict(xgb$price_m2, xgb.DMatrix(data = as.matrix(X))))
     #pred_price <- 10 ^ (predict(xgb$price, xgb.DMatrix(data = as.matrix(X))))
     
@@ -682,8 +680,9 @@ shinyServer(function(input, output, session) {
       )
   }, ignoreInit = TRUE)
   
+  output$valuationResult <- renderFormattable(valuationResultTable())
+  
   output$valuationOutput <- renderHighchart({
-    
     highchart() %>%
       hc_chart(type = "waterfall") %>%
       hc_xAxis(categories = c("area", "location", "condition", "rooms", "energy_certificate")) %>%
