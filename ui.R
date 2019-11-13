@@ -5,6 +5,7 @@
 # ----------------------------------------------------------------------------------------
 
 sideBar <- dashboardSidebar(
+  tags$head(includeHTML("google-analytics.js")),
   sidebarMenu(
     id = "sidebarmenu",
     # menuItem("Home", tabName = "homeTab"),
