@@ -11,7 +11,7 @@ options(shiny.usecairo=TRUE)
 
 shinyServer(function(input, output, session) {
   
-  session$onSessionEnded(stopApp)
+  session$allowReconnect(TRUE)
   
   rv <- reactiveValues(
     location_code = NULL,
