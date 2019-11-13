@@ -98,7 +98,7 @@ hc_hist <- function(df, col_name, xunits, xlabel = "", truncation = 1)
 
 load_dataset <- function() {
   
-  fname <- "imovirtual_20191001.csv"
+  fname <- "imovirtual_20191101.csv"
   col_types <- c(
     DealType = "f",
     PropType = "f",
