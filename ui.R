@@ -63,6 +63,17 @@ sideBar <- dashboardSidebar(
       )
     ),
     conditionalPanel(
+      condition = "['categoriesTab', 'territoryTab'].indexOf(input.sidebarmenu) >= 0",
+      selectizeInput("target_col", "Target",
+                     list(
+                       'Price/m2' = 'price_m2',
+                       'Area' = 'area',
+                       'xYield' = 'xYield',
+                       'Construction Year' = 'construction_year'
+                     ),
+                     selected = "Price/m2")
+    ),
+    conditionalPanel(
       condition = "['valuationTab'].indexOf(input.sidebarmenu) >= 0",
       fluidRow(
         column(12,

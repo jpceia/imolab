@@ -214,6 +214,7 @@ shinyServer(function(input, output, session) {
     
     df <- filtered_dataset()
     df <- df[!is.na(df[[cat_col]]), ]
+    df <- df[!is.na(df[[target_col]]), ]
     
     validate(need(
       nrow(df) >= MIN_DATAPOINTS,
@@ -242,10 +243,11 @@ shinyServer(function(input, output, session) {
       coord_flip()
   }
   
-  F_catCount <- function(cat_col) {
+  F_catCount <- function(cat_col, target_col = "price_m2") {
     
     df <- filtered_dataset()
     df <- df[!is.na(df[[cat_col]]), ]
+    df <- df[!is.na(df[[target_col]]), ]
     
     validate(need(
       nrow(df) >= MIN_DATAPOINTS,
@@ -266,14 +268,26 @@ shinyServer(function(input, output, session) {
       coord_flip()
   }
   
-  F_catTable <- function(cat_col) {
-    filtered_dataset() %>%
+  F_catTable <- function(cat_col,  target_col = "price_m2") {
+    
+    df <- filtered_dataset()
+    df <- df[!is.na(df[[cat_col]]), ]
+    df <- df[!is.na(df[[target_col]]), ]
+    
+    validate(need(
+      nrow(df) >= MIN_DATAPOINTS,
+      "Filtering too narrow: not enough datapoints"
+    ))
+    
+    target <- rlang::sym(target_col)
+    
+    df %>%
       group_by_at(vars(one_of(cat_col))) %>%
       summarize(
-        count=n(price_m2),
-        "25%"=currency(quantile(price_m2, probs=0.25), "", 2),
-        median=currency(quantile(price_m2, probs=0.50), "", 2),
-        "75%"=currency(quantile(price_m2, probs=0.75), "", 2)
+        count = n(!!target),
+        "25%" = currency(quantile(!!target, probs=0.25), "", 2),
+        median= currency(quantile(!!target, probs=0.50), "", 2),
+        "75%" = currency(quantile(!!target, probs=0.75), "", 2)
       ) %>%
       arrange(-row_number()) %>%
       drop_na() %>%
@@ -288,25 +302,25 @@ shinyServer(function(input, output, session) {
   }
   
   
-  output$EnergyCertificateBoxPlot <- renderPlot(F_catBoxPlot("energy_certificate", "price_m2"))
-  output$EnergyCertificateCount <- renderPlot(F_catCount("energy_certificate"))
-  output$EnergyCertificateTable <- renderFormattable(F_catTable("energy_certificate"))
+  output$EnergyCertificateBoxPlot <- renderPlot(F_catBoxPlot("energy_certificate", input$target_col))
+  output$EnergyCertificateCount <- renderPlot(F_catCount("energy_certificate", input$target_col))
+  output$EnergyCertificateTable <- renderFormattable(F_catTable("energy_certificate", input$target_col))
   
-  output$ConditionBoxPlot <- renderPlot(F_catBoxPlot("condition", "price_m2"))
-  output$ConditionCount <- renderPlot(F_catCount("condition"))
-  output$ConditionTable <- renderFormattable(F_catTable("condition"))
+  output$ConditionBoxPlot <- renderPlot(F_catBoxPlot("condition", input$target_col))
+  output$ConditionCount <- renderPlot(F_catCount("condition", input$target_col))
+  output$ConditionTable <- renderFormattable(F_catTable("condition", input$target_col))
   
-  output$RoomsBoxPlot <- renderPlot(F_catBoxPlot("rooms", "price_m2"))
-  output$RoomsCount <- renderPlot(F_catCount("rooms"))
-  output$RoomsTable <- renderFormattable(F_catTable("rooms"))
+  output$RoomsBoxPlot <- renderPlot(F_catBoxPlot("rooms", input$target_col))
+  output$RoomsCount <- renderPlot(F_catCount("rooms", input$target_col))
+  output$RoomsTable <- renderFormattable(F_catTable("rooms", input$target_col))
   
-  output$BathroomsBoxPlot <- renderPlot(F_catBoxPlot("bathrooms", "price_m2"))
-  output$BathroomsCount <- renderPlot(F_catCount("bathrooms"))
-  output$BathroomsTable <- renderFormattable(F_catTable("bathrooms"))
+  output$BathroomsBoxPlot <- renderPlot(F_catBoxPlot("bathrooms", input$target_col))
+  output$BathroomsCount <- renderPlot(F_catCount("bathrooms", input$target_col))
+  output$BathroomsTable <- renderFormattable(F_catTable("bathrooms", input$target_col))
   
-  output$ConstructionYearBoxPlot <- renderPlot(F_catBoxPlot("construction_decade", "price_m2"))
-  output$ConstructionYearCount <- renderPlot(F_catCount("construction_decade"))
-  output$ConstructionYearTable <- renderFormattable(F_catTable("construction_decade"))
+  output$ConstructionYearBoxPlot <- renderPlot(F_catBoxPlot("construction_decade", input$target_col))
+  output$ConstructionYearCount <- renderPlot(F_catCount("construction_decade", input$target_col))
+  output$ConstructionYearTable <- renderFormattable(F_catTable("construction_decade", input$target_col))
   
   
   # ----------------------------------------------------------------------------------------
@@ -349,8 +363,12 @@ shinyServer(function(input, output, session) {
   output$territory_map <- renderLeaflet({
     
     # validate(need(rv$location_type != "Parish", "Invalid location"))
-    df <- filtered_dataset()
     code <- rv$location_code
+    target_col <- input$target_col
+    target <- rlang::sym(target_col)
+    
+    df <- filtered_dataset()
+    df <- df[!is.na(df[[target_col]]), ]
 
     switch (
       rv$location_type,
@@ -358,40 +376,40 @@ shinyServer(function(input, output, session) {
         df <- df %>%
           group_by(district_code) %>%
           summarize(
-            count = n(price_m2),
-            price_m2 = median(price_m2)
+            count = n(!!target),
+            value = median(!!target)
           ) %>%
           filter(count >= MIN_DATAPOINTS)
         
         df_map <- country_map_sh
-        df_map$price_m2 <- df[match(df_map$id, df$district_code), ]$price_m2
+        df_map$value <- df[match(df_map$id, df$district_code), ]$value
       },
       District = {
         df <- df %>%
           filter(district_code == code) %>%
           group_by(city_code) %>%
           summarize(
-            count = n(price_m2),
-            price_m2 = median(price_m2)
+            count = n(!!target),
+            value = median(!!target)
           ) %>%
           filter(count >= MIN_DATAPOINTS)
         
         df_map <- district_map_sh %>% filter(CCA_1 == code)
         
-        df_map$price_m2 <- df[match(df_map$CCA_2, df$city_code), ]$price_m2
+        df_map$value <- df[match(df_map$CCA_2, df$city_code), ]$value
       },
       City = {
         df <- df %>%
           filter(city_code == code) %>%
           group_by(parish_code) %>%
           summarize(
-            count = n(price_m2),
-            price_m2 = median(price_m2)
+            count = n(!!target),
+            value = median(!!target)
           ) %>%
           filter(count >= MIN_DATAPOINTS)
         
         df_map <- city_map_sh %>% filter(CCA_2 == code)
-        df_map$price_m2 <- df[match(df_map$CCA_3, df$parish_code), ]$price_m2
+        df_map$value <- df[match(df_map$CCA_3, df$parish_code), ]$value
       }, 
       {
         validate(FALSE, "")
@@ -408,22 +426,39 @@ shinyServer(function(input, output, session) {
       addTiles() %>%
       addPolygons(
         color = "#444444", weight = 1, smoothFactor = 0.5, label = ~name, layerId = ~id,
-        opacity = 1.0, fillOpacity = 0.75, fillColor = ~qpal("Blues", price_m2),
+        opacity = 1.0, fillOpacity = 0.75, fillColor = ~qpal("Blues", value),
         highlightOptions = highlightOptions(color = "white", weight = 2, bringToFront = TRUE))
   })
   
   
   output$parish_map <- renderLeaflet({
     
+    target_col <- input$target_col
+    
     validate(need(rv$location_type == "Parish", ""))
+    validate(need(target_col != "xYield", "xYield target not allowed for parish level view"))
+    
+    target <- rlang::sym(target_col)
+    
+    df <- filtered_dataset()
+    df <- df[!is.na(df[[target_col]]), ]
+    
     df_map <- city_map_sh %>% filter(CCA_3 == rv$location_code)
-    df <- filtered_dataset() %>% 
+    
+    df <- df %>% 
       group_by(latitude, longitude) %>%
-      summarize(price_m2 = round(median(price_m2), 2)) %>%
+      summarize(value = round(median(!!target), 2)) %>%
       ungroup()
     
     pts <- df %>% sf::st_as_sf(coords = c('longitude', 'latitude'), crs = 4326)
     df <- df[sf::st_contains(df_map, pts)[[1]], ]
+    
+    unit_str <- switch(
+      target_col,
+      "price_m2" = "Eur/m2",
+      "area" = "m2",
+      "construction_decade" = ""
+    )
 
     df_map %>%
       leaflet(options = leafletOptions(
@@ -437,9 +472,9 @@ shinyServer(function(input, output, session) {
         opacity = 1.0, fillOpacity = 0.25, fillColor = "cornflowerblue") %>%
       addCircleMarkers(
         data = df,
-        radius = 5, color = ~qpal(c("red", "green"), price_m2),
+        radius = 5, color = ~qpal(c("red", "green"), value),
         lng = ~longitude, lat = ~latitude,
-        popup = ~htmltools::htmlEscape(paste(price_m2, "Eur/m2")),
+        popup = ~htmltools::htmlEscape(paste(value, unit_str)),
         stroke = FALSE, fillOpacity = 0.75
       )
   })
@@ -447,9 +482,14 @@ shinyServer(function(input, output, session) {
   
   output$territory_boxplot <- renderPlot({
     
+    target_col <- input$target_col
+    target <- rlang::sym(target_col)
+    
     df <- filtered_dataset()
+    df <- df[!is.na(df[[target_col]]), ]
+    
     q <- as.numeric(input$truncation) / 100.0
-    quantiles <- quantile(df$price_m2, probs = c(q, 1 - q))
+    quantiles <- quantile(df[[target_col]], probs = c(q, 1 - q))
     
     cat_col <- switch(
       rv$location_type,
@@ -464,8 +504,8 @@ shinyServer(function(input, output, session) {
     
     df %>% ggplot(
       aes(
-        x = fct_reorder(cat_col, price_m2, .fun = median),
-        y = price_m2
+        x = fct_reorder(cat_col, !!target, .fun = median),
+        y = !!target
       )) +
       stat_boxplot(
         geom = "errorbar",
@@ -491,7 +531,12 @@ shinyServer(function(input, output, session) {
                       City = "parish",
                       Parish = NULL)
     
+    target_col <- input$target_col
+    target <- rlang::sym(target_col)
+    
     df <- filtered_dataset()
+    df <- df[!is.na(df[[target_col]]), ]
+    
     switch (rv$location_type,
             Country = df %>% drop_na(district_code) %>% group_by(district),
             District = df %>% drop_na(city_code) %>% group_by(city),
@@ -502,9 +547,9 @@ shinyServer(function(input, output, session) {
     ) %>%
       summarize(
         count=n(price_m2),
-        "25%"=currency(quantile(price_m2, probs=0.25), "", 2),
-        median=currency(quantile(price_m2, probs=0.50), "", 2),
-        "75%"=currency(quantile(price_m2, probs=0.75), "", 2)
+        "25%" = currency(quantile(!!target, probs=0.25), "", 2),
+        median= currency(quantile(!!target, probs=0.50), "", 2),
+        "75%" = currency(quantile(!!target, probs=0.75), "", 2)
       ) %>%
       formattable(
         align = c("l", "r", "r", "r", "r"),
