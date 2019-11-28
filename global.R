@@ -236,20 +236,32 @@ fairobj <- function(preds, dtrain) {
   return(list(grad = grad, hess = hess))
 }
 
-y <- log10(dataset$price_m2)
-xgb$price_m2 <- xgb.train(
+
+
+y <- log10(dataset$price)
+
+xgb$price <- xgb.train(
   data = xgb.DMatrix(data = as.matrix(X), label = y),
-  eta = 0.30,
-  max.depth = 6,
+  objective = fairobj 
+  eta = 0.08,
+  max.depth = 18,
   nround = 100,
   seed = 0,
   nthread = 4,
-  objective = fairobj , #"reg:squarederror",
-  eval.metric = "mae",
   verbose = 2
 )
 
+filt <- dataset$DealType == "Sale"
+X <- dataset[filt, ] %>% mutate(DealType = "Rent") %>% get_features(match_tables)
+rent_pred <- 10^(predict(xgb$price, xgb.DMatrix(data = as.matrix(X))))
+dataset[filt, "xYield"] <- 12 * rent_pred / dataset[filt, "price"]
 
+#filt <- dataset$DealType == "Rent"
+#X <- dataset[filt, ] %>% mutate(DealType = "Sale") %>% get_features(match_tables)
+#sell_pred <- 10^(predict(xgb$price, xgb.DMatrix(data = as.matrix(X))))
+#dataset[filt, "xYield"] <- dataset[filt, "price"] / sell_pred
+
+                                                            
 rm(X)
 rm(y)
 

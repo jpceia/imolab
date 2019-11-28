@@ -658,14 +658,14 @@ shinyServer(function(input, output, session) {
     
     X <- get_features(df, match_tables)
     
-    pred_price_m2 <- 10 ^ (predict(xgb$price_m2, xgb.DMatrix(data = as.matrix(X))))
-    #pred_price <- 10 ^ (predict(xgb$price, xgb.DMatrix(data = as.matrix(X))))
+    #pred_price_m2 <- 10 ^ (predict(xgb$price_m2, xgb.DMatrix(data = as.matrix(X))))
+    pred_price <- 10 ^ (predict(xgb$price, xgb.DMatrix(data = as.matrix(X))))
     
     data.frame(
       Characteristic = drop_cols_final,
-      price_m2 = currency(pred_price_m2, "", 0),
-      price = currency(pred_price_m2 * input$net_area_val, "", 0),
-      impact = accounting((pred_price_m2 - lag(pred_price_m2)) * input$net_area_val),
+      #price_m2 = currency(pred_price_m2, "", 0),
+      price = currency(pred_price, "", 0),
+      impact = accounting(pred_price - lag(pred_price)),
       row.names = NULL
     ) %>%
       formattable(
@@ -673,7 +673,7 @@ shinyServer(function(input, output, session) {
         list(
           area(col = "Characteristic") ~ formatter(
             "span", style = ~formattable::style(color = "grey", font.weight = "bold")),
-          price_m2 = normalize_bar("pink", 0.2),
+          price = normalize_bar("pink", 0.2),
           impact = formatter(
             "span", style = x ~ formattable::style(color = ifelse(x < 0, "red", "green")))
         )
