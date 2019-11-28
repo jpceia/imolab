@@ -237,17 +237,21 @@ fairobj <- function(preds, dtrain) {
 }
 
 
+constraints <- mapply(function(x) ifelse(stringr::str_starts(x, "mean.enc"), 1, 0), names(X))
+constraints[1] <- 1
+constraints[3] <- 1
 
 y <- log10(dataset$price)
 
 xgb$price <- xgb.train(
   data = xgb.DMatrix(data = as.matrix(X), label = y),
-  objective = fairobj 
-  eta = 0.08,
-  max.depth = 18,
+  monotone_constraints = constraints,
+  objective = fairobj , #"reg:squarederror",1800
+  eta = 0.08, #0.30,
+  max.depth = 18, #6,
   nround = 100,
   seed = 0,
-  nthread = 4,
+  nthread = 8,
   verbose = 2
 )
 
@@ -258,8 +262,7 @@ dataset[filt, "xYield"] <- 12 * rent_pred / dataset[filt, "price"]
 
 #filt <- dataset$DealType == "Rent"
 #X <- dataset[filt, ] %>% mutate(DealType = "Sale") %>% get_features(match_tables)
-#sell_pred <- 10^(predict(xgb$price, xgb.DMatrix(data = as.matrix(X))))
-#dataset[filt, "xYield"] <- dataset[filt, "price"] / sell_pred
+#dataset[filt, "xYield"] <- dataset[filt, "price"] / predict(xgb$price, xgb.DMatrix(data = as.matrix(X)))
 
                                                             
 rm(X)
