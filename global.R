@@ -15,6 +15,7 @@ library(rapportools) # is.empty
 library(formattable)
 library(xgboost)
 
+require(DT)
 require(sf)
 
 source("utils.R")
