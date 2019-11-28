@@ -126,6 +126,8 @@ load_dataset <- function() {
   df$DealType <- plyr::mapvalues(df$DealType, 0:1, c("Rent", "Sale"))
   df$PropType <- plyr::mapvalues(df$PropType, c(1, 2, 4, 5, 6, 7, 8, 9, 11), prop_types)
   
+  df$construction_year[df$construction_year < 1800] <- NA
+  
   # df$energy_certificate <- factor(df$energy_certificate)
   levels(df$energy_certificate) <- energy_certificate_levels
 
