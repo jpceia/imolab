@@ -221,7 +221,7 @@ shinyServer(function(input, output, session) {
       "Filtering too narrow: not enough datapoints"
     ))
     
-    q <- as.numeric(input$truncation) / 100.0
+    q <- 0.05 #as.numeric(input$truncation) / 100.0
     quantiles <- quantile(df[[target_col]], probs = c(q, 1 - q))
     
     if (is.numeric(df[[cat_col]]))
@@ -490,7 +490,7 @@ shinyServer(function(input, output, session) {
     df <- filtered_dataset()
     df <- df[!is.na(df[[target_col]]), ]
     
-    q <- as.numeric(input$truncation) / 100.0
+    q <- 0.05 #as.numeric(input$truncation) / 100.0
     quantiles <- quantile(df[[target_col]], probs = c(q, 1 - q))
     
     cat_col <- switch(

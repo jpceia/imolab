@@ -52,7 +52,10 @@ sideBar <- dashboardSidebar(
                            onInitialize = I('function() { this.setValue(""); }')
                          ))           
         )
-      ),
+      )
+    ),
+    conditionalPanel(
+      condition = "['histogramsTab'].indexOf(input.sidebarmenu) >= 0",
       radioButtons(
         "truncation",
         "Truncation",
