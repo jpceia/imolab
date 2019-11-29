@@ -10,12 +10,12 @@ sideBar <- dashboardSidebar(
     id = "sidebarmenu",
     # menuItem("Home", tabName = "homeTab"),
     menuItem("Exploration", icon = icon("poll"),
-             menuSubItem("Histograms",
-                         tabName = "histogramsTab"),
+             menuSubItem("Territory",
+                         tabName = "territoryTab"),
              menuSubItem("Categories",
                          tabName = "categoriesTab"),
-             menuSubItem("Territory",
-                         tabName = "territoryTab")
+             menuSubItem("Histograms",
+                         tabName = "histogramsTab")
     ),
     menuItem("Data Sources", icon = icon("table"),
              menuSubItem("Raw Data", tabName = "rawdataTab"),
@@ -175,7 +175,7 @@ body <- dashboardBody(
     tabItem(
       tabName = "territoryTab",
       tags$h2(tags$strong("Territory")),
-      tags$h5(tags$strong("Price/m2"), style='color:grey'),
+      tags$h5(tags$strong(textOutput("text_TargetName")), style='color:grey'),
       uiOutput("territory_tab")
     ),
     tabItem(
