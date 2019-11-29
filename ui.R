@@ -50,7 +50,7 @@ sideBar <- dashboardSidebar(
                          options = list(
                            placeholder = 'Parish',
                            onInitialize = I('function() { this.setValue(""); }')
-                         ))           
+                         ))
         )
       )
     ),
@@ -257,22 +257,7 @@ body <- dashboardBody(
           width = 12
         )
       ),
-      fluidRow(
-        box(
-          title = tags$strong("Simulation Results"),
-          #status = "primary",
-          solidHeader = TRUE,
-          #collapsible = TRUE,
-          #collapsed = TRUE,
-          fluidRow(
-            box(
-              formattableOutput("valuationResult") %>% withSpinner(type=SPINNER_TYPE),
-              solidHeader=FALSE,
-              width = 12)
-          ),
-          width = 12
-        )
-      )
+      fluidRow(htmlOutput("valuationOutput"))
     )
   )
 )

@@ -640,7 +640,7 @@ shinyServer(function(input, output, session) {
   })
 
 
-  valuationResultTable <- eventReactive(input$calculate_val, {
+  valuationResult <- eventReactive(input$calculate_val, {
     
     row <- list(
       DealType = input$deal_type_val,
@@ -708,13 +708,24 @@ shinyServer(function(input, output, session) {
     #pred_price_m2 <- 10 ^ (predict(xgb$price_m2, xgb.DMatrix(data = as.matrix(X))))
     pred_price <- 10 ^ (predict(xgb$price, xgb.DMatrix(data = as.matrix(X))))
     
-    data.frame(
+    res <- list()
+    
+    res$breakdown <- data.frame(
       Characteristic = drop_cols_final,
       #price_m2 = currency(pred_price_m2, "", 0),
       price = currency(pred_price, "", 0),
       impact = accounting(pred_price - lag(pred_price)),
       row.names = NULL
-    ) %>%
+    )
+    
+    res$price <- res$breakdown[nrow(res$breakdown), "price"]
+    res$price_m2 <- res$price / input$net_area_val
+      
+    return(res)
+  }, ignoreInit = TRUE)
+  
+  output$valuationResultTable <- renderFormattable({
+    valuationResult()$breakdown %>%
       formattable(
         align = c("l", "r", "r", "r"),
         list(
@@ -725,14 +736,40 @@ shinyServer(function(input, output, session) {
             "span", style = x ~ formattable::style(color = ifelse(x < 0, "red", "green")))
         )
       )
-  }, ignoreInit = TRUE)
+  })
   
-  output$valuationResult <- renderFormattable(valuationResultTable())
-  
-  output$valuationOutput <- renderHighchart({
-    highchart() %>%
-      hc_chart(type = "waterfall") %>%
-      hc_xAxis(categories = c("area", "location", "condition", "rooms", "energy_certificate")) %>%
-      hc_add_series(c(10, 19.4, 21.1, 14.4, 6.5), showInLegend = FALSE)
+  output$valuationOutput <- renderUI({
+    res <- valuationResult()
+
+    box(
+      title = tags$h2("Simulation Results"),
+      #status = "primary",
+      solidHeader = TRUE,
+      #collapsible = TRUE,
+      #collapsed = TRUE,
+      fluidRow(
+        box(
+          fluidRow(
+            valueBox(
+              paste(round(res$price, 2), "\u20ac"),
+              "Predicted price",
+              color = "green",
+              icon = icon("euro-sign")
+            ),
+            valueBox(
+              paste(round(res$price_m2, 2), "\u20ac"),
+              "Predicted price / m2",
+              color = "light-blue",
+              icon = icon("home")
+            )
+          ),
+          tags$h3("Valuation breakdown"),
+          formattableOutput("valuationResultTable") %>% withSpinner(type=SPINNER_TYPE),
+          solidHeader = FALSE,
+          width = 12
+        )
+      ),
+      width = 12
+    )
   })
 })
