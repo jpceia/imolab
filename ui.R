@@ -28,8 +28,8 @@ sideBar <- dashboardSidebar(
     hr(),
     conditionalPanel(
       condition = "['histogramsTab', 'categoriesTab', 'territoryTab'].indexOf(input.sidebarmenu) >= 0",
-      selectizeInput("prop_type", NULL, prop_types, selected = "Apartment", multiple = TRUE),
       radioButtons("deal_type", NULL, c("Sale", "Rent"), inline = TRUE),
+      selectizeInput("prop_type", NULL, prop_types, selected = "Apartment", multiple = TRUE),
       selectizeInput("district", "Location", district_list,
                      size = 3,
                      options = list(
@@ -164,6 +164,7 @@ body <- dashboardBody(
     tabItem(
       tabName = "categoriesTab",
       tags$h2(tags$strong("Categories")),
+      tags$h5(tags$strong(textOutput("CategoryTextTargetName")), style='color:grey'),
       navbarPage("",
          categoryTab("EnergyCertificate", "Energy Certificate"),
          categoryTab("Condition"),
@@ -175,7 +176,7 @@ body <- dashboardBody(
     tabItem(
       tabName = "territoryTab",
       tags$h2(tags$strong("Territory")),
-      tags$h5(tags$strong(textOutput("text_TargetName")), style='color:grey'),
+      tags$h5(tags$strong(textOutput("TerritoryTextTargetName")), style='color:grey'),
       uiOutput("territory_tab")
     ),
     tabItem(
@@ -209,7 +210,7 @@ body <- dashboardBody(
           collapsed = FALSE,
           fluidRow(
             column(4,
-                   selectizeInput("prop_type_val", "Property Type", prop_types, selected = "Apartment"),
+                   selectizeInput("prop_type_val", NULL, prop_types, selected = "Apartment"),
                    radioButtons("deal_type_val", NULL,
                                 choices = c("Sale", "Rent"),
                                 inline = TRUE),

@@ -301,6 +301,7 @@ shinyServer(function(input, output, session) {
         ))
   }
   
+  output$CategoryTextTargetName <- renderText(target_name(input$target_col))
   
   output$EnergyCertificateBoxPlot <- renderPlot(F_catBoxPlot("energy_certificate", input$target_col))
   output$EnergyCertificateCount <- renderPlot(F_catCount("energy_certificate", input$target_col))
@@ -327,7 +328,7 @@ shinyServer(function(input, output, session) {
   #                                     TERRITORY SECTION
   # ----------------------------------------------------------------------------------------
   
-  output$text_TargetName <- renderText(target_name(input$target_col))
+  output$TerritoryTextTargetName <- renderText(target_name(input$target_col))
   
   output$territory_tab <- renderUI({
     if(rv$location_type != "Parish")
