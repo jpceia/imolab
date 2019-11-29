@@ -20,6 +20,18 @@ qpal <- function(palette, x) {
 }
 
 
+target_name <- function(target_col) {
+  switch(
+    target_col,
+    price_m2 = "Price / m2",
+    area = "Area",
+    price = "Price",
+    xYield = "Expected Yield",
+    construction_year = "Construction Year"
+  )
+}
+
+
 remove_outliers <- function(df, col_name, trunc)
 {
   q <- as.numeric(trunc) / 100.0

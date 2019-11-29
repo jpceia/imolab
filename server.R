@@ -327,6 +327,7 @@ shinyServer(function(input, output, session) {
   #                                     TERRITORY SECTION
   # ----------------------------------------------------------------------------------------
   
+  output$text_TargetName <- renderText(target_name(input$target_col))
   
   output$territory_tab <- renderUI({
     if(rv$location_type != "Parish")
