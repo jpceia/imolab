@@ -75,14 +75,6 @@ sideBar <- dashboardSidebar(
                        'Construction Year' = 'construction_year'
                      ),
                      selected = "Price/m2")
-    ),
-    conditionalPanel(
-      condition = "['valuationTab'].indexOf(input.sidebarmenu) >= 0",
-      fluidRow(
-        column(12,
-               actionButton("calculate_val", "Calculate"),
-               align = "center")
-      )
     )
   )
 )
@@ -252,6 +244,16 @@ body <- dashboardBody(
                                     placeholder = 'Parish',
                                     onInitialize = I('function() { this.setValue(""); }')
                                   ))
+            )
+          ),
+          fluidRow(
+            column(12,
+                   actionButton(
+                     "calculate_val",
+                     "Simulate",
+                     icon = icon("random"),
+                     style = "color: #ffffff; background-color: #474949"
+                   )
             )
           ),
           width = 12
