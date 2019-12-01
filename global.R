@@ -252,6 +252,7 @@ xgb$price <- xgb.train(
 )
 
 filt <- dataset$DealType == "Sale"
+filt <- filt & !(dataset$PropType %in% c("Farm", "Terrain"))
 X <- dataset[filt, ] %>% mutate(DealType = "Rent") %>% get_features(match_tables)
 rent_pred <- 10^(predict(xgb$price, xgb.DMatrix(data = as.matrix(X))))
 dataset[filt, "xYield"] <- 12 * rent_pred / dataset[filt, "price"]

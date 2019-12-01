@@ -12,24 +12,31 @@ sideBar <- dashboardSidebar(
     menuItem("Exploration", icon = icon("poll"),
              menuSubItem("Territory",
                          tabName = "territoryTab"),
+             menuSubItem("Property Type",
+                         tabName = "propertyTypeTab"),
              menuSubItem("Categories",
                          tabName = "categoriesTab"),
              menuSubItem("Histograms",
                          tabName = "histogramsTab")
     ),
-    menuItem("Data Sources", icon = icon("table"),
-             menuSubItem("Raw Data", tabName = "rawdataTab"),
-             menuSubItem("Pivots", tabName = "pivotTableTab")),
     menuItem("Valuation", icon = icon("brain"),
              tabName = "valuationTab",
              badgeLabel = "Beta",
-             badgeColor = "blue"), 
-    
+             badgeColor = "blue"),
+    menuItem("Data Sources", icon = icon("table"),
+             menuSubItem("Raw Data", tabName = "rawdataTab"),
+             menuSubItem("Pivots", tabName = "pivotTableTab")),
     hr(),
     conditionalPanel(
+      condition = "['histogramsTab', 'propertyTypeTab', 'categoriesTab', 'territoryTab'].indexOf(input.sidebarmenu) >= 0",
+      radioButtons("deal_type", NULL, c("Sale", "Rent"), inline = TRUE)
+    ),
+    conditionalPanel(
       condition = "['histogramsTab', 'categoriesTab', 'territoryTab'].indexOf(input.sidebarmenu) >= 0",
-      radioButtons("deal_type", NULL, c("Sale", "Rent"), inline = TRUE),
       selectizeInput("prop_type", NULL, prop_types, selected = "Apartment", multiple = TRUE),
+    ),
+    conditionalPanel(
+      condition = "['histogramsTab', 'propertyTypeTab', 'categoriesTab', 'territoryTab'].indexOf(input.sidebarmenu) >= 0",
       selectizeInput("district", "Location", district_list,
                      size = 3,
                      options = list(
@@ -66,7 +73,7 @@ sideBar <- dashboardSidebar(
       )
     ),
     conditionalPanel(
-      condition = "['categoriesTab', 'territoryTab'].indexOf(input.sidebarmenu) >= 0",
+      condition = "['categoriesTab', 'propertyTypeTab', 'territoryTab'].indexOf(input.sidebarmenu) >= 0",
       selectizeInput("target_col", "Target",
                      list(
                        'Price/m2' = 'price_m2',
@@ -155,6 +162,12 @@ body <- dashboardBody(
           width = 12
         )
       )
+    ),
+    tabItem(
+      tabName = "propertyTypeTab",
+      tags$h2(tags$strong("Property Type")),
+      tags$h5(tags$strong(textOutput("PropertyTypeTextTargetName")), style='color:grey'),
+      categoryTab("PropertyType", "Property Type"),
     ),
     tabItem(
       tabName = "categoriesTab",
