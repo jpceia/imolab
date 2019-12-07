@@ -14,6 +14,7 @@ library(rpivotTable)
 library(rapportools) # is.empty
 library(formattable)
 library(xgboost)
+library(openssl)
 
 require(DT)
 require(sf)
@@ -27,7 +28,20 @@ source("utils.R")
 
 SPINNER_TYPE <- 8
 MIN_DATAPOINTS <- 5
+NFOLDS <- 5
 
+
+prop_types <- c(
+  'Apartment',
+  'House',
+  'Terrain',
+  'Store',
+  'Warehouse',
+  'Garage',
+  'Office',
+  'Building',
+  'Farm'
+)
 
 energy_certificate_levels <- list(
   Isento = "isento",
@@ -96,23 +110,6 @@ district_list <- district_meta$Dicofre
 names(district_list) <- district_meta$Designacao
 
 
-prop_types <- c(
-  'Apartment',
-  'House',
-  'Terrain',
-  'Store',
-  'Warehouse',
-  'Garage',
-  'Office',
-  'Building',
-  'Farm'
-)
-
-
-
-dataset <- load_dataset()
-
-
 # ------------------------------------ TERRITORY MAPS ------------------------------------
 
 
@@ -142,6 +139,27 @@ city_map_sh$CCA_3 <- as.factor(as.integer(city_map_sh $Dicofre, 1, -3))
 city_map_sh$id <- city_map_sh$CCA_3
 city_map_sh$name <- city_map_sh$Freguesia
 city_map_sh <- sf::st_transform(city_map_sh, "+init=epsg:4326")
+
+
+# ------------------------------- Loading the main Dataset -------------------------------
+
+
+df <- load_dataset()
+
+# -------------------------------------- GroupKFold --------------------------------------
+
+group_cols <- c("latitude", "longitude", "area", "city_code", "parish_code")
+df$group <- as.factor(md5(apply(df[, group_cols], 1, paste, collapse = "/")))
+unique_groups <- unique(df$group)
+df_groups <- data.frame(
+  group=unique_groups,
+  Fold=sample(1:NFOLDS, length(unique_groups), replace = TRUE)
+) %>% tbl_df()
+
+df <- left_join(df, df_groups, by="group")
+
+
+dataset <- df
 
 
 # ------------------------------------- XGBOOST MODEL ------------------------------------
