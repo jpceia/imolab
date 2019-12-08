@@ -159,73 +159,79 @@ load_dataset <- function() {
 }
 
 
-get_features <- function(df, match_tables) {
+get_features <- function(df, match_tables)
+{
   df <- df %>%
-    select(
-      DealType, PropType,
-      district_code, city_code, parish_code,
-      area, gross_area, terrain_area,
-      rooms, bathrooms,
-      condition, energy_certificate,
-      construction_year
-    ) %>%
     mutate(
       DealType = as.factor(DealType),
       PropType = as.factor(PropType),
       district_code = as.factor(district_code),
       city_code = as.factor(city_code),
       parish_code = as.factor(parish_code),
-      condition = as.factor(condition),
-      energy_certificate = as.factor(energy_certificate)
-    ) %>%
-    left_join(match_tables$mean.enc.cat) %>%
-    left_join(match_tables$mean.area.enc.cat) %>%
-    left_join(match_tables$mean.enc.cat.district) %>%
-    left_join(match_tables$mean.enc.cat.city) %>%
-    left_join(match_tables$mean.enc.cat.parish) %>%
-    left_join(match_tables$mean.enc.cat.energy_certificate) %>%
-    left_join(match_tables$mean.enc.cat.condition) %>%
-    left_join(match_tables$count.enc.cat) %>%
-    left_join(match_tables$count.enc.district) %>%
-    left_join(match_tables$count.enc.city) %>%
-    left_join(match_tables$count.enc.parish) %>%
-    left_join(match_tables$count.enc.condition) %>%
-    mutate(
-      count.enc.cat = replace_na(count.enc.cat, 0),
-      count.enc.district = replace_na(count.enc.district, 0),
-      count.enc.city = replace_na(count.enc.city, 0),
-      count.enc.parish = replace_na(count.enc.parish, 0),
-      count.enc.condition = replace_na(count.enc.condition, 0)
-      ) %>%
-    select(
-      area, gross_area, terrain_area,
-      rooms, bathrooms,
-      construction_year,
-      mean.enc.cat,
-      mean.area.enc.cat,
-      mean.enc.cat.district,
-      mean.enc.cat.city,
-      mean.enc.cat.parish,
-      mean.enc.cat.energy_certificate,
-      mean.enc.cat.condition,
-      count.enc.cat,
-      count.enc.district,
-      count.enc.city,
-      count.enc.parish,
-      count.enc.condition
+      condition = as.factor(condition)
     )
   
-  filt <- is.na(df$mean.enc.cat.district)
-  df$mean.enc.cat.district[filt] <- df$mean.enc.cat[filt]
+  energy_certificate_ord <- c("G", "F", "E", "D", "C", "B-", "B", "A", "A+")
+  df$energy_certificate_ord <- match(df$energy_certificate, energy_certificate_ord)
   
-  filt <- is.na(df$mean.enc.cat.city)
-  df$mean.enc.cat.city[filt] <- df$mean.enc.cat.district[filt]
+  if(!("Fold" %in% names(df)))
+  {
+    df$Fold <- NA
+  }
   
-  filt <- is.na(df$mean.enc.cat.parish)
-  df$mean.enc.cat.parish[filt] <- df$mean.enc.cat.city[filt]
+  # ------------------ APPLYING ENCODINGS TO THE TRAINING SET -------------------
+  enc_cols <- names(match_tables$ALL)
+  df$oof <- TRUE
   
-  filt <- is.na(df$area)
-  df$area[filt] <- df$mean.area.enc.cat[filt]
+  for(k in 1:NFOLDS)
+  {
+    k_name <- paste('F', k, sep='')
+    mapping <- match_tables[[k_name]]
+    filt <- df$Fold == k
+    filt[is.na(filt)] <- FALSE
+    df$oof <- df$oof & !filt
+    
+    for(c in enc_cols)
+    {
+      curr_map <- mapping[[c]]
+      cols <- names(curr_map[, 1:(length(curr_map) - 1)])
+      df[filt, c] <- left_join(df[filt, cols], curr_map, by=cols)[[c]]
+    }
+  }
+  
+  # ------------------ APPLYING ENCODINGS TO NEW DATA -------------------
+  
+  for(c in enc_cols)
+  {
+    curr_map <- match_tables$ALL[[c]]
+    cols <- names(curr_map[, 1:(length(curr_map) - 1)])
+    df[df$oof, c] <- left_join(df[df$oof, cols], curr_map, by=cols)[[c]]
+  }
+  
+  # ------------- Replace NA's by zeros for Count Encodings -------------
+
+  for(c in c("count.enc.city", "count.enc.parish", "count.enc.geo"))
+  {
+    df[is.na(df[[c]]), c] <- 0
+  }
+  
+  # Replace NA's by zeros for hierarchical target Encoding
+  
+  filt <- is.na(df$target.enc.deal.parish)
+  df[filt, "target.enc.deal.parish"] <- df[filt, "target.enc.deal.city"]
+  
+  filt <- is.na(df$target.enc.deal.city)
+  df[filt, "target.enc.deal.city"] <- df[filt, "target.enc.deal.district"]
+  
+  feat_cols <- c(
+    "area", "gross_area", "terrain_area",
+    "rooms", "bathrooms",
+    "construction_year",
+    "energy_certificate_ord",
+    enc_cols
+  )
+  
+  df <- df[, feat_cols]
   
   return(df)
 }

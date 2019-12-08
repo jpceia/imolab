@@ -751,7 +751,10 @@ shinyServer(function(input, output, session) {
       
       area = input$net_area_val,
       gross_area = input$gross_area_val,
-      terrain_area = input$terrain_area_val
+      terrain_area = input$terrain_area_val,
+      
+      latitude = NA,
+      longitude = NA
     )
     
     row <- data.frame(lapply(row, function(x) ifelse(is.null(x), NA, x)))
@@ -798,8 +801,7 @@ shinyServer(function(input, output, session) {
     
     X <- get_features(df, match_tables)
     
-    #pred_price_m2 <- 10 ^ (predict(xgb$price_m2, xgb.DMatrix(data = as.matrix(X))))
-    pred_price <- 10 ^ (predict(xgb$price, xgb.DMatrix(data = as.matrix(X))))
+    pred_price <- exp(predict(reg$price, xgb.DMatrix(data = as.matrix(X))))
     
     res <- list()
     

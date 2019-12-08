@@ -162,92 +162,128 @@ df <- left_join(df, df_groups, by="group")
 dataset <- df
 
 
-# ------------------------------------- XGBOOST MODEL ------------------------------------
+# ------------------------------ MATCH TABLES (ENCODINGS) --------------------------------
 
 
 match_tables <- list()
 
-# cat
-# cat - district
-# cat - district - city
-# cat - district - city - parish
-# cat - energy_certificate
-# cat - condition
 
-match_tables$mean.enc.cat <- dataset %>%
-  group_by(DealType, PropType) %>%
-  summarize(mean.enc.cat = median(price_m2)) %>%
-  na.omit()
+target_enc_cols <- list(
+  deal.prop_type=c('DealType', 'PropType'),
+  deal.district=c('DealType', 'district_code'),
+  deal.city=c('DealType', 'city_code'),
+  deal.parish=c('DealType', 'parish_code'),
+  deal.condition=c('DealType', 'condition')
+)
 
-match_tables$mean.area.enc.cat <- dataset %>%
-  group_by(PropType) %>%
-  summarize(mean.area.enc.cat = median(area)) %>%
-  na.omit()
+area_enc_cols <- list(
+  prop_type='PropType',
+  condition='condition'
+)
 
-match_tables$count.enc.cat <- dataset %>%
-  group_by(PropType) %>%
-  summarize(count.enc.cat = n(price_m2)) %>%
-  na.omit()
-
-
-match_tables$mean.enc.cat.district <- dataset %>%
-  group_by(DealType, PropType, district_code) %>%
-  summarize(mean.enc.cat.district = median(price_m2)) %>%
-  na.omit()
-
-match_tables$count.enc.district <- dataset %>%
-  group_by(district_code) %>%
-  summarize(count.enc.district = n(price_m2)) %>%
-  na.omit()
+count_enc_cols <- list(
+  prop_type='PropType',
+  district='district_code',
+  city='city_code',
+  parish='parish_code',
+  condition='condition',
+  geo=c('latitude', 'longitude')
+)
 
 
-match_tables$mean.enc.cat.city <- dataset %>%
-  group_by(DealType, PropType, district_code, city_code) %>%
-  summarize(mean.enc.cat.city = median(price_m2)) %>%
-  na.omit()
 
-match_tables$count.enc.city <- dataset %>%
-  group_by(city_code) %>%
-  summarize(count.enc.city = n(price_m2)) %>%
-  na.omit()
+# ------------------ ENCODINGS W/ FOR EACH FOLD -------------------
+for(k in 1:NFOLDS)
+{
+  k_name <- paste('F', k, sep='')
+  match_tables[[k_name]] <- list()
+  
+  # encodings w/ targets
+  for(key in names(target_enc_cols))
+  {
+    cols <- target_enc_cols[[key]]
+    col_name <- paste('target.enc', key, sep='.')
+    match_tables[[k_name]][[col_name]] <- df %>%
+      filter(Fold != k) %>%
+      group_by_at(cols) %>%
+      summarize(!!col_name := median(price_m2)) %>%
+      na.omit()
+  }
+  
+  # encodings w/ median areas
+  for(key in names(area_enc_cols))
+  {
+    cols <- area_enc_cols[[key]]
+    col_name <- paste('area.enc', key, sep='.')
+    match_tables[[k_name]][[col_name]] <- df %>%
+      filter(Fold != k) %>%
+      group_by_at(cols) %>%
+      summarize(!!col_name := median(area)) %>%
+      na.omit()
+  }
+  
+  # encodings w/ counts
+  for(key in names(count_enc_cols))
+  {
+    cols <- count_enc_cols[[key]]
+    col_name <- paste('count.enc', key, sep='.')
+    match_tables[[k_name]][[col_name]] <- df %>%
+      filter(Fold != k) %>%
+      group_by_at(cols) %>%
+      summarise(!!col_name := n(price_m2)) %>%
+      na.omit()
+  }
+}
+
+# ------------------ ENCODINGS W/ THE WHOLE DATASET -------------------
+match_tables$ALL <- list()
+
+# encodings w/ targets
+for(key in names(target_enc_cols))
+{
+  cols <- target_enc_cols[[key]]
+  col_name <- paste('target.enc', key, sep='.')
+  match_tables$ALL[[col_name]] <- df %>%
+    group_by_at(cols) %>%
+    summarize(!!col_name := median(price_m2)) %>%
+    na.omit()
+}
+
+# encodings w/ areas
+for(key in names(area_enc_cols))
+{
+  cols <- area_enc_cols[[key]]
+  col_name <- paste('area.enc', key, sep='.')
+  match_tables$ALL[[col_name]] <- df %>%
+    group_by_at(cols) %>%
+    summarize(!!col_name := median(area)) %>%
+    na.omit()
+}
+
+# encodings w/ counts
+for(key in names(count_enc_cols))
+{
+  cols <- count_enc_cols[[key]]
+  col_name <- paste('count.enc', key, sep='.')
+  match_tables$ALL[[col_name]] <- df %>%
+    group_by_at(cols) %>%
+    summarise(!!col_name := n(price_m2)) %>%
+    na.omit()
+}
 
 
-match_tables$mean.enc.cat.parish <- dataset %>%
-  group_by(DealType, PropType, district_code, city_code, parish_code) %>%
-  summarize(mean.enc.cat.parish = median(price_m2)) %>%
-  na.omit()
-
-match_tables$count.enc.parish <- dataset %>%
-  group_by(parish_code) %>%
-  summarize(count.enc.parish = n(price_m2)) %>%
-  na.omit()
-
-
-match_tables$mean.enc.cat.energy_certificate <- dataset %>%
-  group_by(DealType, PropType, energy_certificate) %>%
-  summarize(mean.enc.cat.energy_certificate = median(price_m2)) %>%
-  na.omit()
-
-
-match_tables$mean.enc.cat.condition <- dataset %>%
-  group_by(DealType, PropType, condition) %>%
-  summarize(mean.enc.cat.condition = median(price_m2)) %>%
-  na.omit()
-
-match_tables$count.enc.condition <- dataset %>%
-  group_by(condition) %>%
-  summarize(count.enc.condition = n(price_m2)) %>%
-  na.omit()
+# ------------------------------------- XGBOOST MODEL ------------------------------------
 
 X <- get_features(dataset, match_tables)
 
+
 cat("Started XGBoost training\n")
 
-xgb <- list()
+reg <- list()
 
 fairobj <- function(preds, dtrain) {
   labels <- getinfo(dtrain, "label")
-  c <- 2 # the lower the "slower/smoother" the loss is. Cross-Validate.
+  c <- 2 # the higher the "slower/smoother" the loss is. Cross-Validate.
   x <-  preds-labels
   grad <- c * x / (abs(x) + c)
   hess <- c ^ 2 / (abs(x) + c) ^ 2
@@ -256,9 +292,9 @@ fairobj <- function(preds, dtrain) {
 
 
 
-y <- log10(dataset$price)
+y <- log(dataset$price)
 
-xgb$price <- xgb.train(
+reg$price <- xgb.train(
   data = xgb.DMatrix(data = as.matrix(X), label = y),
   objective = fairobj,
   eta = 0.08,
@@ -269,10 +305,11 @@ xgb$price <- xgb.train(
   verbose = 2
 )
 
+
 filt <- dataset$DealType == "Sale"
 filt <- filt & !(dataset$PropType %in% c("Farm", "Terrain"))
 X <- dataset[filt, ] %>% mutate(DealType = "Rent") %>% get_features(match_tables)
-rent_pred <- 10^(predict(xgb$price, xgb.DMatrix(data = as.matrix(X))))
+rent_pred <- 10^(predict(reg$price, xgb.DMatrix(data = as.matrix(X))))
 dataset[filt, "xYield"] <- 12 * rent_pred / dataset[filt, "price"]
 
 #filt <- dataset$DealType == "Rent"
