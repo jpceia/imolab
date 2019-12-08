@@ -583,9 +583,6 @@ shinyServer(function(input, output, session) {
     df <- filtered_dataset()
     df <- df[!is.na(df[[target_col]]), ]
     
-    q <- 0.05 #as.numeric(input$truncation) / 100.0
-    quantiles <- quantile(df[[target_col]], probs = c(q, 1 - q))
-    
     cat_col <- switch(
       rv$location_type,
       Country = "district",
@@ -596,6 +593,9 @@ shinyServer(function(input, output, session) {
     
     df <- df[!is.na(df[[paste(cat_col, "code", sep = "_")]]), ]
     df$cat_col <- stringr::str_wrap(df[[cat_col]], 25)
+    
+    q <- 0.05 #as.numeric(input$truncation) / 100.0
+    quantiles <- quantile(df[[target_col]], probs = c(q, 1 - q))
     
     df %>% ggplot(
       aes(
