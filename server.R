@@ -735,6 +735,12 @@ shinyServer(function(input, output, session) {
 
   valuationResult <- eventReactive(input$calculate_val, {
     
+    validate(
+      need(!is.empty(input$district_val), label = "District"),
+      need(!is.empty(input$city_val), label = "Municipality"),
+      need(!is.empty(input$net_area_val), label = "Area")
+    )
+    
     row <- list(
       DealType = input$deal_type_val,
       PropType = input$prop_type_val,
@@ -757,8 +763,15 @@ shinyServer(function(input, output, session) {
       longitude = NA
     )
     
-    row <- data.frame(lapply(row, function(x) ifelse(is.null(x), NA, x)))
-    row <- row %>% tbl_df() %>%
+    for(c in unlist(other_attrs, use.names = FALSE))
+    {
+      row[[c]] <- 1.0 * (c %in% input$attrs_val)
+    }
+    
+    row <- data.frame(
+      lapply(row, function(x) ifelse(is.null(x), NA, x)),
+      check.names = FALSE) %>%
+      tbl_df() %>%
       mutate(
         area = as.double(area),
         gross_area = as.double(gross_area),
@@ -767,9 +780,8 @@ shinyServer(function(input, output, session) {
     
     ### DROPDOWN
     
-    df <- row
-    
     drop_cols <- c(
+      input$attrs_val,
       "bathrooms",
       "rooms",
       "construction_year",
@@ -783,6 +795,7 @@ shinyServer(function(input, output, session) {
       "district_code"
     )
     
+    df <- row
     drop_cols_final <- NULL
     for(c in drop_cols)
     {

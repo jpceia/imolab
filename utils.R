@@ -108,8 +108,8 @@ hc_hist <- function(df, col_name, xunits, xlabel = "", truncation = 1)
   }
 
 
-load_dataset <- function() {
-  
+load_dataset <- function()
+{
   fname <- "imovirtual_20191101.csv"
   col_types <- c(
     DealType = "f",
@@ -125,6 +125,13 @@ load_dataset <- function() {
     rooms = "d",
     bathrooms = "d",
     condition = "f",
+    elevator = "d",
+    balcony = "d",
+    view = "d",
+    garden = "d",
+    pool = "d",
+    'garage (box)' = "d",
+    parking = "d",
     latitude = "d",
     longitude = "d",
     price = "d"
@@ -228,6 +235,7 @@ get_features <- function(df, match_tables)
     "rooms", "bathrooms",
     "construction_year",
     "energy_certificate_ord",
+    unlist(other_attrs, use.names=FALSE),
     enc_cols
   )
   

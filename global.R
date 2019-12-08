@@ -56,6 +56,16 @@ energy_certificate_levels <- list(
   `A+` = "aplus"
 )
 
+other_attrs <- list(
+  Elevator = 'elevator',
+  Balcony = 'balcony',
+  View = 'view',
+  Garden = 'garden',
+  'Swimming Pool' = 'pool',
+  Garage = 'garage (box)',
+  Parking = 'parking'
+)
+
 bathrooms_levels <- 1:4
 
 rooms_levels <- 0:10
@@ -309,7 +319,7 @@ reg$price <- xgb.train(
 filt <- dataset$DealType == "Sale"
 filt <- filt & !(dataset$PropType %in% c("Farm", "Terrain"))
 X <- dataset[filt, ] %>% mutate(DealType = "Rent") %>% get_features(match_tables)
-rent_pred <- 10^(predict(reg$price, xgb.DMatrix(data = as.matrix(X))))
+rent_pred <- exp(predict(reg$price, xgb.DMatrix(data = as.matrix(X))))
 dataset[filt, "xYield"] <- 12 * rent_pred / dataset[filt, "price"]
 
 #filt <- dataset$DealType == "Rent"

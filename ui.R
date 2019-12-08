@@ -218,7 +218,8 @@ body <- dashboardBody(
           collapsed = FALSE,
           fluidRow(
             column(4,
-                   selectizeInput("prop_type_val", NULL, prop_types, selected = "Apartment"),
+                   selectizeInput("prop_type_val", NULL,
+                                  prop_types, selected = "Apartment"),
                    radioButtons("deal_type_val", NULL,
                                 choices = c("Sale", "Rent"),
                                 inline = TRUE),
@@ -227,7 +228,7 @@ body <- dashboardBody(
                                choices = names(energy_certificate_levels)),
                    selectInput("condition_val",
                                "Condition",
-                               selected = NULL,
+                               selected = "Usado",
                                choices = names(condition_levels)),
                    numericInput("construction_year_val",
                                 "Construction Year", NULL, min=0, max=2020)
@@ -240,6 +241,9 @@ body <- dashboardBody(
                    numericInput("bathrooms_val",          "#Bathrooms",   NULL, min=0, max=4, step=1)
             ),
             column(4,
+                   selectizeInput("attrs_val", "Other Attributes",
+                                  other_attrs, multiple = TRUE
+                   ),
                    selectizeInput("district_val", "Location", district_list,#,  district
                                   size = 3,
                                   options = list(
@@ -256,7 +260,10 @@ body <- dashboardBody(
                                   options = list(
                                     placeholder = 'Parish',
                                     onInitialize = I('function() { this.setValue(""); }')
-                                  ))
+                                  )),
+                   actionButton("coordinates_val",
+                                "Select coordinates",
+                                icon=icon("globe"))
             )
           ),
           fluidRow(
