@@ -513,9 +513,9 @@ shinyServer(function(input, output, session) {
 
     df_map %>%
       leaflet(options = leafletOptions(
-        zoomControl = FALSE,
+        #zoomControl = FALSE,
+        #dragging = FALSE,
         attributionControl = FALSE,
-        dragging = FALSE,
         scrollWheelZoom = FALSE
       )) %>%
       addTiles() %>%
@@ -557,9 +557,10 @@ shinyServer(function(input, output, session) {
 
     df_map %>%
       leaflet(options = leafletOptions(
-        zoomControl = FALSE,
-        attributionControl = FALSE
-        #dragging = FALSE
+        #zoomControl = FALSE,
+        #dragging = FALSE,
+        attributionControl = FALSE,
+        scrollWheelZoom = TRUE
       )) %>%
       addTiles() %>%
       addPolygons(
