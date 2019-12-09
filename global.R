@@ -28,7 +28,9 @@ source("utils.R")
 
 SPINNER_TYPE <- 8
 MIN_DATAPOINTS <- 5
+MIN_DATAPOINTS_MSG <- "Filter too narrow: not enough datapoints"
 NFOLDS <- 5
+
 
 
 prop_types <- c(

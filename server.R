@@ -152,7 +152,7 @@ shinyServer(function(input, output, session) {
       stop("Invalid data")
     )
     
-    validate(need(nrow(df) >= MIN_DATAPOINTS, "Not enough datapoints"))
+    validate(need(nrow(df) >= MIN_DATAPOINTS, MIN_DATAPOINTS_MSG))
     
     return(df)
   })
@@ -163,7 +163,7 @@ shinyServer(function(input, output, session) {
     df <- filtered_dataset_noprop() %>%
         filter(PropType %in% input$prop_type)
     
-    validate(need(nrow(df) >= MIN_DATAPOINTS, "Not enough datapoints"))
+    validate(need(nrow(df) >= MIN_DATAPOINTS, MIN_DATAPOINTS_MSG))
     
     return(df)
   })
@@ -226,7 +226,7 @@ shinyServer(function(input, output, session) {
     
     validate(need(
       nrow(df) >= MIN_DATAPOINTS,
-      "Filtering too narrow: not enough datapoints"
+      MIN_DATAPOINTS_MSG
     ))
     
     q <- 0.05 #as.numeric(input$truncation) / 100.0
@@ -259,7 +259,7 @@ shinyServer(function(input, output, session) {
     
     validate(need(
       nrow(df) >= MIN_DATAPOINTS,
-      "Filtering too narrow: not enough datapoints"
+      MIN_DATAPOINTS_MSG
     ))
     
     if (is.numeric(df[[cat_col]]))
@@ -284,7 +284,7 @@ shinyServer(function(input, output, session) {
     
     validate(need(
       nrow(df) >= MIN_DATAPOINTS,
-      "Filtering too narrow: not enough datapoints"
+      MIN_DATAPOINTS_MSG
     ))
     
     target <- rlang::sym(target_col)
@@ -345,7 +345,7 @@ shinyServer(function(input, output, session) {
     
     validate(need(
       nrow(df) >= MIN_DATAPOINTS,
-      "Filtering too narrow: not enough datapoints"
+      MIN_DATAPOINTS_MSG
     ))
     
     q <- 0.05 #as.numeric(input$truncation) / 100.0
@@ -372,7 +372,7 @@ shinyServer(function(input, output, session) {
     
     validate(need(
       nrow(df) >= MIN_DATAPOINTS,
-      "Filtering too narrow: not enough datapoints"
+      MIN_DATAPOINTS_MSG
     ))
     
     ggplot(df, aes(x = PropType)) +
@@ -391,7 +391,7 @@ shinyServer(function(input, output, session) {
     
     validate(need(
       nrow(df) >= MIN_DATAPOINTS,
-      "Filtering too narrow: not enough datapoints"
+      MIN_DATAPOINTS_MSG
     ))
     
     target <- rlang::sym(target_col)

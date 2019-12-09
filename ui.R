@@ -261,9 +261,14 @@ body <- dashboardBody(
                                     placeholder = 'Parish',
                                     onInitialize = I('function() { this.setValue(""); }')
                                   )),
-                   actionButton("coordinates_val",
+                   actionButton("coordinates_button_val",
                                 "Select coordinates",
-                                icon=icon("globe"))
+                                icon=icon("globe")),
+                   
+                   bsModal("coordinates_map_val", "Property Location",
+                           "coordinates_button_val",
+                           leafletOutput("coordinates_map_val"),
+                           size = "large")
             )
           ),
           fluidRow(
