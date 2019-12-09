@@ -707,6 +707,8 @@ shinyServer(function(input, output, session) {
   #                                     VALUATION SECTION
   # ----------------------------------------------------------------------------------------
   
+  
+  # updates the city list, after selecting a new district
   observe({
     city_list <- c(NULL)
     df <- city_meta %>% filter(code1 == input$district_val)
@@ -721,6 +723,7 @@ shinyServer(function(input, output, session) {
   })
   
   
+  # updates the parish list, after selecting a new city
   observe({
     parish_list <- c(NULL)
     df <- parish_meta %>% filter(code1 == input$city_val)
@@ -732,10 +735,32 @@ shinyServer(function(input, output, session) {
     
     updateSelectInput(session, "parish_val", choices = parish_list)
   })
-
-
-  valuationResult <- eventReactive(input$calculate_val, {
+  
+  
+  # map of the parish to select the coordinates
+  output$coordinates_map_val <- renderLeaflet({
     
+    parish_code <- input$parish_val
+    validate(need(!is.empty(parish_code), label = "Parish"))
+    city_map_sh %>%
+      filter(CCA_3 == parish_code) %>%
+      leaflet(options = leafletOptions(
+        zoomControl = TRUE,
+        attributionControl = FALSE
+        # dragging = FALSE
+      )) %>%
+      addTiles() %>%
+      addPolygons(
+        color = "#444444", weight = 1, smoothFactor = 0.5,
+        opacity = 1.0,
+        fillOpacity = 0.15,
+        fillColor = "cornflowerblue"
+      )
+  })
+  
+  
+  # performs the actual valuation
+  valuationResult <- eventReactive(input$calculate_val, {
     validate(
       need(!is.empty(input$district_val), label = "District"),
       need(!is.empty(input$city_val), label = "Municipality"),
@@ -833,6 +858,8 @@ shinyServer(function(input, output, session) {
     return(res)
   }, ignoreInit = TRUE)
   
+  
+  # formats the impact table
   output$valuationResultTable <- renderFormattable({
     valuationResult()$breakdown %>%
       formattable(
@@ -847,6 +874,7 @@ shinyServer(function(input, output, session) {
       )
   })
   
+  # renderUI
   output$valuationOutput <- renderUI({
     res <- valuationResult()
 
