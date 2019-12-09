@@ -6,6 +6,7 @@
 library(shiny)
 library(shinycssloaders)
 library(shinydashboard)
+library(shinyBS)
 library(tidyverse)
 library(dplyr)
 library(highcharter)
@@ -20,6 +21,7 @@ require(DT)
 require(sf)
 
 source("utils.R")
+source("mod_valuation.R")
 
 
 # ----------------------------------------------------------------------------------------
@@ -310,7 +312,7 @@ reg$price <- xgb.train(
   data = xgb.DMatrix(data = as.matrix(X), label = y),
   objective = fairobj,
   eta = 0.08,
-  max.depth = 18,
+  max.depth = 6,
   nround = 100,
   seed = 0,
   nthread = 4,

@@ -20,7 +20,7 @@ sideBar <- dashboardSidebar(
                          tabName = "histogramsTab")
     ),
     menuItem("Valuation", icon = icon("brain"),
-             tabName = "valuationTab",
+             tabName = NS("mod_valuation")("valuationTab"),
              badgeLabel = "Beta",
              badgeColor = "blue"),
     menuItem("Data Sources", icon = icon("table"),
@@ -206,86 +206,7 @@ body <- dashboardBody(
       #tags$h3("Imovirtual database"),
       rpivotTableOutput("pivotTable") %>% withSpinner(type=SPINNER_TYPE)
     ),
-    tabItem(
-      tabName = "valuationTab",
-      tags$h2(tags$strong('Valuation')),
-      fluidRow(
-        box(
-          title = tags$strong("Inputs"),
-          solidHeader = TRUE,
-          status = "primary",
-          collapsible = TRUE,
-          collapsed = FALSE,
-          fluidRow(
-            column(4,
-                   selectizeInput("prop_type_val", NULL,
-                                  prop_types, selected = "Apartment"),
-                   radioButtons("deal_type_val", NULL,
-                                choices = c("Sale", "Rent"),
-                                inline = TRUE),
-                   selectInput("energy_certificate_val",
-                               "Energy Certificate", NULL,
-                               choices = names(energy_certificate_levels)),
-                   selectInput("condition_val",
-                               "Condition",
-                               selected = "Usado",
-                               choices = names(condition_levels)),
-                   numericInput("construction_year_val",
-                                "Construction Year", NULL, min=0, max=2020)
-            ),
-            column(4,
-                   numericInput("net_area_val",           "Net Area",      100, min=0, step=1),
-                   numericInput("gross_area_val",         "Gross Area",   NULL, min=0, step=1),
-                   numericInput("terrain_area_val",       "Terrain Area", NULL, min=0, step=1),
-                   numericInput("rooms_val",              "#Rooms",       NULL, min=0, max=10, step=1),
-                   numericInput("bathrooms_val",          "#Bathrooms",   NULL, min=0, max=4, step=1)
-            ),
-            column(4,
-                   selectizeInput("attrs_val", "Other Attributes",
-                                  other_attrs, multiple = TRUE
-                   ),
-                   selectizeInput("district_val", "Location", district_list,#,  district
-                                  size = 3,
-                                  options = list(
-                                    placeholder = 'District',
-                                    onInitialize = I('function() { this.setValue(""); }')
-                                  )),
-                   selectizeInput("city_val", NULL, c(" "),
-                                  options = list(
-                                    placeholder = 'Municipality',
-                                    onInitialize = I('function() { this.setValue(""); }')
-                                  )),
-                   selectizeInput("parish_val", NULL, c(" "),
-                                  multiple = FALSE,
-                                  options = list(
-                                    placeholder = 'Parish',
-                                    onInitialize = I('function() { this.setValue(""); }')
-                                  )),
-                   actionButton("coordinates_button_val",
-                                "Select coordinates",
-                                icon=icon("globe")),
-                   
-                   bsModal("coordinates_map_val", "Property Location",
-                           "coordinates_button_val",
-                           leafletOutput("coordinates_map_val"),
-                           size = "large")
-            )
-          ),
-          fluidRow(
-            column(12,
-                   actionButton(
-                     "calculate_val",
-                     "Simulate",
-                     icon = icon("random"),
-                     style = "color: #ffffff; background-color: #474949"
-                   )
-            )
-          ),
-          width = 12
-        )
-      ),
-      fluidRow(htmlOutput("valuationOutput"))
-    )
+    ui_valuation("mod_valuation")
   )
 )
 
