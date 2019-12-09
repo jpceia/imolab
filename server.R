@@ -600,20 +600,20 @@ shinyServer(function(input, output, session) {
     df %>% ggplot(
       aes(
         x = fct_reorder(cat_col, !!target, .fun = median),
-        y = !!target
-      )) +
-      stat_boxplot(
-        geom = "errorbar",
-        width = 0.2
+        y = !!target)
+      ) +
+      geom_errorbar(
+        stat = "summary",
+        fun.ymin = ~quantile(., prob = 0.1,   na.rm=True),
+        fun.ymin = ~quantile(., prob = 0.9, na.rm=True),
+        width = 0.3
       ) +
       geom_boxplot(
         outlier.shape = NA,
-        fill = "#8DBEDA"
+        fill = "#8DBEDA",
       ) +
-      #scale_x_discrete(drop = FALSE) +
       scale_y_continuous(trans = 'log10', limits = quantiles) +
-      theme(axis.title.y=element_blank(), #axis.text.y=element_blank(),
-            axis.ticks.y=element_blank()) +
+      theme(axis.title.y=element_blank()) +
       theme(legend.position = "none") +
       coord_flip()
   })
