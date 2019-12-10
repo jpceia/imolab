@@ -416,6 +416,54 @@ shinyServer(function(input, output, session) {
         ))
   })
   
+  # ----------------------------------------------------------------------------------------
+  #                               CORRELATION EXPLORER SECTION
+  # ----------------------------------------------------------------------------------------
+  
+  output$CorrelationTextTargetName <- renderText({
+    tname1 <- target_name(input$target1)
+    tname2 <- target_name(input$target2)
+    paste(tname1, "vs", tname2, "by", input$agg_level)
+  })
+  
+  output$CorrelationPlot <- renderHighchart({
+    agg_level <- input$agg_level
+    target1 <- rlang::sym(input$target1)
+    target2 <- rlang::sym(input$target2)
+    
+    df_group <- switch(
+      agg_level,
+      District = {
+        need(rv$location_type == "Country", "")
+        filtered_dataset() %>% group_by(district, PropType)
+      },
+      Municipality = {
+        need(rv$location_type %in% c("Country", "District"), "")
+        filtered_dataset() %>% group_by(city, PropType)
+      },
+      Parish = {
+        need(rv$location_type %in% c("Country", "District", "City"), "")
+        filtered_dataset() %>% group_by(parish, PropType)
+      },
+      'Statistical Section' = {
+        need(rv$location_type %in% c("Country", "District", "City", "Parish"), "")
+      }
+    )
+    
+    df_group %>% summarize(
+      count = n(price),
+      Target1 = median(!!target1),
+      Target2 = median(!!target2)
+    ) %>%
+      filter(count > MIN_DATAPOINTS) %>%
+      hchart("scatter",
+             hcaes(x = Target2,
+                   y = Target1,
+                   group = PropType
+             )
+      )
+  })
+  
   
   # ----------------------------------------------------------------------------------------
   #                                     TERRITORY SECTION

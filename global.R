@@ -83,6 +83,14 @@ condition_levels <- list(
   Novo = "novo"
 )
 
+target_list <- list(
+  'Price/m2' = 'price_m2',
+  'Area' = 'area',
+  'xYield' = 'xYield',
+  'Construction Year' = 'construction_year'
+)
+
+
 decades <- c(-Inf, as.integer(seq(1900, 2020, 10)))
 decades_labels <- as.character(decades)
 decades_labels[1] <- "< 1900"

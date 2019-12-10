@@ -16,6 +16,8 @@ sideBar <- dashboardSidebar(
                          tabName = "propertyTypeTab"),
              menuSubItem("Categories",
                          tabName = "categoriesTab"),
+             menuSubItem("Correlations",
+                         tabName = "correlationTab"),
              menuSubItem("Histograms",
                          tabName = "histogramsTab")
     ),
@@ -28,15 +30,15 @@ sideBar <- dashboardSidebar(
              menuSubItem("Pivots", tabName = "pivotTableTab")),
     hr(),
     conditionalPanel(
-      condition = "['histogramsTab', 'propertyTypeTab', 'categoriesTab', 'territoryTab'].indexOf(input.sidebarmenu) >= 0",
+      condition = "['histogramsTab', 'propertyTypeTab', 'categoriesTab', 'correlationTab', 'territoryTab'].indexOf(input.sidebarmenu) >= 0",
       radioButtons("deal_type", NULL, c("Sale", "Rent"), inline = TRUE)
     ),
     conditionalPanel(
-      condition = "['histogramsTab', 'categoriesTab', 'territoryTab'].indexOf(input.sidebarmenu) >= 0",
+      condition = "['histogramsTab', 'categoriesTab', 'correlationTab', 'territoryTab'].indexOf(input.sidebarmenu) >= 0",
       selectizeInput("prop_type", NULL, prop_types, selected = "Apartment", multiple = TRUE),
     ),
     conditionalPanel(
-      condition = "['histogramsTab', 'propertyTypeTab', 'categoriesTab', 'territoryTab'].indexOf(input.sidebarmenu) >= 0",
+      condition = "['histogramsTab', 'propertyTypeTab', 'categoriesTab', 'correlationTab', 'territoryTab'].indexOf(input.sidebarmenu) >= 0",
       selectizeInput("district", "Location", district_list,
                      size = 3,
                      options = list(
@@ -75,13 +77,7 @@ sideBar <- dashboardSidebar(
     conditionalPanel(
       condition = "['categoriesTab', 'propertyTypeTab', 'territoryTab'].indexOf(input.sidebarmenu) >= 0",
       selectizeInput("target_col", "Target",
-                     list(
-                       'Price/m2' = 'price_m2',
-                       'Area' = 'area',
-                       'xYield' = 'xYield',
-                       'Construction Year' = 'construction_year'
-                     ),
-                     selected = "Price/m2")
+                     target_list, selected = "Price/m2")
     )
   )
 )
@@ -186,6 +182,28 @@ body <- dashboardBody(
       tags$h2(tags$strong("Territory")),
       tags$h5(tags$strong(textOutput("TerritoryTextTargetName")), style='color:grey'),
       uiOutput("territory_tab")
+    ),
+    tabItem(
+      tabName = "correlationTab",
+      tags$h2(tags$strong("Correlation Explorer")),
+      tags$h5(tags$strong(textOutput("CorrelationTextTargetName")), style='color:grey'),
+      fluidRow(
+        box(
+          fluidRow(
+            column(4,
+                   selectizeInput("target1", "Target1",
+                                  target_list, selected = "Price/m2"),
+                   selectizeInput("target2", "Target2",
+                                  target_list, selected = "Area"),
+                   selectizeInput("agg_level", "Aggregation Level",
+                                  c("District", "Municipality", "Parish", "Statistical Section"),
+                                  selected = "District")
+            ),
+            column(8, highchartOutput("CorrelationPlot") %>% withSpinner(type=SPINNER_TYPE))
+          ),
+          width = 12
+        )
+      )
     ),
     tabItem(
       tabName = "rawdataTab",
