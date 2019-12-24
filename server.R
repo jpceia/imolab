@@ -421,47 +421,70 @@ shinyServer(function(input, output, session) {
   # ----------------------------------------------------------------------------------------
   
   output$CorrelationTextTargetName <- renderText({
-    tname1 <- target_name(input$target1)
-    tname2 <- target_name(input$target2)
-    paste(tname1, "vs", tname2, "by", input$agg_level)
+    target1 <- target_name(input$target1)
+    target2 <- target_name(input$target2)
+    paste(target1, "vs", target2, ", by", input$agg_level)
   })
   
   output$CorrelationPlot <- renderHighchart({
     agg_level <- input$agg_level
-    target1 <- rlang::sym(input$target1)
-    target2 <- rlang::sym(input$target2)
+    target1 <- input$target1
+    target2 <- input$target2
     
-    df_group <- switch(
+    agg_col <- switch(
       agg_level,
       District = {
         need(rv$location_type == "Country", "")
-        filtered_dataset() %>% group_by(district, PropType)
+        "district"
       },
       Municipality = {
         need(rv$location_type %in% c("Country", "District"), "")
-        filtered_dataset() %>% group_by(city, PropType)
+        "city"
       },
       Parish = {
         need(rv$location_type %in% c("Country", "District", "City"), "")
-        filtered_dataset() %>% group_by(parish, PropType)
+        "parish"
       },
-      'Statistical Section' = {
-        need(rv$location_type %in% c("Country", "District", "City", "Parish"), "")
-      }
+      validate(FALSE, "")
     )
     
-    df_group %>% summarize(
-      count = n(price),
-      Target1 = median(!!target1),
-      Target2 = median(!!target2)
-    ) %>%
-      filter(count > MIN_DATAPOINTS) %>%
-      hchart("scatter",
-             hcaes(x = Target2,
-                   y = Target1,
-                   group = PropType
-             )
-      )
+    if(input$agg_prop_type)
+    {
+      js <- "
+        function () {
+          return '  <strong>' + this.point.%s + '</strong><br>' + 
+                 '<strong>' + '%s:</strong> ' + this.point.x + '<br>' + 
+                 '<strong>' + '%s:</strong> ' + this.point.y; }"
+      df <- filtered_dataset() %>%
+        group_by_at(vars(one_of(agg_col))) %>%
+        summarize(
+          count = n(price),
+          !!target1 := median(!!rlang::sym(target1)),
+          !!target2 := median(!!rlang::sym(target2))
+        ) %>%
+        filter(count >= MIN_DATAPOINTS) %>%
+        hchart("scatter", hcaes(!!target1, !!target2)) %>%
+        hc_tooltip(formatter=JS(sprintf(js, agg_col, target1, target2)))
+    }
+    else
+    {
+      js <- "
+        function () {
+          return '  <strong>' + this.point.%s + '</strong>' +
+                 '<span style=\"color:' + this.series.color + '\">\u25CF</span> ' + this.series.name + '<br><br>' + 
+                 '<strong>' + '%s:</strong> ' + this.point.x + '<br>' + 
+                 '<strong>' + '%s:</strong> ' + this.point.y; }"
+      filtered_dataset() %>%
+        group_by_at(vars(one_of(c(agg_col, "PropType")))) %>%
+        summarize(
+          count = n(price),
+          !!target1 := median(!!rlang::sym(target1)),
+          !!target2 := median(!!rlang::sym(target2))
+        ) %>%
+        filter(count >= MIN_DATAPOINTS) %>%
+        hchart("scatter", hcaes(!!target1, !!target2, group=PropType)) %>%
+        hc_tooltip(formatter=JS(sprintf(js, agg_col, target1, target2)))
+    }
   })
   
   
