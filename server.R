@@ -778,6 +778,13 @@ shinyServer(function(input, output, session) {
   #                                     VALUATION SECTION
   # ----------------------------------------------------------------------------------------
   
-  callModule(server_valuation, "mod_valuation")
+  #callModule(server_valuation, "mod_valuation")
+  
+
+  # ----------------------------------------------------------------------------------------
+  #                                      SEARCH SECTION
+  # ----------------------------------------------------------------------------------------
+  
+  #callModule(server_search, "mod_search")
  
 })

@@ -9,6 +9,12 @@ sideBar <- dashboardSidebar(
   sidebarMenu(
     id = "sidebarmenu",
     # menuItem("Home", tabName = "homeTab"),
+    menuItem("Investment Search", icon = icon("search-dollar"),
+             tabName = NS("mod_search")("investmentSearchTab")),
+    menuItem("Valuation", icon = icon("brain"),
+             tabName = NS("mod_valuation")("valuationTab")),
+             #badgeLabel = "Beta",
+             #badgeColor = "blue"),
     menuItem("Exploration", icon = icon("poll"),
              menuSubItem("Territory",
                          tabName = "territoryTab"),
@@ -21,10 +27,6 @@ sideBar <- dashboardSidebar(
              menuSubItem("Histograms",
                          tabName = "histogramsTab")
     ),
-    menuItem("Valuation", icon = icon("brain"),
-             tabName = NS("mod_valuation")("valuationTab"),
-             badgeLabel = "Beta",
-             badgeColor = "blue"),
     menuItem("Data Sources", icon = icon("table"),
              menuSubItem("Raw Data", tabName = "rawdataTab"),
              menuSubItem("Pivots", tabName = "pivotTableTab")),
@@ -35,7 +37,7 @@ sideBar <- dashboardSidebar(
     ),
     conditionalPanel(
       condition = "['histogramsTab', 'categoriesTab', 'correlationTab', 'territoryTab'].indexOf(input.sidebarmenu) >= 0",
-      selectizeInput("prop_type", NULL, prop_types, selected = "Apartment", multiple = TRUE),
+      selectizeInput("prop_type", NULL, prop_types, selected = "Apartment", multiple = TRUE)
     ),
     conditionalPanel(
       condition = "['histogramsTab', 'propertyTypeTab', 'categoriesTab', 'correlationTab', 'territoryTab'].indexOf(input.sidebarmenu) >= 0",
@@ -225,7 +227,8 @@ body <- dashboardBody(
       #tags$h3("Imovirtual database"),
       rpivotTableOutput("pivotTable") %>% withSpinner(type=SPINNER_TYPE)
     ),
-    ui_valuation("mod_valuation")
+    ui_valuation("mod_valuation"),
+    ui_search("mod_search")
   )
 )
 
@@ -239,7 +242,7 @@ body <- dashboardBody(
 shinyUI(
   dashboardPage(
     #skin = "blue",
-    dashboardHeader(title = "IMO Lab"),
+    dashboardHeader(title = "rentalgo"),
     sideBar,
     body
   )
