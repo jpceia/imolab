@@ -320,7 +320,7 @@ reg$price <- xgb.train(
   data = xgb.DMatrix(data = as.matrix(X), label = y),
   objective = fairobj,
   eta = 0.08,
-  max.depth = 6,
+  max.depth = 18,
   nround = 100,
   seed = 0,
   nthread = 4,
