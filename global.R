@@ -135,32 +135,32 @@ names(district_list) <- district_meta$Designacao
 # ------------------------------------ TERRITORY MAPS ------------------------------------
 
 
-country_map_sh <- sf::read_sf(file.path("data", "geo", "distritos-shapefile", "distritos.shp"))
-country_map_sh <- rmapshaper::ms_simplify(country_map_sh ) # polygon simplification to speedup rendering
-country_map_sh  <- country_map_sh[country_map_sh$TYPE_1 == "Distrito", ]
-country_map_sh$CCA_1 <- as.factor(as.integer(country_map_sh$CCA_1))
-country_map_sh$id <- country_map_sh$CCA_1
-country_map_sh$name <- country_map_sh$NAME_1
+district_sh <- sf::read_sf(file.path("data", "geo", "distritos-shapefile", "distritos.shp"))
+district_sh <- rmapshaper::ms_simplify(district_sh ) # polygon simplification to speedup rendering
+district_sh  <- district_sh[district_sh$TYPE_1 == "Distrito", ]
+district_sh$CCA_1 <- as.factor(as.integer(district_sh$CCA_1))
+district_sh$id <- district_sh$CCA_1
+district_sh$name <- district_sh$NAME_1
 
 
-district_map_sh <- sf::read_sf(file.path("data", "geo", "concelhos-shapefile", "concelhos.shp"))
-district_map_sh <- rmapshaper::ms_simplify(district_map_sh)
-#district_map_sh <- district_map_sh[district_map_sh$ID_1 %in% country_map_sh$ID_1, ]
-district_map_sh$CCA_1 <- as.factor(as.integer(stringr::str_sub(district_map_sh$CCA_2, 1, -3)))
-district_map_sh$CCA_2 <- as.factor(as.integer(district_map_sh$CCA_2))
-district_map_sh$id <- district_map_sh$CCA_2
-district_map_sh$name <- district_map_sh$NAME_2
+municipality_sh <- sf::read_sf(file.path("data", "geo", "concelhos-shapefile", "concelhos.shp"))
+municipality_sh <- rmapshaper::ms_simplify(municipality_sh)
+#municipality_sh <- municipality_sh[municipality_sh$ID_1 %in% district_sh$ID_1, ]
+municipality_sh$CCA_1 <- as.factor(as.integer(stringr::str_sub(municipality_sh$CCA_2, 1, -3)))
+municipality_sh$CCA_2 <- as.factor(as.integer(municipality_sh$CCA_2))
+municipality_sh$id <- municipality_sh$CCA_2
+municipality_sh$name <- municipality_sh$NAME_2
 
 ## LOADING PARISH DATA
 # https://dados.gov.pt/s/resources/freguesias-de-portugal/20181112-195834/cont-aad-caop2017.zip
-city_map_sh <- sf::read_sf(file.path("data", "geo", "cont-aad-caop2017", "Cont_AAD_CAOP2017.shp"))
-city_map_sh <- rmapshaper::ms_simplify(city_map_sh)
-city_map_sh$CCA_1 <- as.factor(as.integer(stringr::str_sub(city_map_sh $Dicofre, 1, -5)))
-city_map_sh$CCA_2 <- as.factor(as.integer(stringr::str_sub(city_map_sh $Dicofre, 1, -3)))
-city_map_sh$CCA_3 <- as.factor(as.integer(city_map_sh $Dicofre, 1, -3))
-city_map_sh$id <- city_map_sh$CCA_3
-city_map_sh$name <- city_map_sh$Freguesia
-city_map_sh <- sf::st_transform(city_map_sh, "+init=epsg:4326")
+parish_sh <- sf::read_sf(file.path("data", "geo", "cont-aad-caop2017", "Cont_AAD_CAOP2017.shp"))
+parish_sh <- rmapshaper::ms_simplify(parish_sh)
+parish_sh$CCA_1 <- as.factor(as.integer(stringr::str_sub(parish_sh $Dicofre, 1, -5)))
+parish_sh$CCA_2 <- as.factor(as.integer(stringr::str_sub(parish_sh $Dicofre, 1, -3)))
+parish_sh$CCA_3 <- as.factor(as.integer(parish_sh $Dicofre, 1, -3))
+parish_sh$id <- parish_sh$CCA_3
+parish_sh$name <- parish_sh$Freguesia
+parish_sh <- sf::st_transform(parish_sh, "+init=epsg:4326")
 
 
 # ------------------------------- Loading the main Dataset -------------------------------

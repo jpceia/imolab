@@ -120,7 +120,7 @@ server_valuation <- function(input, output, session) {
     
     parish_code <- input$parish
     validate(need(!is.empty(parish_code), label = "Parish"))
-    city_map_sh %>%
+    parish_sh %>%
       filter(CCA_3 == parish_code) %>%
       leaflet(options = leafletOptions(
         zoomControl = TRUE,
