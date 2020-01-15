@@ -47,17 +47,31 @@ prop_types <- c(
   'Farm'
 )
 
-energy_certificate_levels <- list(
-  Isento = "isento",
-  G = "g",
-  `F` = "f",
-  E = "e",
-  D = "d",
-  C = "c",
-  `B-` = "bminus",
-  B = "b",
-  A = "a",
-  `A+` = "aplus"
+prop_types_ids <- c(1, 2, 4, 5, 6, 7, 8, 9, 11)
+
+
+condition_levels <- c(
+  "Ruina",
+  "Para Recuperar",
+  "Usado",
+  "Em Construcao",
+  "Renovado",
+  "Novo",
+  "Projecto"
+)
+
+condition_ids <- c(
+  0, 1, 2, 5, 3, 4, 6
+)
+
+
+energy_certificate_levels <- c(
+  "Isento",
+  "G", "F", "E", "D", "C", "B-", "B", "A", "A+"
+)
+
+energy_certificate_ids <- c(
+  0, 1, 2, 3, 4, 5, 6, 7, 8, 9
 )
 
 other_attrs <- list(
@@ -74,15 +88,6 @@ bathrooms_levels <- 1:4
 
 rooms_levels <- 0:10
 
-condition_levels <- list(
-  Ruina = "ruina",
-  `Para recuperar` = "para_recuperar",
-  Usado = "usado",
-  `Em construcao` = "em_construcao",
-  Renovado = "renovado", 
-  Novo = "novo"
-)
-
 target_list <- list(
   'Price/m2' = 'price_m2',
   'Area' = 'area',
@@ -97,48 +102,13 @@ decades_labels[1] <- "< 1900"
 decades_labels <- decades_labels[1: length(decades_labels) - 1]
 
 
-# ------------------------------------- LOCATION DATA ------------------------------------
-
-district_meta <- read_csv(
-    file.path("data", "geo", "district_meta.csv"),
-    col_types = c(Designacao="f"),
-    locale = readr::locale(encoding = "latin1")
-  ) %>%
-  filter(Continente) %>%
-  select(Dicofre, Designacao)
-
-
-city_meta <- read_csv(
-    file.path("data", "geo", "concelho_meta.csv"),
-    col_types = c(Designacao="f"),
-    locale = readr::locale(encoding = "latin1")
-  ) %>%
-  mutate(code1 = stringr::str_sub(as.character(Dicofre), 0, -3)) %>%
-  filter(code1 %in% district_meta$Dicofre) %>%
-  select(code1, Dicofre, Designacao)
-
-
-parish_meta <- read_csv(
-    file.path("data", "geo", "freguesias_meta.csv"),
-    col_types = c(Designacao="f"),
-    locale = readr::locale(encoding = "latin1")
-  ) %>%
-  mutate(code1 = stringr::str_sub(as.character(Dicofre), 0, -3)) %>%
-  filter(code1 %in% city_meta$Dicofre) %>%
-  select(code1, Dicofre, Designacao)
-
-
-district_list <- district_meta$Dicofre
-names(district_list) <- district_meta$Designacao
-
-
 # ------------------------------------ TERRITORY MAPS ------------------------------------
 
 
 district_sh <- sf::read_sf(file.path("data", "geo", "distritos-shapefile", "distritos.shp"))
 district_sh <- rmapshaper::ms_simplify(district_sh ) # polygon simplification to speedup rendering
 district_sh  <- district_sh[district_sh$TYPE_1 == "Distrito", ]
-district_sh$CCA_1 <- as.factor(as.integer(district_sh$CCA_1))
+district_sh$CCA_1 <- as.factor(district_sh$CCA_1)
 district_sh$id <- district_sh$CCA_1
 district_sh$name <- district_sh$NAME_1
 
@@ -146,8 +116,8 @@ district_sh$name <- district_sh$NAME_1
 municipality_sh <- sf::read_sf(file.path("data", "geo", "concelhos-shapefile", "concelhos.shp"))
 municipality_sh <- rmapshaper::ms_simplify(municipality_sh)
 #municipality_sh <- municipality_sh[municipality_sh$ID_1 %in% district_sh$ID_1, ]
-municipality_sh$CCA_1 <- as.factor(as.integer(stringr::str_sub(municipality_sh$CCA_2, 1, -3)))
-municipality_sh$CCA_2 <- as.factor(as.integer(municipality_sh$CCA_2))
+municipality_sh$CCA_1 <- as.factor(stringr::str_sub(municipality_sh$CCA_2, 1, -3))
+municipality_sh$CCA_2 <- as.factor(municipality_sh$CCA_2)
 municipality_sh$id <- municipality_sh$CCA_2
 municipality_sh$name <- municipality_sh$NAME_2
 
@@ -155,22 +125,25 @@ municipality_sh$name <- municipality_sh$NAME_2
 # https://dados.gov.pt/s/resources/freguesias-de-portugal/20181112-195834/cont-aad-caop2017.zip
 parish_sh <- sf::read_sf(file.path("data", "geo", "cont-aad-caop2017", "Cont_AAD_CAOP2017.shp"))
 parish_sh <- rmapshaper::ms_simplify(parish_sh)
-parish_sh$CCA_1 <- as.factor(as.integer(stringr::str_sub(parish_sh $Dicofre, 1, -5)))
-parish_sh$CCA_2 <- as.factor(as.integer(stringr::str_sub(parish_sh $Dicofre, 1, -3)))
-parish_sh$CCA_3 <- as.factor(as.integer(parish_sh $Dicofre, 1, -3))
+parish_sh$CCA_1 <- as.factor(stringr::str_sub(parish_sh$Dicofre, 1, -5))
+parish_sh$CCA_2 <- as.factor(stringr::str_sub(parish_sh$Dicofre, 1, -3))
+parish_sh$CCA_3 <- as.factor(sprintf("%06d", as.integer(parish_sh$Dicofre)))
 parish_sh$id <- parish_sh$CCA_3
 parish_sh$name <- parish_sh$Freguesia
 parish_sh <- sf::st_transform(parish_sh, "+init=epsg:4326")
 
 
-# ------------------------------- Loading the main Dataset -------------------------------
+district_list <- district_sh$CCA_1
+names(district_list) <- district_sh$NAME_1
 
+
+# ------------------------------- Loading the main Dataset -------------------------------
 
 df <- load_dataset()
 
 # -------------------------------------- GroupKFold --------------------------------------
 
-group_cols <- c("latitude", "longitude", "area", "city_code", "parish_code")
+group_cols <- c("latitude", "longitude", "city_code", "DealType", "PropType")
 df$group <- as.factor(md5(apply(df[, group_cols], 1, paste, collapse = "/")))
 unique_groups <- unique(df$group)
 df_groups <- data.frame(
@@ -337,7 +310,7 @@ dataset[filt, "xYield"] <- 12 * rent_pred / dataset[filt, "price"]
 #filt <- dataset$DealType == "Rent"
 #X <- dataset[filt, ] %>% mutate(DealType = "Sale") %>% get_features(match_tables)
 #sell_pred <- 10^(predict(xgb$price, xgb.DMatrix(data = as.matrix(X))))
-#dataset[filt, "xYield"] <- dataset[filt, "price"] / sell_pred
+# dataset[filt, "xYield"] <- dataset[filt, "price"] / sell_pred
 
                                                             
 rm(X)

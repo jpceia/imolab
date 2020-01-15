@@ -21,11 +21,11 @@ ui_valuation <- function(id)
                               inline = TRUE),
                  selectInput(ns("energy_certificate"),
                              "Energy Certificate", NULL,
-                             choices = names(energy_certificate_levels)),
+                             choices = energy_certificate_levels),
                  selectInput(ns("condition"),
                              "Condition",
                              selected = "Usado",
-                             choices = names(condition_levels)),
+                             choices = condition_levels),
                  numericInput(ns("construction_year"),
                               "Construction Year", NULL, min=0, max=2020)
           ),
@@ -89,11 +89,11 @@ server_valuation <- function(input, output, session) {
   # updates the city list, after selecting a new district
   observe({
     city_list <- c(NULL)
-    df <- city_meta %>% filter(code1 == input$district)
+    df <- municipality_sh %>% filter(CCA_1 == input$district)
     
     if (nrow(df) > 0) {
-      city_list <- df$Dicofre
-      names(city_list) <- df$Designacao
+      city_list <- df$id
+      names(city_list) <- df$name
     }
     
     updateSelectInput(session, "city", choices = city_list)
@@ -104,11 +104,11 @@ server_valuation <- function(input, output, session) {
   # updates the parish list, after selecting a new city
   observe({
     parish_list <- c(NULL)
-    df <- parish_meta %>% filter(code1 == input$city)
+    df <- parish_sh %>% filter(CCA_2 == input$city)
     
     if (nrow(df) > 0) {
-      parish_list <- df$Dicofre
-      names(parish_list) <- df$Designacao
+      parish_list <- df$id
+      names(parish_list) <- df$name
     }
     
     updateSelectInput(session, "parish", choices = parish_list)

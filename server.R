@@ -31,9 +31,9 @@ shinyServer(function(input, output, session) {
       rv$location_code <- input$district
       rv$location_type <- "Municipality"
       
-      df <- city_meta %>% filter(code1 == input$district)
-      city_list <- df$Dicofre
-      names(city_list) <- df$Designacao
+      df <- municipality_sh %>% filter(CCA_1 == input$district)
+      city_list <- df$id
+      names(city_list) <- df$name
     }
     
     updateSelectInput(session, "city", choices = city_list)
@@ -55,9 +55,9 @@ shinyServer(function(input, output, session) {
       rv$location_code <- input$city
       rv$location_type <- "Parish"
       
-      df <- parish_meta %>% filter(code1 == input$city)
-      parish_list <- df$Dicofre
-      names(parish_list) <- df$Designacao
+      df <- parish_sh %>% filter(CCA_2 == input$city)
+      parish_list <- df$id
+      names(parish_list) <- df$name
     }
 
     updateSelectInput(session, "parish", choices = parish_list)
@@ -93,9 +93,9 @@ shinyServer(function(input, output, session) {
       if(len <= 2) # district
       {
         rv$location_type <- "Municipality"
-        df <- city_meta %>% filter(code1 == code)
-        city_list <- df$Dicofre
-        names(city_list) <- df$Designacao
+        df <- municipality_sh %>% filter(CCA_1 == code)
+        city_list <- df$id
+        names(city_list) <- df$name
         updateSelectInput(session, "district", selected = code)
         updateSelectInput(session, "city", choices = city_list)
         updateSelectInput(session, "parish", choices = c(NULL))
@@ -110,9 +110,9 @@ shinyServer(function(input, output, session) {
         else
         {
           rv$location_type <- "Parish"
-          df <- parish_meta %>% filter(code1 == code)
-          parish_list <- df$Dicofre
-          names(parish_list) <- df$Designacao
+          df <- parish_sh %>% filter(CCA_2 == code)
+          parish_list <- df$id
+          names(parish_list) <- df$name
           updateSelectInput(session, "city", selected = code)
           updateSelectInput(session, "parish", choices = parish_list) 
         }
@@ -145,7 +145,7 @@ shinyServer(function(input, output, session) {
     
     df <- switch(
       rv$location_type,
-      District           = df %>% filter(district_code %in% district_meta$Dicofre),
+      District           = df %>% filter(district_code %in% district_sh$CCA_1),
       Municipality       = df %>% filter(district_code == rv$location_code),
       Parish             = df %>% filter(city_code == rv$location_code),
       StatisticalSection = df %>% filter(parish_code == rv$location_code),

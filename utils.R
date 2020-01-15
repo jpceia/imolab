@@ -110,7 +110,7 @@ hc_hist <- function(df, col_name, xunits, xlabel = "", truncation = 1)
 
 load_dataset <- function()
 {
-  fname <- "imovirtual_20191101.csv"
+  fname <- "imovirtual_20191230.csv"
   col_types <- c(
     DealType = "f",
     PropType = "f",
@@ -142,23 +142,25 @@ load_dataset <- function()
     col_types = col_types
   ) %>% select(names(col_types))
   
-  df$DealType <- plyr::mapvalues(df$DealType, 0:1, c("Rent", "Sale"))
-  df$PropType <- plyr::mapvalues(df$PropType, c(1, 2, 4, 5, 6, 7, 8, 9, 11), prop_types)
+  df$DealType <-  plyr::mapvalues(df$DealType, 0:1, c("Rent", "Sale"))
+  df$PropType <-  plyr::mapvalues(df$PropType, prop_types_ids, prop_types)
+  
+  df$condition <- plyr::mapvalues(
+    as.integer(df$condition),
+    condition_ids,
+    condition_levels
+  )
   
   df$construction_year[df$construction_year < 1800] <- NA
   
   # df$energy_certificate <- factor(df$energy_certificate)
   levels(df$energy_certificate) <- energy_certificate_levels
 
-  
-  # df$condition <- factor(df$condition)
-  levels(df$condition) <- condition_levels
-
-  df <- add_column(df, price_m2 = round(df$price / df$area, 2), .after="price")
+  df <- add_column(df, price_m2 = round(df$price / df$area, 2),                                  .after="price")
   df <- add_column(df, construction_decade = cut(df$construction_year, decades, decades_labels), .after="construction_year")
-  df <- add_column(df, district = district_meta$Designacao[match(df$district_code, district_meta$Dicofre)], .after="district_code")
-  df <- add_column(df, city = city_meta$Designacao[match(df$city_code, city_meta$Dicofre)], .after="city_code")
-  df <- add_column(df, parish = parish_meta$Designacao[match(df$parish_code, parish_meta$Dicofre)], .after="parish_code")
+  df <- add_column(df, district = district_sh$name[match(df$district_code, district_sh$id)],     .after="district_code")
+  df <- add_column(df, city     = municipality_sh$name[match(df$city_code, municipality_sh$id)], .after="city_code")
+  df <- add_column(df, parish   = parish_sh$name[match(df$parish_code, parish_sh$id)],           .after="parish_code")
   
   df <- df %>% filter(!is.na(price_m2) & (price_m2 > 0))
   
