@@ -143,7 +143,7 @@ df <- load_dataset()
 
 # -------------------------------------- GroupKFold --------------------------------------
 
-group_cols <- c("latitude", "longitude", "city_code", "DealType", "PropType")
+group_cols <- c("latitude", "longitude", "MunicipalityID", "Deal", "Property Type")
 df$group <- as.factor(md5(apply(df[, group_cols], 1, paste, collapse = "/")))
 unique_groups <- unique(df$group)
 df_groups <- data.frame(
@@ -164,23 +164,23 @@ match_tables <- list()
 
 
 target_enc_cols <- list(
-  deal.prop_type=c('DealType', 'PropType'),
-  deal.district=c('DealType', 'district_code'),
-  deal.city=c('DealType', 'city_code'),
-  deal.parish=c('DealType', 'parish_code'),
-  deal.condition=c('DealType', 'condition')
+  deal.prop_type=c('Deal', 'Property Type'),
+  deal.district=c('Deal', 'DistrictID'),
+  deal.municipality=c('Deal', 'MunicipalityID'),
+  deal.parish=c('Deal', 'ParishID'),
+  deal.condition=c('Deal', 'condition')
 )
 
 area_enc_cols <- list(
-  prop_type='PropType',
+  prop_type='Property Type',
   condition='condition'
 )
 
 count_enc_cols <- list(
-  prop_type='PropType',
-  district='district_code',
-  city='city_code',
-  parish='parish_code',
+  prop_type='Property Type',
+  district='DistrictID',
+  municipality='MunicipalityID',
+  parish='ParishID',
   condition='condition',
   geo=c('latitude', 'longitude')
 )
@@ -301,15 +301,15 @@ reg$price <- xgb.train(
 )
 
 
-filt <- dataset$DealType == "Sale"
-filt <- filt & !(dataset$PropType %in% c("Farm", "Terrain"))
-X <- dataset[filt, ] %>% mutate(DealType = "Rent") %>% get_features(match_tables)
+filt <- dataset$Deal == "Sale"
+filt <- filt & !(dataset$`Property Type` %in% c("Farm", "Terrain"))
+X <- dataset[filt, ] %>% mutate(Deal = "Rent") %>% get_features(match_tables)
 rent_pred <- exp(predict(reg$price, xgb.DMatrix(data = as.matrix(X))))
 dataset[filt, "xYield"] <- 12 * rent_pred / dataset[filt, "price"]
 
-#filt <- dataset$DealType == "Rent"
-#X <- dataset[filt, ] %>% mutate(DealType = "Sale") %>% get_features(match_tables)
-#sell_pred <- 10^(predict(xgb$price, xgb.DMatrix(data = as.matrix(X))))
+# filt <- dataset$Deal == "Rent"
+# X <- dataset[filt, ] %>% mutate(Deal = "Sale") %>% get_features(match_tables)
+# sell_pred <- 10^(predict(xgb$price, xgb.DMatrix(data = as.matrix(X))))
 # dataset[filt, "xYield"] <- dataset[filt, "price"] / sell_pred
 
                                                             
