@@ -324,9 +324,9 @@ shinyServer(function(input, output, session) {
   output$EnergyCertificateCount <- renderPlot(F_catCount("energy_certificate", input$target_col))
   output$EnergyCertificateTable <- renderFormattable(F_catTable("energy_certificate", input$target_col))
   
-  output$ConditionBoxPlot <- renderPlot(F_catBoxPlot("condition", input$target_col))
-  output$ConditionCount <- renderPlot(F_catCount("condition", input$target_col))
-  output$ConditionTable <- renderFormattable(F_catTable("condition", input$target_col))
+  output$ConditionBoxPlot <- renderPlot(F_catBoxPlot("Condition", input$target_col))
+  output$ConditionCount <- renderPlot(F_catCount("Condition", input$target_col))
+  output$ConditionTable <- renderFormattable(F_catTable("Condition", input$target_col))
   
   output$RoomsBoxPlot <- renderPlot(F_catBoxPlot("rooms", input$target_col))
   output$RoomsCount <- renderPlot(F_catCount("rooms", input$target_col))

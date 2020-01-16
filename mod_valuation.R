@@ -153,9 +153,9 @@ server_valuation <- function(input, output, session) {
       MunicipalityID = input$municipality,
       ParishID = input$parish,
       
-      construction_year = input$construction_year,
+      `Construction Year` = input$construction_year,
       energy_certificate = input$energy_certificate,
-      condition = input$condition,
+      Condition = input$condition,
       rooms = input$rooms,
       bathrooms = input$bathrooms,
       
@@ -188,9 +188,9 @@ server_valuation <- function(input, output, session) {
       input$attrs,
       "bathrooms",
       "rooms",
-      "construction_year",
+      "Construction Year",
       "energy_certificate",
-      "condition",
+      "Condition",
       "terrain_area",
       "gross_area",
       "area",

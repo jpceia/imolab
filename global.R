@@ -92,7 +92,7 @@ target_list <- list(
   'Price/m2' = 'price_m2',
   'Area' = 'area',
   'xYield' = 'xYield',
-  'Construction Year' = 'construction_year'
+  'Construction Year' = 'Construction Year'
 )
 
 
@@ -168,12 +168,12 @@ target_enc_cols <- list(
   deal.district=c('Deal', 'DistrictID'),
   deal.municipality=c('Deal', 'MunicipalityID'),
   deal.parish=c('Deal', 'ParishID'),
-  deal.condition=c('Deal', 'condition')
+  deal.condition=c('Deal', 'Condition')
 )
 
 area_enc_cols <- list(
   prop_type='Property Type',
-  condition='condition'
+  condition='Condition'
 )
 
 count_enc_cols <- list(
@@ -181,7 +181,7 @@ count_enc_cols <- list(
   district='DistrictID',
   municipality='MunicipalityID',
   parish='ParishID',
-  condition='condition',
+  condition='Condition',
   geo=c('latitude', 'longitude')
 )
 
