@@ -248,7 +248,11 @@ shinyServer(function(input, output, session) {
       geom_boxplot(outlier.alpha = 0.5) +
       scale_x_discrete(drop = FALSE) +
       scale_y_continuous(trans = 'log10') +
-      theme(legend.position = "none") +
+      theme(
+        axis.text.x = element_text(size = 12),
+        axis.text.y = element_text(size = 12),
+        legend.position = "none"
+      ) +
       coord_flip()
   }
   
@@ -273,7 +277,11 @@ shinyServer(function(input, output, session) {
       geom_text(stat = 'count', aes(label=..count..),
                 hjust=-0.3, check_overlap = TRUE) +
       scale_x_discrete(drop = FALSE) +
-      theme(legend.position = "none") +
+      theme(
+        axis.text.x = element_text(size = 12),
+        axis.text.y = element_text(size = 12),
+        legend.position = "none"
+      ) +
       coord_flip()
   }
   
@@ -670,19 +678,17 @@ shinyServer(function(input, output, session) {
         x = reorder(tmp, !!target, FUN = median),
         y = !!target)
       ) +
-      geom_errorbar(
-        stat = "summary",
-        fun.ymin = ~quantile(., prob = 0.1,   na.rm=True),
-        fun.ymin = ~quantile(., prob = 0.9, na.rm=True),
-        width = 0.3
-      ) +
       geom_boxplot(
         outlier.shape = NA,
         fill = "#8DBEDA",
       ) +
       scale_y_continuous(trans = 'log10') +
-      theme(axis.title.y=element_blank()) +
-      theme(legend.position = "none") +
+      theme(
+        axis.title.y = element_blank(),
+        axis.text.x = element_text(size = 12),
+        axis.text.y = element_text(size = 12),
+        legend.position = "none"
+      ) +
       coord_flip()
   })
   
