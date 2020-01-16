@@ -85,7 +85,7 @@ other_attrs <- list(
 
 bathrooms_levels <- 1:4
 
-rooms_levels <- 0:10
+bedrooms_levels <- 0:10
 
 target_list <- list(
   'Price/m2' = 'price_m2',

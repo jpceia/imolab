@@ -33,7 +33,7 @@ ui_valuation <- function(id)
                  numericInput(ns("net_area"),     "Net Area",      100, min=0, step=1),
                  numericInput(ns("gross_area"),   "Gross Area",   NULL, min=0, step=1),
                  numericInput(ns("terrain_area"), "Terrain Area", NULL, min=0, step=1),
-                 numericInput(ns("rooms"),        "#Rooms",       NULL, min=0, max=10, step=1),
+                 numericInput(ns("bedrooms"),     "#Bedrooms",    NULL, min=0, max=10, step=1),
                  numericInput(ns("bathrooms"),    "#Bathrooms",   NULL, min=0, max=4, step=1)
           ),
           column(4,
@@ -154,10 +154,10 @@ server_valuation <- function(input, output, session) {
       ParishID = input$parish,
       
       `Construction Year` = input$construction_year,
-      energy_certificate = input$energy_certificate,
+      `Energy Certificate` = input$energy_certificate,
       Condition = input$condition,
-      rooms = input$rooms,
-      bathrooms = input$bathrooms,
+      Bedrooms = input$bedrooms,
+      Bathrooms = input$bathrooms,
       
       area = input$net_area,
       gross_area = input$gross_area,
@@ -186,10 +186,10 @@ server_valuation <- function(input, output, session) {
     
     drop_cols <- c(
       input$attrs,
-      "bathrooms",
-      "rooms",
+      "Bathrooms",
+      "Bedrooms",
       "Construction Year",
-      "energy_certificate",
+      "Energy Certificate",
       "Condition",
       "terrain_area",
       "gross_area",

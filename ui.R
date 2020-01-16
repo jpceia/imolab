@@ -159,11 +159,11 @@ body <- dashboardBody(
       tags$h2(tags$strong("Categories")),
       tags$h5(tags$strong(textOutput("CategoryTextTargetName")), style='color:grey'),
       navbarPage("",
-         categoryTab("EnergyCertificate", "Energy Certificate"),
+         categoryTab("EnergyCertificate",  "Energy Certificate"),
          categoryTab("Condition"),
-         categoryTab("Rooms",             "#Rooms"),
-         categoryTab("Bathrooms",         "#Bathrooms"),
-         categoryTab("ConstructionYear",  "Construction decade")
+         categoryTab("Bedrooms",           "#Bedrooms"),
+         categoryTab("Bathrooms",          "#Bathrooms"),
+         categoryTab("ConstructionDecade", "Construction Decade")
       )
     ),
     tabItem(

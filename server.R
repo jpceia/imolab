@@ -145,7 +145,7 @@ shinyServer(function(input, output, session) {
     
     df <- switch(
       rv$location_type,
-      District           = df %>% filter(DistrictID   %in% district_sh$CCA_1),
+      District           = df %>% filter(DistrictID  %in% district_sh$CCA_1),
       Municipality       = df %>% filter(DistrictID     == rv$location_code),
       Parish             = df %>% filter(MunicipalityID == rv$location_code),
       StatisticalSection = df %>% filter(ParishID       == rv$location_code),
@@ -238,11 +238,14 @@ shinyServer(function(input, output, session) {
       df[[cat_col]] <- as.factor(df[[cat_col]])
     }
     
+    cat_var <- rlang::sym(cat_col)
+    target_var <- rlang::sym(target_col)
+    
     df %>% ggplot(
-      aes_string(
-        x = cat_col,
-        y = target_col,
-        fill = cat_col
+      aes(
+        x = !!cat_var,
+        y = !!target_var,
+        fill = !!cat_var
       )) +
       stat_boxplot(geom = "errorbar", width = 0.2) +
       geom_boxplot(outlier.alpha = 0.5) +
@@ -272,7 +275,12 @@ shinyServer(function(input, output, session) {
       df[[cat_col]] <- as.factor(df[[cat_col]])
     }
     
-    ggplot(df, aes_string(x = cat_col, fill = cat_col)) +
+    cat_var <- rlang::sym(cat_col)
+    
+    ggplot(df, aes(
+        x = !!cat_var,
+        fill = !!cat_var
+      )) +
       geom_bar(color = "black", lwd = 0.5) +
       geom_text(stat = 'count', aes(label=..count..),
                 hjust=-0.3, check_overlap = TRUE) +
@@ -320,25 +328,25 @@ shinyServer(function(input, output, session) {
   
   output$CategoryTextTargetName <- renderText(target_name(input$target_col))
   
-  output$EnergyCertificateBoxPlot <- renderPlot(F_catBoxPlot("energy_certificate", input$target_col))
-  output$EnergyCertificateCount <- renderPlot(F_catCount("energy_certificate", input$target_col))
-  output$EnergyCertificateTable <- renderFormattable(F_catTable("energy_certificate", input$target_col))
+  output$EnergyCertificateBoxPlot <- renderPlot(F_catBoxPlot("Energy Certificate", input$target_col))
+  output$EnergyCertificateCount <- renderPlot(F_catCount("Energy Certificate", input$target_col))
+  output$EnergyCertificateTable <- renderFormattable(F_catTable("`Energy Certificate`", input$target_col))
   
   output$ConditionBoxPlot <- renderPlot(F_catBoxPlot("Condition", input$target_col))
   output$ConditionCount <- renderPlot(F_catCount("Condition", input$target_col))
   output$ConditionTable <- renderFormattable(F_catTable("Condition", input$target_col))
   
-  output$RoomsBoxPlot <- renderPlot(F_catBoxPlot("rooms", input$target_col))
-  output$RoomsCount <- renderPlot(F_catCount("rooms", input$target_col))
-  output$RoomsTable <- renderFormattable(F_catTable("rooms", input$target_col))
+  output$BedroomsBoxPlot <- renderPlot(F_catBoxPlot("Bedrooms", input$target_col))
+  output$BedroomsCount <- renderPlot(F_catCount("Bedrooms", input$target_col))
+  output$BedroomsTable <- renderFormattable(F_catTable("Bedrooms", input$target_col))
   
-  output$BathroomsBoxPlot <- renderPlot(F_catBoxPlot("bathrooms", input$target_col))
-  output$BathroomsCount <- renderPlot(F_catCount("bathrooms", input$target_col))
-  output$BathroomsTable <- renderFormattable(F_catTable("bathrooms", input$target_col))
+  output$BathroomsBoxPlot <- renderPlot(F_catBoxPlot("Bathrooms", input$target_col))
+  output$BathroomsCount <- renderPlot(F_catCount("Bathrooms", input$target_col))
+  output$BathroomsTable <- renderFormattable(F_catTable("Bathrooms", input$target_col))
   
-  output$ConstructionYearBoxPlot <- renderPlot(F_catBoxPlot("construction_decade", input$target_col))
-  output$ConstructionYearCount <- renderPlot(F_catCount("construction_decade", input$target_col))
-  output$ConstructionYearTable <- renderFormattable(F_catTable("construction_decade", input$target_col))
+  output$ConstructionDecadeBoxPlot <- renderPlot(F_catBoxPlot("Construction Decade", input$target_col))
+  output$ConstructionDecadeCount <- renderPlot(F_catCount("Construction Decade", input$target_col))
+  output$ConstructionDecadeTable <- renderFormattable(F_catTable("Construction Decade", input$target_col))
 
   
   # ----------------------------------------------------------------------------------------
@@ -530,7 +538,7 @@ shinyServer(function(input, output, session) {
       target_col,
       "price_m2" = "Eur/m2",
       "area" = "m2",
-      "construction_decade" = ""
+      "Construction Decade" = ""
     )
 
     df_map %>%

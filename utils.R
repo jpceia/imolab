@@ -120,10 +120,10 @@ load_dataset <- function()
     DistrictID = "f",
     MunicipalityID = "f",
     ParishID = "f",
-    energy_certificate = "f",
+    `Energy Certificate` = "f",
     `Construction Year` = "d",
-    rooms = "d",
-    bathrooms = "d",
+    Bedrooms = "d",
+    Bathrooms = "d",
     Condition = "f",
     elevator = "d",
     balcony = "d",
@@ -154,11 +154,11 @@ load_dataset <- function()
   year <- df[["Construction Year"]]
   df[!is.na(year) & !between(year, 1800, 2025), "Construction Year"] <- NA
   
-  # df$energy_certificate <- factor(df$energy_certificate)
-  levels(df$energy_certificate) <- energy_certificate_levels
+  # df$`Energy Certificate` <- factor(df[["Energy Certificate"]])
+  levels(df$`Energy Certificate`) <- energy_certificate_levels
 
   df <- add_column(df, price_m2     = round(df$price / df$area, 2),                                       .after = "price")
-  df <- add_column(df, construction_decade = cut(df[["Construction Year"]], decades, decades_labels),     .after = "Construction Year")
+  df <- add_column(df, `Construction Decade` = cut(df[["Construction Year"]], decades, decades_labels),   .after = "Construction Year")
   df <- add_column(df, District     = district_sh$name[match(df$DistrictID, district_sh$id)],             .after = "DistrictID")
   df <- add_column(df, Municipality = municipality_sh$name[match(df$MunicipalityID, municipality_sh$id)], .after = "MunicipalityID")
   df <- add_column(df, Parish       = parish_sh$name[match(df$ParishID, parish_sh$id)],                   .after = "ParishID")
@@ -182,7 +182,7 @@ get_features <- function(df, match_tables)
     )
   
   energy_certificate_ord <- c("G", "F", "E", "D", "C", "B-", "B", "A", "A+")
-  df$energy_certificate_ord <- match(df$energy_certificate, energy_certificate_ord)
+  df$energy_certificate_ord <- match(df[["Energy Certificate"]], energy_certificate_ord)
   
   if(!("Fold" %in% names(df)))
   {
@@ -235,7 +235,7 @@ get_features <- function(df, match_tables)
   
   feat_cols <- c(
     "area", "gross_area", "terrain_area",
-    "rooms", "bathrooms",
+    "Bedrooms", "Bathrooms",
     "Construction Year",
     "energy_certificate_ord",
     unlist(other_attrs, use.names=FALSE),
