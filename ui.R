@@ -25,9 +25,6 @@ sideBar <- dashboardSidebar(
              tabName = NS("mod_valuation")("valuationTab"),
              badgeLabel = "Beta",
              badgeColor = "blue"),
-    menuItem("Data Sources", icon = icon("table"),
-             menuSubItem("Raw Data", tabName = "rawdataTab"),
-             menuSubItem("Pivots", tabName = "pivotTableTab")),
     hr(),
     conditionalPanel(
       condition = "['histogramsTab', 'propertyTypeTab', 'categoriesTab', 'correlationTab', 'territoryTab'].indexOf(input.sidebarmenu) >= 0",
@@ -205,25 +202,6 @@ body <- dashboardBody(
           width = 12
         )
       )
-    ),
-    tabItem(
-      tabName = "rawdataTab",
-      tags$h2(tags$strong('Raw Data')),
-      box(
-        title = tags$strong("Imovirtual database"),
-        solidHeader = TRUE,
-        status = "primary",
-        collapsible = TRUE,
-        collapsed = FALSE,
-        DT::dataTableOutput("rawDataTable") %>% withSpinner(type=SPINNER_TYPE),
-        width = 12
-      )
-    ),
-    tabItem(
-      tabName = "pivotTableTab",
-      #tags$h2(tags$strong("Pivot Table")),
-      #tags$h3("Imovirtual database"),
-      rpivotTableOutput("pivotTable") %>% withSpinner(type=SPINNER_TYPE)
     ),
     ui_valuation("mod_valuation")
   )

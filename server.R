@@ -740,40 +740,6 @@ shinyServer(function(input, output, session) {
       -construction_decade),
     filter = 'top', options = list(scrollX = TRUE)
   )
-  
-  
-  # ----------------------------------------------------------------------------------------
-  #                                    DATA SOURCES SECTION
-  # ----------------------------------------------------------------------------------------
-  
-  output$rawDataTable <- DT::renderDataTable(
-    dataset %>% select(
-      -DistrictID,
-      -MunicipalityID,
-      -ParishID,
-      -latitude,
-      -longitude,
-      -construction_decade),
-    filter = 'top', options = list(scrollX = TRUE))
-  
-  output$pivotTable <- renderRpivotTable({
-    df <- dataset %>% select(
-      -DistrictID,
-      -MunicipalityID,
-      -ParishID,
-      -latitude,
-      -longitude,
-      -construction_decade)
-    
-    rpivotTable(
-      df,
-      rows = "district",
-      cols = c("Deal", "Property Type"),
-      aggregatorName = "Median",
-      vals = "price_m2",
-      rendererName = "Col Heatmap") 
-  })
-  
 
   # ----------------------------------------------------------------------------------------
   #                                     VALUATION SECTION
