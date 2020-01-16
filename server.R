@@ -638,12 +638,17 @@ shinyServer(function(input, output, session) {
   
   output$filtered_table <- DT::renderDataTable(
     filtered_dataset() %>% select(
-      -DistrictID,
-      -MunicipalityID,
-      -ParishID,
-      -latitude,
-      -longitude,
-      -construction_decade),
+      `Property Type`,
+      price,
+      price_m2,
+      area,
+      gross_area,
+      terrain_area,
+      Bedrooms,
+      Bathrooms,
+      `Energy Certificate`,
+      `Construction Year`,
+      Condition),
     filter = 'top', options = list(scrollX = TRUE)
   )
 
