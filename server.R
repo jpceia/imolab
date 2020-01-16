@@ -339,92 +339,7 @@ shinyServer(function(input, output, session) {
   output$ConstructionYearBoxPlot <- renderPlot(F_catBoxPlot("construction_decade", input$target_col))
   output$ConstructionYearCount <- renderPlot(F_catCount("construction_decade", input$target_col))
   output$ConstructionYearTable <- renderFormattable(F_catTable("construction_decade", input$target_col))
-  
-  # ----------------------------------------------------------------------------------------
-  #                                   PROPERTY TYPE SECTION
-  # ----------------------------------------------------------------------------------------
 
-  output$PropertyTypeTextTargetName <- renderText(target_name(input$target_col))
-  
-  output$PropertyTypeBoxPlot <- renderPlot({
-    
-    target_col <- input$target_col
-    df <- filtered_dataset_noprop()
-    df <- df[!is.na(df[[target_col]]), ]
-    
-    validate(need(
-      nrow(df) >= MIN_DATAPOINTS,
-      MIN_DATAPOINTS_MSG
-    ))
-    
-    q <- 0.001 #as.numeric(input$truncation) / 100.0
-    quantiles <- quantile(df[[target_col]], probs = c(q, 1 - q))
-    df <- df[between(df[[target_col]], quantiles[1], quantiles[2]), ]
-    
-    df %>% ggplot(
-      aes_string(
-        x = "`Property Type`",
-        y = target_col
-      )) +
-      stat_boxplot(geom = "errorbar", width = 0.2) +
-      geom_boxplot(outlier.alpha = 0.5) +
-      # scale_x_discrete(drop = FALSE) +
-      scale_y_continuous(trans = 'log10') + 
-      theme(legend.position = "none") +
-      coord_flip()
-  })
-  
-  output$PropertyTypeCount <- renderPlot({
-    target_col <- input$target_col
-    
-    df <- filtered_dataset_noprop()
-    df <- df[!is.na(df[[target_col]]), ]
-    
-    validate(need(
-      nrow(df) >= MIN_DATAPOINTS,
-      MIN_DATAPOINTS_MSG
-    ))
-    
-    ggplot(df, aes(x = `Property Type`)) +
-      geom_bar(color = "black", lwd = 0.5) +
-      geom_text(stat = 'count', aes(label=..count..),
-                hjust=-0.3, check_overlap = TRUE) +
-      # scale_x_discrete(drop = FALSE) +
-      theme(legend.position = "none") +
-      coord_flip()
-  })
-  
-  output$PropertyTypeTable <- renderFormattable({
-    target_col <- input$target_col
-    df <- filtered_dataset_noprop()
-    df <- df[!is.na(df[[target_col]]), ]
-    
-    validate(need(
-      nrow(df) >= MIN_DATAPOINTS,
-      MIN_DATAPOINTS_MSG
-    ))
-    
-    target <- rlang::sym(target_col)
-    
-    df %>%
-      group_by(`Property Type`) %>%
-      summarize(
-        count = n(!!target),
-        "25%" = currency(quantile(!!target, probs=0.25), "", 2),
-        median= currency(quantile(!!target, probs=0.50), "", 2),
-        "75%" = currency(quantile(!!target, probs=0.75), "", 2)
-      ) %>%
-      arrange(-row_number()) %>%
-      drop_na() %>%
-      formattable(
-        align = c("l", "r", "r", "r", "r"),
-        list(
-          area(col = "Property Type") ~ formatter(
-            "span", style = ~formattable::style(color = "grey", font.weight = "bold")),
-          count = normalize_bar("pink", 0.2),
-          median = normalize_bar("lightblue", 0.2)
-        ))
-  })
   
   # ----------------------------------------------------------------------------------------
   #                               CORRELATION EXPLORER SECTION
@@ -437,27 +352,10 @@ shinyServer(function(input, output, session) {
   })
   
   output$CorrelationPlot <- renderHighchart({
-    agg_level <- input$agg_level
+    agg_col <- input$agg_level
     target1 <- input$target1
     target2 <- input$target2
-    
-    agg_col <- switch(
-      agg_level,
-      District = {
-        need(rv$location_type == "District", "")
-        "district"
-      },
-      Municipality = {
-        need(rv$location_type %in% c("District", "Municipality"), "")
-        "municipality"
-      },
-      Parish = {
-        need(rv$location_type %in% c("District", "Municipality", "Parish"), "")
-        "parish"
-      },
-      validate(FALSE, "")
-    )
-    
+
     if(input$agg_prop_type)
     {
       js <- "

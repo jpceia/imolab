@@ -12,8 +12,6 @@ sideBar <- dashboardSidebar(
     menuItem("Exploration", icon = icon("poll"),
              menuSubItem("Territory",
                          tabName = "territoryTab"),
-             menuSubItem("Property Type",
-                         tabName = "propertyTypeTab"),
              menuSubItem("Categories",
                          tabName = "categoriesTab"),
              menuSubItem("Correlations",
@@ -27,7 +25,7 @@ sideBar <- dashboardSidebar(
              badgeColor = "blue"),
     hr(),
     conditionalPanel(
-      condition = "['histogramsTab', 'propertyTypeTab', 'categoriesTab', 'correlationTab', 'territoryTab'].indexOf(input.sidebarmenu) >= 0",
+      condition = "['histogramsTab', 'categoriesTab', 'correlationTab', 'territoryTab'].indexOf(input.sidebarmenu) >= 0",
       radioButtons("deal", NULL, c("Sale", "Rent"), inline = TRUE)
     ),
     conditionalPanel(
@@ -35,7 +33,7 @@ sideBar <- dashboardSidebar(
       selectizeInput("prop_type", NULL, prop_types, selected = "Apartment", multiple = TRUE),
     ),
     conditionalPanel(
-      condition = "['histogramsTab', 'propertyTypeTab', 'categoriesTab', 'correlationTab', 'territoryTab'].indexOf(input.sidebarmenu) >= 0",
+      condition = "['histogramsTab', 'categoriesTab', 'correlationTab', 'territoryTab'].indexOf(input.sidebarmenu) >= 0",
       selectizeInput("district", "Location", district_list,
                      size = 3,
                      options = list(
@@ -72,7 +70,7 @@ sideBar <- dashboardSidebar(
       )
     ),
     conditionalPanel(
-      condition = "['categoriesTab', 'propertyTypeTab', 'territoryTab'].indexOf(input.sidebarmenu) >= 0",
+      condition = "['categoriesTab', 'territoryTab'].indexOf(input.sidebarmenu) >= 0",
       selectizeInput("target_col", "Target",
                      target_list, selected = "Price/m2")
     )
@@ -155,12 +153,6 @@ body <- dashboardBody(
           width = 12
         )
       )
-    ),
-    tabItem(
-      tabName = "propertyTypeTab",
-      tags$h2(tags$strong("Property Type")),
-      tags$h5(tags$strong(textOutput("PropertyTypeTextTargetName")), style='color:grey'),
-      categoryTab("PropertyType", "Property Type"),
     ),
     tabItem(
       tabName = "categoriesTab",
