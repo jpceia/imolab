@@ -31,7 +31,7 @@ sideBar <- dashboardSidebar(
     hr(),
     conditionalPanel(
       condition = "['histogramsTab', 'propertyTypeTab', 'categoriesTab', 'correlationTab', 'territoryTab'].indexOf(input.sidebarmenu) >= 0",
-      radioButtons("deal_type", NULL, c("Sale", "Rent"), inline = TRUE)
+      radioButtons("deal", NULL, c("Sale", "Rent"), inline = TRUE)
     ),
     conditionalPanel(
       condition = "['histogramsTab', 'categoriesTab', 'correlationTab', 'territoryTab'].indexOf(input.sidebarmenu) >= 0",
@@ -47,13 +47,13 @@ sideBar <- dashboardSidebar(
                      )),
       conditionalPanel(
         condition = "input.district != ''",
-        selectizeInput("city", NULL, c(" "),
+        selectizeInput("municipality", NULL, c(" "),
                        options = list(
                          placeholder = 'Municipality',
                          onInitialize = I('function() { this.setValue(""); }')
                        )),
         conditionalPanel(
-          condition = "input.city != ''",
+          condition = "input.municipality != ''",
           selectizeInput("parish", NULL, c(" "),
                          multiple = FALSE,
                          options = list(
