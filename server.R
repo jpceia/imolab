@@ -673,6 +673,8 @@ shinyServer(function(input, output, session) {
     quantiles <- quantile(df[[target_col]], probs = c(q, 1 - q))
     df <- df[between(df[[target_col]], quantiles[1], quantiles[2]), ]
     
+    median_val <- median(df[[target_col]])
+    
     df %>% ggplot(
       aes(
         x = reorder(tmp, !!target, FUN = median),
@@ -680,7 +682,7 @@ shinyServer(function(input, output, session) {
       ) +
       geom_boxplot(
         outlier.shape = NA,
-        fill = "#8DBEDA",
+        #fill = "#8DBEDA",
       ) +
       scale_y_continuous(trans = 'log10') +
       theme(
@@ -689,6 +691,11 @@ shinyServer(function(input, output, session) {
         axis.text.y = element_text(size = 12),
         legend.position = "none"
       ) +
+      geom_hline(
+        yintercept = median_val,
+        linetype = "dashed", 
+        color = "red",
+        size = 1) +
       coord_flip()
   })
   
