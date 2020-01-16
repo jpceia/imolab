@@ -30,7 +30,7 @@ sideBar <- dashboardSidebar(
     ),
     conditionalPanel(
       condition = "['histogramsTab', 'categoriesTab', 'correlationTab', 'territoryTab'].indexOf(input.sidebarmenu) >= 0",
-      selectizeInput("prop_type", NULL, prop_types, selected = "Apartment", multiple = TRUE),
+      selectizeInput("prop_type", NULL, prop_types, selected = c("Apartment", "House"), multiple = TRUE),
     ),
     conditionalPanel(
       condition = "['histogramsTab', 'categoriesTab', 'correlationTab', 'territoryTab'].indexOf(input.sidebarmenu) >= 0",
