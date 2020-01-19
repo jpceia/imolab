@@ -15,49 +15,49 @@ shinyServer(function(input, output, session) {
   
   rv <- reactiveValues(
     location_code = NULL,
-    location_type = "Country")
+    location_type = "District")
   
   observeEvent(input$district, {
     
     if(is.empty(input$district))
     {
       rv$location_code <- NULL
-      rv$location_type <- "Country"
+      rv$location_type <- "District"
       
-      city_list <- c(NULL)
+      municipality_list <- c(NULL)
     }
     else
     {
       rv$location_code <- input$district
-      rv$location_type <- "District"
+      rv$location_type <- "Municipality"
       
-      df <- city_meta %>% filter(code1 == input$district)
-      city_list <- df$Dicofre
-      names(city_list) <- df$Designacao
+      df <- municipality_sh %>% filter(CCA_1 == input$district)
+      municipality_list <- df$id
+      names(municipality_list) <- df$name
     }
     
-    updateSelectInput(session, "city", choices = city_list)
-    updateSelectInput(session, "parish", choices = c(NULL))
+    updateSelectInput(session, "municipality", choices = municipality_list)
+    updateSelectInput(session, "parish",       choices = c(NULL))
   }, ignoreInit = TRUE)
   
   
-  observeEvent(input$city, {
+  observeEvent(input$municipality, {
 
-    if(is.empty(input$city))
+    if(is.empty(input$municipality))
     {
       rv$location_code <- input$district
-      rv$location_type <- "District"
+      rv$location_type <- "Municipality"
       
       parish_list <- c(NULL)
     }
     else
     {
-      rv$location_code <- input$city
-      rv$location_type <- "City"
+      rv$location_code <- input$municipality
+      rv$location_type <- "Parish"
       
-      df <- parish_meta %>% filter(code1 == input$city)
-      parish_list <- df$Dicofre
-      names(parish_list) <- df$Designacao
+      df <- parish_sh %>% filter(CCA_2 == input$municipality)
+      parish_list <- df$id
+      names(parish_list) <- df$name
     }
 
     updateSelectInput(session, "parish", choices = parish_list)
@@ -67,13 +67,13 @@ shinyServer(function(input, output, session) {
     
     if(is.empty(input$parish))
     {
-      rv$location_code <- input$city
-      rv$location_type <- "City"
+      rv$location_code <- input$municipality
+      rv$location_type <- "Parish"
     }
     else
     {
       rv$location_code <- input$parish
-      rv$location_type <- "Parish"
+      rv$location_type <- "StatisticalSection"
     }
   }, ignoreInit = TRUE)
   
@@ -85,41 +85,24 @@ shinyServer(function(input, output, session) {
     
     if(is.empty(code))
     {
-      rv$location_type <- "Country"
+      rv$location_type <- "District"
     }
     else
     {
       len <- stringr::str_length(code)
       if(len <= 2) # district
       {
-        rv$location_type <- "District"
-        df <- city_meta %>% filter(code1 == code)
-        city_list <- df$Dicofre
-        names(city_list) <- df$Designacao
+        rv$location_type <- "Municipality"
+        df <- municipality_sh %>% filter(CCA_1 == code)
+        municipality_list <- df$id
+        names(municipality_list) <- df$name
         updateSelectInput(session, "district", selected = code)
-        updateSelectInput(session, "city", choices = city_list)
+        updateSelectInput(session, "municipality", choices = municipality_list)
         updateSelectInput(session, "parish", choices = c(NULL))
       }
-      else if(len <= 4) # city
+      else if(len <= 4) # municipality
       {
-        n_points <- nrow(filtered_dataset() %>% filter(city_code == code))
-        if(n_points < MIN_DATAPOINTS)
-        {
-          modify_code <- FALSE
-        }
-        else
-        {
-          rv$location_type <- "City"
-          df <- parish_meta %>% filter(code1 == code)
-          parish_list <- df$Dicofre
-          names(parish_list) <- df$Designacao
-          updateSelectInput(session, "city", selected = code)
-          updateSelectInput(session, "parish", choices = parish_list) 
-        }
-      }
-      else if(len <= 6) # parish
-      {
-        n_points <- nrow(filtered_dataset() %>% filter(parish_code == code))
+        n_points <- nrow(filtered_dataset() %>% filter(MunicipalityID == code))
         if(n_points < MIN_DATAPOINTS)
         {
           modify_code <- FALSE
@@ -127,6 +110,23 @@ shinyServer(function(input, output, session) {
         else
         {
           rv$location_type <- "Parish"
+          df <- parish_sh %>% filter(CCA_2 == code)
+          parish_list <- df$id
+          names(parish_list) <- df$name
+          updateSelectInput(session, "municipality", selected = code)
+          updateSelectInput(session, "parish",       choices = parish_list) 
+        }
+      }
+      else if(len <= 6) # parish
+      {
+        n_points <- nrow(filtered_dataset() %>% filter(ParishID == code))
+        if(n_points < MIN_DATAPOINTS)
+        {
+          modify_code <- FALSE
+        }
+        else
+        {
+          rv$location_type <- "StatisticalSection"
           updateSelectInput(session, "parish", selected = code) 
         }
       }
@@ -141,14 +141,14 @@ shinyServer(function(input, output, session) {
   
   filtered_dataset_noprop <- reactive({
     df <- dataset %>%
-      filter(DealType == input$deal_type)
+      filter(Deal == input$deal)
     
     df <- switch(
       rv$location_type,
-      Country = df %>% filter(district_code %in% district_meta$Dicofre),
-      District = df %>% filter(district_code == rv$location_code),
-      City = df %>% filter(city_code == rv$location_code),
-      Parish = df %>% filter(parish_code == rv$location_code),
+      District           = df %>% filter(DistrictID  %in% district_sh$CCA_1),
+      Municipality       = df %>% filter(DistrictID     == rv$location_code),
+      Parish             = df %>% filter(MunicipalityID == rv$location_code),
+      StatisticalSection = df %>% filter(ParishID       == rv$location_code),
       stop("Invalid data")
     )
     
@@ -161,7 +161,7 @@ shinyServer(function(input, output, session) {
   filtered_dataset <- reactive({
     
     df <- filtered_dataset_noprop() %>%
-        filter(PropType %in% input$prop_type)
+        filter(`Property Type` %in% input$prop_type)
     
     validate(need(nrow(df) >= MIN_DATAPOINTS, MIN_DATAPOINTS_MSG))
     
@@ -180,11 +180,11 @@ shinyServer(function(input, output, session) {
   )
   
   output$HistogramPrice <- renderHighchart(
-    filtered_dataset() %>% hc_hist("price", "EUR", "", input$truncation)
+    filtered_dataset() %>% hc_hist("Price", "EUR", "", input$truncation)
   )
   
   output$HistogramArea <- renderHighchart(
-    filtered_dataset() %>% hc_hist("area", "m2", "", input$truncation)
+    filtered_dataset() %>% hc_hist("Area", "m2", "", input$truncation)
   )
   
   # -------------------------------------- FORMATTABLE -------------------------------------
@@ -194,8 +194,8 @@ shinyServer(function(input, output, session) {
     probs <- c(0.95, 0.90, 0.75, 0.50, 0.25, 0.10, 0.05)
     table <- data.frame(
       quantile = percent(probs, 0),
-      price = currency(quantile(df$price, probs = probs), "", 0),
-      area = currency(quantile(df$area, probs = probs), "", 0),
+      Price = currency(quantile(df$Price, probs = probs), "", 0),
+      Area = currency(quantile(df$Area, probs = probs), "", 0),
       price_m2 = currency(quantile(df$price_m2, probs = probs), "", 0)
     )
     row.names(table) <- NULL
@@ -206,8 +206,8 @@ shinyServer(function(input, output, session) {
       list(
         quantile =  formatter(
           "span", style = ~formattable::style(color = "grey", font.weight = "bold")),
-        price = normalize_bar("lightpink", 0.2),
-        area = normalize_bar("lightpink", 0.2),
+        Price = normalize_bar("lightpink", 0.2),
+        Area = normalize_bar("lightpink", 0.2),
         price_m2 = normalize_bar("lightblue", 0.2)
       )
     )
@@ -229,25 +229,33 @@ shinyServer(function(input, output, session) {
       MIN_DATAPOINTS_MSG
     ))
     
-    q <- 0.05 #as.numeric(input$truncation) / 100.0
+    q <- 0.001 #as.numeric(input$truncation) / 100.0
     quantiles <- quantile(df[[target_col]], probs = c(q, 1 - q))
+    df <- df[between(df[[target_col]], quantiles[1], quantiles[2]), ]
     
     if (is.numeric(df[[cat_col]]))
     {
       df[[cat_col]] <- as.factor(df[[cat_col]])
     }
     
+    cat_var <- rlang::sym(cat_col)
+    target_var <- rlang::sym(target_col)
+    
     df %>% ggplot(
-      aes_string(
-        x = cat_col,
-        y = target_col,
-        fill = cat_col
+      aes(
+        x = !!cat_var,
+        y = !!target_var,
+        fill = !!cat_var
       )) +
       stat_boxplot(geom = "errorbar", width = 0.2) +
       geom_boxplot(outlier.alpha = 0.5) +
       scale_x_discrete(drop = FALSE) +
-      scale_y_continuous(trans = 'log10', limits = quantiles) +
-      theme(legend.position = "none") +
+      scale_y_continuous(trans = 'log10') +
+      theme(
+        axis.text.x = element_text(size = 12),
+        axis.text.y = element_text(size = 12),
+        legend.position = "none"
+      ) +
       coord_flip()
   }
   
@@ -267,12 +275,21 @@ shinyServer(function(input, output, session) {
       df[[cat_col]] <- as.factor(df[[cat_col]])
     }
     
-    ggplot(df, aes_string(x = cat_col, fill = cat_col)) +
+    cat_var <- rlang::sym(cat_col)
+    
+    ggplot(df, aes(
+        x = !!cat_var,
+        fill = !!cat_var
+      )) +
       geom_bar(color = "black", lwd = 0.5) +
       geom_text(stat = 'count', aes(label=..count..),
                 hjust=-0.3, check_overlap = TRUE) +
       scale_x_discrete(drop = FALSE) +
-      theme(legend.position = "none") +
+      theme(
+        axis.text.x = element_text(size = 12),
+        axis.text.y = element_text(size = 12),
+        legend.position = "none"
+      ) +
       coord_flip()
   }
   
@@ -311,110 +328,26 @@ shinyServer(function(input, output, session) {
   
   output$CategoryTextTargetName <- renderText(target_name(input$target_col))
   
-  output$EnergyCertificateBoxPlot <- renderPlot(F_catBoxPlot("energy_certificate", input$target_col))
-  output$EnergyCertificateCount <- renderPlot(F_catCount("energy_certificate", input$target_col))
-  output$EnergyCertificateTable <- renderFormattable(F_catTable("energy_certificate", input$target_col))
+  output$EnergyCertificateBoxPlot <- renderPlot(F_catBoxPlot("Energy Certificate", input$target_col))
+  output$EnergyCertificateCount <- renderPlot(F_catCount("Energy Certificate", input$target_col))
+  output$EnergyCertificateTable <- renderFormattable(F_catTable("Energy Certificate", input$target_col))
   
-  output$ConditionBoxPlot <- renderPlot(F_catBoxPlot("condition", input$target_col))
-  output$ConditionCount <- renderPlot(F_catCount("condition", input$target_col))
-  output$ConditionTable <- renderFormattable(F_catTable("condition", input$target_col))
+  output$ConditionBoxPlot <- renderPlot(F_catBoxPlot("Condition", input$target_col))
+  output$ConditionCount <- renderPlot(F_catCount("Condition", input$target_col))
+  output$ConditionTable <- renderFormattable(F_catTable("Condition", input$target_col))
   
-  output$RoomsBoxPlot <- renderPlot(F_catBoxPlot("rooms", input$target_col))
-  output$RoomsCount <- renderPlot(F_catCount("rooms", input$target_col))
-  output$RoomsTable <- renderFormattable(F_catTable("rooms", input$target_col))
+  output$BedroomsBoxPlot <- renderPlot(F_catBoxPlot("Bedrooms", input$target_col))
+  output$BedroomsCount <- renderPlot(F_catCount("Bedrooms", input$target_col))
+  output$BedroomsTable <- renderFormattable(F_catTable("Bedrooms", input$target_col))
   
-  output$BathroomsBoxPlot <- renderPlot(F_catBoxPlot("bathrooms", input$target_col))
-  output$BathroomsCount <- renderPlot(F_catCount("bathrooms", input$target_col))
-  output$BathroomsTable <- renderFormattable(F_catTable("bathrooms", input$target_col))
+  output$BathroomsBoxPlot <- renderPlot(F_catBoxPlot("Bathrooms", input$target_col))
+  output$BathroomsCount <- renderPlot(F_catCount("Bathrooms", input$target_col))
+  output$BathroomsTable <- renderFormattable(F_catTable("Bathrooms", input$target_col))
   
-  output$ConstructionYearBoxPlot <- renderPlot(F_catBoxPlot("construction_decade", input$target_col))
-  output$ConstructionYearCount <- renderPlot(F_catCount("construction_decade", input$target_col))
-  output$ConstructionYearTable <- renderFormattable(F_catTable("construction_decade", input$target_col))
-  
-  # ----------------------------------------------------------------------------------------
-  #                                   PROPERTY TYPE SECTION
-  # ----------------------------------------------------------------------------------------
+  output$ConstructionDecadeBoxPlot <- renderPlot(F_catBoxPlot("Construction Decade", input$target_col))
+  output$ConstructionDecadeCount <- renderPlot(F_catCount("Construction Decade", input$target_col))
+  output$ConstructionDecadeTable <- renderFormattable(F_catTable("Construction Decade", input$target_col))
 
-  output$PropertyTypeTextTargetName <- renderText(target_name(input$target_col))
-  
-  output$PropertyTypeBoxPlot <- renderPlot({
-    
-    target_col <- input$target_col
-    df <- filtered_dataset_noprop()
-    df <- df[!is.na(df[[target_col]]), ]
-    
-    validate(need(
-      nrow(df) >= MIN_DATAPOINTS,
-      MIN_DATAPOINTS_MSG
-    ))
-    
-    q <- 0.05 #as.numeric(input$truncation) / 100.0
-    quantiles <- quantile(df[[target_col]], probs = c(q, 1 - q))
-    
-    df %>% ggplot(
-      aes_string(
-        x = "PropType",
-        y = target_col
-      )) +
-      stat_boxplot(geom = "errorbar", width = 0.2) +
-      geom_boxplot(outlier.alpha = 0.5) +
-      # scale_x_discrete(drop = FALSE) +
-      scale_y_continuous(trans = 'log10', limits = quantiles) + 
-      theme(legend.position = "none") +
-      coord_flip()
-  })
-  
-  output$PropertyTypeCount <- renderPlot({
-    target_col <- input$target_col
-    
-    df <- filtered_dataset_noprop()
-    df <- df[!is.na(df[[target_col]]), ]
-    
-    validate(need(
-      nrow(df) >= MIN_DATAPOINTS,
-      MIN_DATAPOINTS_MSG
-    ))
-    
-    ggplot(df, aes(x = PropType)) +
-      geom_bar(color = "black", lwd = 0.5) +
-      geom_text(stat = 'count', aes(label=..count..),
-                hjust=-0.3, check_overlap = TRUE) +
-      # scale_x_discrete(drop = FALSE) +
-      theme(legend.position = "none") +
-      coord_flip()
-  })
-  
-  output$PropertyTypeTable <- renderFormattable({
-    target_col <- input$target_col
-    df <- filtered_dataset_noprop()
-    df <- df[!is.na(df[[target_col]]), ]
-    
-    validate(need(
-      nrow(df) >= MIN_DATAPOINTS,
-      MIN_DATAPOINTS_MSG
-    ))
-    
-    target <- rlang::sym(target_col)
-    
-    df %>%
-      group_by(PropType) %>%
-      summarize(
-        count = n(!!target),
-        "25%" = currency(quantile(!!target, probs=0.25), "", 2),
-        median= currency(quantile(!!target, probs=0.50), "", 2),
-        "75%" = currency(quantile(!!target, probs=0.75), "", 2)
-      ) %>%
-      arrange(-row_number()) %>%
-      drop_na() %>%
-      formattable(
-        align = c("l", "r", "r", "r", "r"),
-        list(
-          area(col = "PropType") ~ formatter(
-            "span", style = ~formattable::style(color = "grey", font.weight = "bold")),
-          count = normalize_bar("pink", 0.2),
-          median = normalize_bar("lightblue", 0.2)
-        ))
-  })
   
   # ----------------------------------------------------------------------------------------
   #                               CORRELATION EXPLORER SECTION
@@ -427,27 +360,12 @@ shinyServer(function(input, output, session) {
   })
   
   output$CorrelationPlot <- renderHighchart({
-    agg_level <- input$agg_level
-    target1 <- input$target1
-    target2 <- input$target2
-    
-    agg_col <- switch(
-      agg_level,
-      District = {
-        need(rv$location_type == "Country", "")
-        "district"
-      },
-      Municipality = {
-        need(rv$location_type %in% c("Country", "District"), "")
-        "city"
-      },
-      Parish = {
-        need(rv$location_type %in% c("Country", "District", "City"), "")
-        "parish"
-      },
-      validate(FALSE, "")
-    )
-    
+    agg_col <- input$agg_level
+    target1_col <- input$target1
+    target2_col <- input$target2
+    target1 <- rlang::sym(target1)
+    target2 <- rlang::sym(target2)
+
     if(input$agg_prop_type)
     {
       js <- "
@@ -458,13 +376,13 @@ shinyServer(function(input, output, session) {
       df <- filtered_dataset() %>%
         group_by_at(vars(one_of(agg_col))) %>%
         summarize(
-          count = n(price),
-          !!target1 := median(!!rlang::sym(target1)),
-          !!target2 := median(!!rlang::sym(target2))
+          count = n(Price),
+          !!target1_col := median(!!target1),
+          !!target2_col := median(!!target2)
         ) %>%
         filter(count >= MIN_DATAPOINTS) %>%
         hchart("scatter", hcaes(!!target1, !!target2)) %>%
-        hc_tooltip(formatter=JS(sprintf(js, agg_col, target1, target2)))
+        hc_tooltip(formatter=JS(sprintf(js, agg_col, target1_col, target2_col)))
     }
     else
     {
@@ -475,14 +393,14 @@ shinyServer(function(input, output, session) {
                  '<strong>' + '%s:</strong> ' + this.point.x + '<br>' + 
                  '<strong>' + '%s:</strong> ' + this.point.y; }"
       filtered_dataset() %>%
-        group_by_at(vars(one_of(c(agg_col, "PropType")))) %>%
+        group_by_at(vars(one_of(c(agg_col, "Property Type")))) %>%
         summarize(
-          count = n(price),
+          count = n(Price),
           !!target1 := median(!!rlang::sym(target1)),
           !!target2 := median(!!rlang::sym(target2))
         ) %>%
         filter(count >= MIN_DATAPOINTS) %>%
-        hchart("scatter", hcaes(!!target1, !!target2, group=PropType)) %>%
+        hchart("scatter", hcaes(!!target1, !!target2, group = `Property Type`)) %>%
         hc_tooltip(formatter=JS(sprintf(js, agg_col, target1, target2)))
     }
   })
@@ -495,7 +413,7 @@ shinyServer(function(input, output, session) {
   output$TerritoryTextTargetName <- renderText(target_name(input$target_col))
   
   output$territory_tab <- renderUI({
-    if(rv$location_type != "Parish")
+    if(rv$location_type != "StatisticalSection")
     {
       html <- fluidRow(
         box(
@@ -528,7 +446,7 @@ shinyServer(function(input, output, session) {
   
   output$territory_map <- renderLeaflet({
     
-    # validate(need(rv$location_type != "Parish", "Invalid location"))
+    #validate(need(rv$location_type != "StatisticalSection", "Invalid location"))
     code <- rv$location_code
     target_col <- input$target_col
     target <- rlang::sym(target_col)
@@ -538,44 +456,43 @@ shinyServer(function(input, output, session) {
 
     switch (
       rv$location_type,
-      Country = {
-        df <- df %>%
-          group_by(district_code) %>%
-          summarize(
-            count = n(!!target),
-            value = median(!!target)
-          ) %>%
-          filter(count >= MIN_DATAPOINTS)
-        
-        df_map <- country_map_sh
-        df_map$value <- df[match(df_map$id, df$district_code), ]$value
-      },
       District = {
         df <- df %>%
-          filter(district_code == code) %>%
-          group_by(city_code) %>%
+          group_by(DistrictID) %>%
           summarize(
             count = n(!!target),
             value = median(!!target)
           ) %>%
           filter(count >= MIN_DATAPOINTS)
         
-        df_map <- district_map_sh %>% filter(CCA_1 == code)
-        
-        df_map$value <- df[match(df_map$CCA_2, df$city_code), ]$value
+        df_map <- district_sh
+        df_map$value <- df[match(df_map$id, df$DistrictID), ]$value
       },
-      City = {
+      Municipality = {
         df <- df %>%
-          filter(city_code == code) %>%
-          group_by(parish_code) %>%
+          filter(DistrictID == code) %>%
+          group_by(MunicipalityID) %>%
           summarize(
             count = n(!!target),
             value = median(!!target)
           ) %>%
           filter(count >= MIN_DATAPOINTS)
         
-        df_map <- city_map_sh %>% filter(CCA_2 == code)
-        df_map$value <- df[match(df_map$CCA_3, df$parish_code), ]$value
+        df_map <- municipality_sh %>% filter(CCA_1 == code)
+        df_map$value <- df[match(df_map$CCA_2, df$MunicipalityID), ]$value
+      },
+      Parish = {
+        df <- df %>%
+          filter(MunicipalityID == code) %>%
+          group_by(ParishID) %>%
+          summarize(
+            count = n(!!target),
+            value = median(!!target)
+          ) %>%
+          filter(count >= MIN_DATAPOINTS)
+        
+        df_map <- parish_sh %>% filter(CCA_2 == code)
+        df_map$value <- df[match(df_map$CCA_3, df$ParishID), ]$value
       }, 
       {
         validate(FALSE, "")
@@ -601,7 +518,7 @@ shinyServer(function(input, output, session) {
     
     target_col <- input$target_col
     
-    validate(need(rv$location_type == "Parish", ""))
+    validate(need(rv$location_type == "StatisticalSection", ""))
     validate(need(target_col != "xYield", "xYield target not allowed for parish level view"))
     
     target <- rlang::sym(target_col)
@@ -609,10 +526,10 @@ shinyServer(function(input, output, session) {
     df <- filtered_dataset()
     df <- df[!is.na(df[[target_col]]), ]
     
-    df_map <- city_map_sh %>% filter(CCA_3 == rv$location_code)
+    df_map <- parish_sh %>% filter(CCA_3 == rv$location_code)
     
     df <- df %>% 
-      group_by(latitude, longitude) %>%
+      group_by(Latitude, Longitude) %>%
       summarize(value = round(median(!!target), 2)) %>%
       ungroup()
     
@@ -622,8 +539,8 @@ shinyServer(function(input, output, session) {
     unit_str <- switch(
       target_col,
       "price_m2" = "Eur/m2",
-      "area" = "m2",
-      "construction_decade" = ""
+      "Area" = "m2",
+      "Construction Decade" = ""
     )
 
     df_map %>%
@@ -640,7 +557,7 @@ shinyServer(function(input, output, session) {
       addCircleMarkers(
         data = df,
         radius = 5, color = ~qpal(c("red", "green"), value),
-        lng = ~longitude, lat = ~latitude,
+        lng = ~Longitude, lat = ~Latitude,
         popup = ~htmltools::htmlEscape(paste(value, unit_str)),
         stroke = FALSE, fillOpacity = 0.75
       )
@@ -649,69 +566,61 @@ shinyServer(function(input, output, session) {
   
   output$territory_boxplot <- renderPlot({
     
+    cat_col <- rv$location_type
+    validate(need(cat_col != "StatisticalSection", ""))
+    
     target_col <- input$target_col
     target <- rlang::sym(target_col)
     
     df <- filtered_dataset()
     df <- df[!is.na(df[[target_col]]), ]
+    df <- df[!is.na(df[[cat_col]]), ]
+    df$tmp <- stringr::str_wrap(df[[cat_col]], 25)
     
-    cat_col <- switch(
-      rv$location_type,
-      Country = "district",
-      District = "city",
-      City = "parish",
-      validate(FALSE, "")
-    )
-    
-    df <- df[!is.na(df[[paste(cat_col, "code", sep = "_")]]), ]
-    df$cat_col <- stringr::str_wrap(df[[cat_col]], 25)
-    
-    q <- 0.05 #as.numeric(input$truncation) / 100.0
+    q <- 0.001 #as.numeric(input$truncation) / 100.0
     quantiles <- quantile(df[[target_col]], probs = c(q, 1 - q))
+    df <- df[between(df[[target_col]], quantiles[1], quantiles[2]), ]
+    
+    median_val <- median(df[[target_col]])
     
     df %>% ggplot(
       aes(
-        x = fct_reorder(cat_col, !!target, .fun = median),
+        x = reorder(tmp, !!target, FUN = median),
         y = !!target)
-      ) +
-      geom_errorbar(
-        stat = "summary",
-        fun.ymin = ~quantile(., prob = 0.1,   na.rm=True),
-        fun.ymin = ~quantile(., prob = 0.9, na.rm=True),
-        width = 0.3
       ) +
       geom_boxplot(
         outlier.shape = NA,
-        fill = "#8DBEDA",
+        #fill = "#8DBEDA",
       ) +
-      scale_y_continuous(trans = 'log10', limits = quantiles) +
-      theme(axis.title.y=element_blank()) +
-      theme(legend.position = "none") +
+      scale_y_continuous(trans = 'log10') +
+      theme(
+        axis.title.y = element_blank(),
+        axis.text.x = element_text(size = 12),
+        axis.text.y = element_text(size = 12),
+        legend.position = "none"
+      ) +
+      geom_hline(
+        yintercept = median_val,
+        linetype = "dashed", 
+        color = "red",
+        size = 1) +
       coord_flip()
   })
   
   output$territory_table <- renderFormattable({
     
-    cat_col <- switch(rv$location_type,
-                      Country = "district",
-                      District = "city",
-                      City = "parish",
-                      Parish = NULL)
+    cat_col <- rv$location_type
+    validate(need(cat_col != "StatisticalSection", ""))
     
     target_col <- input$target_col
     target <- rlang::sym(target_col)
     
     df <- filtered_dataset()
     df <- df[!is.na(df[[target_col]]), ]
+    df <- df[!is.na(df[[cat_col]]), ]
     
-    switch (rv$location_type,
-            Country = df %>% drop_na(district_code) %>% group_by(district),
-            District = df %>% drop_na(city_code) %>% group_by(city),
-            City = df %>% drop_na(parish_code) %>% group_by(parish),
-            Parish = {
-              validate(FALSE, "")
-            }
-    ) %>%
+    df %>%
+      group_by_at(vars(one_of(cat_col))) %>%
       summarize(
         count=n(price_m2),
         "25%" = currency(quantile(!!target, probs=0.25), "", 2),
@@ -731,48 +640,19 @@ shinyServer(function(input, output, session) {
   
   output$filtered_table <- DT::renderDataTable(
     filtered_dataset() %>% select(
-      -district_code,
-      -city_code,
-      -parish_code,
-      -latitude,
-      -longitude,
-      -construction_decade),
+      `Property Type`,
+      Price,
+      price_m2,
+      Area,
+      `Gross Area`,
+      `Terrain Area`,
+      Bedrooms,
+      Bathrooms,
+      `Energy Certificate`,
+      `Construction Year`,
+      Condition),
     filter = 'top', options = list(scrollX = TRUE)
   )
-  
-  
-  # ----------------------------------------------------------------------------------------
-  #                                    DATA SOURCES SECTION
-  # ----------------------------------------------------------------------------------------
-  
-  output$rawDataTable <- DT::renderDataTable(
-    dataset %>% select(
-      -district_code,
-      -city_code,
-      -parish_code,
-      -latitude,
-      -longitude,
-      -construction_decade),
-    filter = 'top', options = list(scrollX = TRUE))
-  
-  output$pivotTable <- renderRpivotTable({
-    df <- dataset %>% select(
-      -district_code,
-      -city_code,
-      -parish_code,
-      -latitude,
-      -longitude,
-      -construction_decade)
-    
-    rpivotTable(
-      df,
-      rows = "district",
-      cols = c("DealType", "PropType"),
-      aggregatorName = "Median",
-      vals = "price_m2",
-      rendererName = "Col Heatmap") 
-  })
-  
 
   # ----------------------------------------------------------------------------------------
   #                                     VALUATION SECTION

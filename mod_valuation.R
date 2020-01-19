@@ -16,16 +16,16 @@ ui_valuation <- function(id)
           column(4,
                  selectizeInput(ns("prop_type"), NULL,
                                 prop_types, selected = "Apartment"),
-                 radioButtons(ns("deal_type"), NULL,
+                 radioButtons(ns("deal"), NULL,
                               choices = c("Sale", "Rent"),
                               inline = TRUE),
                  selectInput(ns("energy_certificate"),
                              "Energy Certificate", NULL,
-                             choices = names(energy_certificate_levels)),
+                             choices = energy_certificate_levels),
                  selectInput(ns("condition"),
                              "Condition",
                              selected = "Usado",
-                             choices = names(condition_levels)),
+                             choices = condition_levels),
                  numericInput(ns("construction_year"),
                               "Construction Year", NULL, min=0, max=2020)
           ),
@@ -33,7 +33,7 @@ ui_valuation <- function(id)
                  numericInput(ns("net_area"),     "Net Area",      100, min=0, step=1),
                  numericInput(ns("gross_area"),   "Gross Area",   NULL, min=0, step=1),
                  numericInput(ns("terrain_area"), "Terrain Area", NULL, min=0, step=1),
-                 numericInput(ns("rooms"),        "#Rooms",       NULL, min=0, max=10, step=1),
+                 numericInput(ns("bedrooms"),     "#Bedrooms",    NULL, min=0, max=10, step=1),
                  numericInput(ns("bathrooms"),    "#Bathrooms",   NULL, min=0, max=4, step=1)
           ),
           column(4,
@@ -46,7 +46,7 @@ ui_valuation <- function(id)
                                   placeholder = 'District',
                                   onInitialize = I('function() { this.setValue(""); }')
                                 )),
-                 selectizeInput(ns("city"), NULL, c(" "),
+                 selectizeInput(ns("municipality"), NULL, c(" "),
                                 options = list(
                                   placeholder = 'Municipality',
                                   onInitialize = I('function() { this.setValue(""); }')
@@ -86,29 +86,29 @@ ui_valuation <- function(id)
 
 server_valuation <- function(input, output, session) {
   
-  # updates the city list, after selecting a new district
+  # updates the municipality list, after selecting a new district
   observe({
-    city_list <- c(NULL)
-    df <- city_meta %>% filter(code1 == input$district)
+    municipality_list <- c(NULL)
+    df <- municipality_sh %>% filter(CCA_1 == input$district)
     
     if (nrow(df) > 0) {
-      city_list <- df$Dicofre
-      names(city_list) <- df$Designacao
+      municipality_list <- df$id
+      names(municipality_list) <- df$name
     }
     
-    updateSelectInput(session, "city", choices = city_list)
+    updateSelectInput(session, "municipality", choices = municipality_list)
     updateSelectInput(session, "parish", choices = c(" "))
   })
   
   
-  # updates the parish list, after selecting a new city
+  # updates the parish list, after selecting a new municipality
   observe({
     parish_list <- c(NULL)
-    df <- parish_meta %>% filter(code1 == input$city)
+    df <- parish_sh %>% filter(CCA_2 == input$municipality)
     
     if (nrow(df) > 0) {
-      parish_list <- df$Dicofre
-      names(parish_list) <- df$Designacao
+      parish_list <- df$id
+      names(parish_list) <- df$name
     }
     
     updateSelectInput(session, "parish", choices = parish_list)
@@ -118,10 +118,10 @@ server_valuation <- function(input, output, session) {
   # map of the parish to select the coordinates
   output$coordinates_map <- renderLeaflet({
     
-    parish_code <- input$parish
-    validate(need(!is.empty(parish_code), label = "Parish"))
-    city_map_sh %>%
-      filter(CCA_3 == parish_code) %>%
+    code <- input$parish
+    validate(need(!is.empty(code), label = "Parish"))
+    parish_sh %>%
+      filter(CCA_3 == code) %>%
       leaflet(options = leafletOptions(
         zoomControl = TRUE,
         attributionControl = FALSE
@@ -140,31 +140,31 @@ server_valuation <- function(input, output, session) {
   # performs the actual valuation
   valuationResult <- eventReactive(input$calculate, {
     validate(
-      need(!is.empty(input$district), label = "District"),
-      need(!is.empty(input$city), label = "Municipality"),
-      need(!is.empty(input$net_area), label = "Area")
+      need(!is.empty(input$district),     label = "District"),
+      need(!is.empty(input$municipality), label = "Municipality"),
+      need(!is.empty(input$net_area),     label = "Area")
     )
     
     row <- list(
-      DealType = input$deal_type,
-      PropType = input$prop_type,
+      Deal = input$deal,
+      `Property Type` = input$prop_type,
       
-      district_code = input$district,
-      city_code = input$city,
-      parish_code = input$parish,
+      DistrictID = input$district,
+      MunicipalityID = input$municipality,
+      ParishID = input$parish,
       
-      construction_year = input$construction_year,
-      energy_certificate = input$energy_certificate,
-      condition = input$condition,
-      rooms = input$rooms,
-      bathrooms = input$bathrooms,
+      `Construction Year` = input$construction_year,
+      `Energy Certificate` = input$energy_certificate,
+      Condition = input$condition,
+      Bedrooms = input$bedrooms,
+      Bathrooms = input$bathrooms,
       
-      area = input$net_area,
-      gross_area = input$gross_area,
-      terrain_area = input$terrain_area,
+      Area = input$net_area,
+      `Gross Area` = input$gross_area,
+      `Terrain Area` = input$terrain_area,
       
-      latitude = NA,
-      longitude = NA
+      Latitude = NA,
+      Longitude = NA
     )
     
     for(c in unlist(other_attrs, use.names = FALSE))
@@ -177,26 +177,26 @@ server_valuation <- function(input, output, session) {
       check.names = FALSE) %>%
       tbl_df() %>%
       mutate(
-        area = as.double(area),
-        gross_area = as.double(gross_area),
-        terrain_area = as.double(terrain_area)
+        Area = as.double(Area),
+        `Gross Area` = as.double(`Gross Area`),
+        `Terrain Area` = as.double(`Terrain Area`)
       )
     
     ### DROPDOWN
     
     drop_cols <- c(
       input$attrs,
-      "bathrooms",
-      "rooms",
-      "construction_year",
-      "energy_certificate",
-      "condition",
-      "terrain_area",
-      "gross_area",
-      "area",
-      "parish_code",
-      "city_code",
-      "district_code"
+      "Bathrooms",
+      "Bedrooms",
+      "Construction Year",
+      "Energy Certificate",
+      "Condition",
+      "Terrain Area",
+      "Gross Area",
+      "Area",
+      "ParishID",
+      "MunicipalityID",
+      "DistrictID"
     )
     
     df <- row

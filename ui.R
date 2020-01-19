@@ -18,8 +18,6 @@ sideBar <- dashboardSidebar(
     menuItem("Exploration", icon = icon("poll"),
              menuSubItem("Territory",
                          tabName = "territoryTab"),
-             menuSubItem("Property Type",
-                         tabName = "propertyTypeTab"),
              menuSubItem("Categories",
                          tabName = "categoriesTab"),
              menuSubItem("Correlations",
@@ -27,20 +25,17 @@ sideBar <- dashboardSidebar(
              menuSubItem("Histograms",
                          tabName = "histogramsTab")
     ),
-    menuItem("Data Sources", icon = icon("table"),
-             menuSubItem("Raw Data", tabName = "rawdataTab"),
-             menuSubItem("Pivots", tabName = "pivotTableTab")),
     hr(),
     conditionalPanel(
-      condition = "['histogramsTab', 'propertyTypeTab', 'categoriesTab', 'correlationTab', 'territoryTab'].indexOf(input.sidebarmenu) >= 0",
-      radioButtons("deal_type", NULL, c("Sale", "Rent"), inline = TRUE)
+      condition = "['histogramsTab', 'categoriesTab', 'correlationTab', 'territoryTab'].indexOf(input.sidebarmenu) >= 0",
+      radioButtons("deal", NULL, c("Sale", "Rent"), inline = TRUE)
     ),
     conditionalPanel(
       condition = "['histogramsTab', 'categoriesTab', 'correlationTab', 'territoryTab'].indexOf(input.sidebarmenu) >= 0",
-      selectizeInput("prop_type", NULL, prop_types, selected = "Apartment", multiple = TRUE)
+      selectizeInput("prop_type", NULL, prop_types, selected = c("Apartment", "House"), multiple = TRUE)
     ),
     conditionalPanel(
-      condition = "['histogramsTab', 'propertyTypeTab', 'categoriesTab', 'correlationTab', 'territoryTab'].indexOf(input.sidebarmenu) >= 0",
+      condition = "['histogramsTab', 'categoriesTab', 'correlationTab', 'territoryTab'].indexOf(input.sidebarmenu) >= 0",
       selectizeInput("district", "Location", district_list,
                      size = 3,
                      options = list(
@@ -49,13 +44,13 @@ sideBar <- dashboardSidebar(
                      )),
       conditionalPanel(
         condition = "input.district != ''",
-        selectizeInput("city", NULL, c(" "),
+        selectizeInput("municipality", NULL, c(" "),
                        options = list(
                          placeholder = 'Municipality',
                          onInitialize = I('function() { this.setValue(""); }')
                        )),
         conditionalPanel(
-          condition = "input.city != ''",
+          condition = "input.municipality != ''",
           selectizeInput("parish", NULL, c(" "),
                          multiple = FALSE,
                          options = list(
@@ -77,7 +72,7 @@ sideBar <- dashboardSidebar(
       )
     ),
     conditionalPanel(
-      condition = "['categoriesTab', 'propertyTypeTab', 'territoryTab'].indexOf(input.sidebarmenu) >= 0",
+      condition = "['categoriesTab', 'territoryTab'].indexOf(input.sidebarmenu) >= 0",
       selectizeInput("target_col", "Target",
                      target_list, selected = "Price/m2")
     )
@@ -162,21 +157,15 @@ body <- dashboardBody(
       )
     ),
     tabItem(
-      tabName = "propertyTypeTab",
-      tags$h2(tags$strong("Property Type")),
-      tags$h5(tags$strong(textOutput("PropertyTypeTextTargetName")), style='color:grey'),
-      categoryTab("PropertyType", "Property Type"),
-    ),
-    tabItem(
       tabName = "categoriesTab",
       tags$h2(tags$strong("Categories")),
       tags$h5(tags$strong(textOutput("CategoryTextTargetName")), style='color:grey'),
       navbarPage("",
-         categoryTab("EnergyCertificate", "Energy Certificate"),
+         categoryTab("EnergyCertificate",  "Energy Certificate"),
          categoryTab("Condition"),
-         categoryTab("Rooms",             "#Rooms"),
-         categoryTab("Bathrooms",         "#Bathrooms"),
-         categoryTab("ConstructionYear",  "Construction decade")
+         categoryTab("Bedrooms",           "#Bedrooms"),
+         categoryTab("Bathrooms",          "#Bathrooms"),
+         categoryTab("ConstructionDecade", "Construction Decade")
       )
     ),
     tabItem(
@@ -194,7 +183,7 @@ body <- dashboardBody(
           fluidRow(
             column(4,
                    selectizeInput("target1", "Target1",
-                                  target_list, selected = "area"),
+                                  target_list, selected = "Area"),
                    selectizeInput("target2", "Target2",
                                   target_list, selected = "price_m2"),
                    selectizeInput("agg_level", "Aggregation Level",
@@ -207,25 +196,6 @@ body <- dashboardBody(
           width = 12
         )
       )
-    ),
-    tabItem(
-      tabName = "rawdataTab",
-      tags$h2(tags$strong('Raw Data')),
-      box(
-        title = tags$strong("Imovirtual database"),
-        solidHeader = TRUE,
-        status = "primary",
-        collapsible = TRUE,
-        collapsed = FALSE,
-        DT::dataTableOutput("rawDataTable") %>% withSpinner(type=SPINNER_TYPE),
-        width = 12
-      )
-    ),
-    tabItem(
-      tabName = "pivotTableTab",
-      #tags$h2(tags$strong("Pivot Table")),
-      #tags$h3("Imovirtual database"),
-      rpivotTableOutput("pivotTable") %>% withSpinner(type=SPINNER_TYPE)
     ),
     ui_valuation("mod_valuation"),
     ui_search("mod_search")

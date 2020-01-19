@@ -24,10 +24,10 @@ target_name <- function(target_col) {
   switch(
     target_col,
     price_m2 = "Price / m2",
-    area = "Area",
-    price = "Price",
+    Area = "Area",
+    Price = "Price",
     xYield = "Expected Yield",
-    construction_year = "Construction Year"
+    `Construction Year` = "Construction Year"
   )
 }
 
@@ -110,31 +110,31 @@ hc_hist <- function(df, col_name, xunits, xlabel = "", truncation = 1)
 
 load_dataset <- function()
 {
-  fname <- "imovirtual_20191101.csv"
+  fname <- "imovirtual_20191230.csv"
   col_types <- c(
-    DealType = "f",
-    PropType = "f",
-    area = "d",
-    gross_area = "d",
-    terrain_area = "d",
-    district_code = "f",
-    city_code = "f",
-    parish_code = "f",
-    energy_certificate = "f",
-    construction_year = "d",
-    rooms = "d",
-    bathrooms = "d",
-    condition = "f",
-    elevator = "d",
-    balcony = "d",
-    view = "d",
-    garden = "d",
-    pool = "d",
-    'garage (box)' = "d",
-    parking = "d",
-    latitude = "d",
-    longitude = "d",
-    price = "d"
+    Deal = "f",
+    `Property Type` = "f",
+    Area = "d",
+    `Gross Area` = "d",
+    `Terrain Area` = "d",
+    DistrictID = "f",
+    MunicipalityID = "f",
+    ParishID = "f",
+    `Energy Certificate` = "f",
+    `Construction Year` = "d",
+    Bedrooms = "d",
+    Bathrooms = "d",
+    Condition = "f",
+    Elevator = "d",
+    Balcony = "d",
+    View = "d",
+    Garden = "d",
+    `Swimming Pool` = "d",
+    Garage = "d",
+    Parking = "d",
+    Latitude = "d",
+    Longitude = "d",
+    Price = "d"
   )
   
   df <- readr::read_csv(
@@ -142,23 +142,26 @@ load_dataset <- function()
     col_types = col_types
   ) %>% select(names(col_types))
   
-  df$DealType <- plyr::mapvalues(df$DealType, 0:1, c("Rent", "Sale"))
-  df$PropType <- plyr::mapvalues(df$PropType, c(1, 2, 4, 5, 6, 7, 8, 9, 11), prop_types)
+  df$Deal <-  plyr::mapvalues(df$Deal, 0:1, c("Rent", "Sale"))
+  df$`Property Type` <-  plyr::mapvalues(df$`Property Type`, prop_types_ids, prop_types)
   
-  df$construction_year[df$construction_year < 1800] <- NA
+  df$Condition <- plyr::mapvalues(
+    as.integer(df$Condition),
+    condition_ids,
+    condition_levels
+  )
   
-  # df$energy_certificate <- factor(df$energy_certificate)
-  levels(df$energy_certificate) <- energy_certificate_levels
+  year <- df[["Construction Year"]]
+  df[!is.na(year) & !between(year, 1800, 2025), "Construction Year"] <- NA
+  
+  # df$`Energy Certificate` <- factor(df[["Energy Certificate"]])
+  levels(df$`Energy Certificate`) <- energy_certificate_levels
 
-  
-  # df$condition <- factor(df$condition)
-  levels(df$condition) <- condition_levels
-
-  df <- add_column(df, price_m2 = round(df$price / df$area, 2), .after="price")
-  df <- add_column(df, construction_decade = cut(df$construction_year, decades, decades_labels), .after="construction_year")
-  df <- add_column(df, district = district_meta$Designacao[match(df$district_code, district_meta$Dicofre)], .after="district_code")
-  df <- add_column(df, city = city_meta$Designacao[match(df$city_code, city_meta$Dicofre)], .after="city_code")
-  df <- add_column(df, parish = parish_meta$Designacao[match(df$parish_code, parish_meta$Dicofre)], .after="parish_code")
+  df <- add_column(df, price_m2     = round(df$Price / df$Area, 2),                                       .after = "Price")
+  df <- add_column(df, `Construction Decade` = cut(df[["Construction Year"]], decades, decades_labels),   .after = "Construction Year")
+  df <- add_column(df, District     = district_sh$name[match(df$DistrictID, district_sh$id)],             .after = "DistrictID")
+  df <- add_column(df, Municipality = municipality_sh$name[match(df$MunicipalityID, municipality_sh$id)], .after = "MunicipalityID")
+  df <- add_column(df, Parish       = parish_sh$name[match(df$ParishID, parish_sh$id)],                   .after = "ParishID")
   
   df <- df %>% filter(!is.na(price_m2) & (price_m2 > 0))
   
@@ -170,16 +173,16 @@ get_features <- function(df, match_tables)
 {
   df <- df %>%
     mutate(
-      DealType = as.factor(DealType),
-      PropType = as.factor(PropType),
-      district_code = as.factor(district_code),
-      city_code = as.factor(city_code),
-      parish_code = as.factor(parish_code),
-      condition = as.factor(condition)
+      Deal = as.factor(Deal),
+      `Property Type` = as.factor(`Property Type`),
+      DistrictID = as.factor(DistrictID),
+      MunicipalityID = as.factor(MunicipalityID),
+      ParishID = as.factor(ParishID),
+      Condition = as.factor(Condition)
     )
   
   energy_certificate_ord <- c("G", "F", "E", "D", "C", "B-", "B", "A", "A+")
-  df$energy_certificate_ord <- match(df$energy_certificate, energy_certificate_ord)
+  df$energy_certificate_ord <- match(df[["Energy Certificate"]], energy_certificate_ord)
   
   if(!("Fold" %in% names(df)))
   {
@@ -217,7 +220,7 @@ get_features <- function(df, match_tables)
   
   # ------------- Replace NA's by zeros for Count Encodings -------------
 
-  for(c in c("count.enc.city", "count.enc.parish", "count.enc.geo"))
+  for(c in c("count.enc.municipality", "count.enc.parish", "count.enc.geo"))
   {
     df[is.na(df[[c]]), c] <- 0
   }
@@ -225,15 +228,15 @@ get_features <- function(df, match_tables)
   # Replace NA's by zeros for hierarchical target Encoding
   
   filt <- is.na(df$target.enc.deal.parish)
-  df[filt, "target.enc.deal.parish"] <- df[filt, "target.enc.deal.city"]
+  df[filt, "target.enc.deal.parish"] <- df[filt, "target.enc.deal.municipality"]
   
-  filt <- is.na(df$target.enc.deal.city)
-  df[filt, "target.enc.deal.city"] <- df[filt, "target.enc.deal.district"]
+  filt <- is.na(df$target.enc.deal.municipality)
+  df[filt, "target.enc.deal.municipality"] <- df[filt, "target.enc.deal.district"]
   
   feat_cols <- c(
-    "area", "gross_area", "terrain_area",
-    "rooms", "bathrooms",
-    "construction_year",
+    "Area", "Gross Area", "Terrain Area",
+    "Bedrooms", "Bathrooms",
+    "Construction Year",
     "energy_certificate_ord",
     unlist(other_attrs, use.names=FALSE),
     enc_cols
