@@ -180,11 +180,11 @@ shinyServer(function(input, output, session) {
   )
   
   output$HistogramPrice <- renderHighchart(
-    filtered_dataset() %>% hc_hist("price", "EUR", "", input$truncation)
+    filtered_dataset() %>% hc_hist("Price", "EUR", "", input$truncation)
   )
   
   output$HistogramArea <- renderHighchart(
-    filtered_dataset() %>% hc_hist("area", "m2", "", input$truncation)
+    filtered_dataset() %>% hc_hist("Area", "m2", "", input$truncation)
   )
   
   # -------------------------------------- FORMATTABLE -------------------------------------
@@ -194,8 +194,8 @@ shinyServer(function(input, output, session) {
     probs <- c(0.95, 0.90, 0.75, 0.50, 0.25, 0.10, 0.05)
     table <- data.frame(
       quantile = percent(probs, 0),
-      price = currency(quantile(df$price, probs = probs), "", 0),
-      area = currency(quantile(df$area, probs = probs), "", 0),
+      Price = currency(quantile(df$Price, probs = probs), "", 0),
+      Area = currency(quantile(df$Area, probs = probs), "", 0),
       price_m2 = currency(quantile(df$price_m2, probs = probs), "", 0)
     )
     row.names(table) <- NULL
@@ -206,8 +206,8 @@ shinyServer(function(input, output, session) {
       list(
         quantile =  formatter(
           "span", style = ~formattable::style(color = "grey", font.weight = "bold")),
-        price = normalize_bar("lightpink", 0.2),
-        area = normalize_bar("lightpink", 0.2),
+        Price = normalize_bar("lightpink", 0.2),
+        Area = normalize_bar("lightpink", 0.2),
         price_m2 = normalize_bar("lightblue", 0.2)
       )
     )
@@ -330,7 +330,7 @@ shinyServer(function(input, output, session) {
   
   output$EnergyCertificateBoxPlot <- renderPlot(F_catBoxPlot("Energy Certificate", input$target_col))
   output$EnergyCertificateCount <- renderPlot(F_catCount("Energy Certificate", input$target_col))
-  output$EnergyCertificateTable <- renderFormattable(F_catTable("`Energy Certificate`", input$target_col))
+  output$EnergyCertificateTable <- renderFormattable(F_catTable("Energy Certificate", input$target_col))
   
   output$ConditionBoxPlot <- renderPlot(F_catBoxPlot("Condition", input$target_col))
   output$ConditionCount <- renderPlot(F_catCount("Condition", input$target_col))
@@ -361,8 +361,10 @@ shinyServer(function(input, output, session) {
   
   output$CorrelationPlot <- renderHighchart({
     agg_col <- input$agg_level
-    target1 <- input$target1
-    target2 <- input$target2
+    target1_col <- input$target1
+    target2_col <- input$target2
+    target1 <- rlang::sym(target1)
+    target2 <- rlang::sym(target2)
 
     if(input$agg_prop_type)
     {
@@ -374,13 +376,13 @@ shinyServer(function(input, output, session) {
       df <- filtered_dataset() %>%
         group_by_at(vars(one_of(agg_col))) %>%
         summarize(
-          count = n(price),
-          !!target1 := median(!!rlang::sym(target1)),
-          !!target2 := median(!!rlang::sym(target2))
+          count = n(Price),
+          !!target1_col := median(!!target1),
+          !!target2_col := median(!!target2)
         ) %>%
         filter(count >= MIN_DATAPOINTS) %>%
         hchart("scatter", hcaes(!!target1, !!target2)) %>%
-        hc_tooltip(formatter=JS(sprintf(js, agg_col, target1, target2)))
+        hc_tooltip(formatter=JS(sprintf(js, agg_col, target1_col, target2_col)))
     }
     else
     {
@@ -393,7 +395,7 @@ shinyServer(function(input, output, session) {
       filtered_dataset() %>%
         group_by_at(vars(one_of(c(agg_col, "Property Type")))) %>%
         summarize(
-          count = n(price),
+          count = n(Price),
           !!target1 := median(!!rlang::sym(target1)),
           !!target2 := median(!!rlang::sym(target2))
         ) %>%
@@ -527,7 +529,7 @@ shinyServer(function(input, output, session) {
     df_map <- parish_sh %>% filter(CCA_3 == rv$location_code)
     
     df <- df %>% 
-      group_by(latitude, longitude) %>%
+      group_by(Latitude, Longitude) %>%
       summarize(value = round(median(!!target), 2)) %>%
       ungroup()
     
@@ -537,7 +539,7 @@ shinyServer(function(input, output, session) {
     unit_str <- switch(
       target_col,
       "price_m2" = "Eur/m2",
-      "area" = "m2",
+      "Area" = "m2",
       "Construction Decade" = ""
     )
 
@@ -555,7 +557,7 @@ shinyServer(function(input, output, session) {
       addCircleMarkers(
         data = df,
         radius = 5, color = ~qpal(c("red", "green"), value),
-        lng = ~longitude, lat = ~latitude,
+        lng = ~Longitude, lat = ~Latitude,
         popup = ~htmltools::htmlEscape(paste(value, unit_str)),
         stroke = FALSE, fillOpacity = 0.75
       )
@@ -639,11 +641,11 @@ shinyServer(function(input, output, session) {
   output$filtered_table <- DT::renderDataTable(
     filtered_dataset() %>% select(
       `Property Type`,
-      price,
+      Price,
       price_m2,
-      area,
-      gross_area,
-      terrain_area,
+      Area,
+      `Gross Area`,
+      `Terrain Area`,
       Bedrooms,
       Bathrooms,
       `Energy Certificate`,

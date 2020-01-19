@@ -181,7 +181,7 @@ body <- dashboardBody(
           fluidRow(
             column(4,
                    selectizeInput("target1", "Target1",
-                                  target_list, selected = "area"),
+                                  target_list, selected = "Area"),
                    selectizeInput("target2", "Target2",
                                   target_list, selected = "price_m2"),
                    selectizeInput("agg_level", "Aggregation Level",

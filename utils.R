@@ -24,8 +24,8 @@ target_name <- function(target_col) {
   switch(
     target_col,
     price_m2 = "Price / m2",
-    area = "Area",
-    price = "Price",
+    Area = "Area",
+    Price = "Price",
     xYield = "Expected Yield",
     `Construction Year` = "Construction Year"
   )
@@ -114,9 +114,9 @@ load_dataset <- function()
   col_types <- c(
     Deal = "f",
     `Property Type` = "f",
-    area = "d",
-    gross_area = "d",
-    terrain_area = "d",
+    Area = "d",
+    `Gross Area` = "d",
+    `Terrain Area` = "d",
     DistrictID = "f",
     MunicipalityID = "f",
     ParishID = "f",
@@ -125,16 +125,16 @@ load_dataset <- function()
     Bedrooms = "d",
     Bathrooms = "d",
     Condition = "f",
-    elevator = "d",
-    balcony = "d",
-    view = "d",
-    garden = "d",
-    pool = "d",
-    'garage (box)' = "d",
-    parking = "d",
-    latitude = "d",
-    longitude = "d",
-    price = "d"
+    Elevator = "d",
+    Balcony = "d",
+    View = "d",
+    Garden = "d",
+    `Swimming Pool` = "d",
+    Garage = "d",
+    Parking = "d",
+    Latitude = "d",
+    Longitude = "d",
+    Price = "d"
   )
   
   df <- readr::read_csv(
@@ -157,7 +157,7 @@ load_dataset <- function()
   # df$`Energy Certificate` <- factor(df[["Energy Certificate"]])
   levels(df$`Energy Certificate`) <- energy_certificate_levels
 
-  df <- add_column(df, price_m2     = round(df$price / df$area, 2),                                       .after = "price")
+  df <- add_column(df, price_m2     = round(df$Price / df$Area, 2),                                       .after = "Price")
   df <- add_column(df, `Construction Decade` = cut(df[["Construction Year"]], decades, decades_labels),   .after = "Construction Year")
   df <- add_column(df, District     = district_sh$name[match(df$DistrictID, district_sh$id)],             .after = "DistrictID")
   df <- add_column(df, Municipality = municipality_sh$name[match(df$MunicipalityID, municipality_sh$id)], .after = "MunicipalityID")
@@ -234,7 +234,7 @@ get_features <- function(df, match_tables)
   df[filt, "target.enc.deal.municipality"] <- df[filt, "target.enc.deal.district"]
   
   feat_cols <- c(
-    "area", "gross_area", "terrain_area",
+    "Area", "Gross Area", "Terrain Area",
     "Bedrooms", "Bathrooms",
     "Construction Year",
     "energy_certificate_ord",

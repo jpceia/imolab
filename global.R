@@ -74,13 +74,13 @@ energy_certificate_ids <- c(
 )
 
 other_attrs <- list(
-  Elevator = 'elevator',
-  Balcony = 'balcony',
-  View = 'view',
-  Garden = 'garden',
-  'Swimming Pool' = 'pool',
-  Garage = 'garage (box)',
-  Parking = 'parking'
+  Elevator = 'Elevator',
+  Balcony = 'Balcony',
+  View = 'View',
+  Garden = 'Garden',
+  'Swimming Pool' = 'Swimming Pool',
+  Garage = 'Garage',
+  Parking = 'Parking'
 )
 
 bathrooms_levels <- 1:4
@@ -89,7 +89,7 @@ bedrooms_levels <- 0:10
 
 target_list <- list(
   'Price/m2' = 'price_m2',
-  'Area' = 'area',
+  'Area' = 'Area',
   'xYield' = 'xYield',
   'Construction Year' = 'Construction Year'
 )
@@ -142,7 +142,7 @@ df <- load_dataset()
 
 # -------------------------------------- GroupKFold --------------------------------------
 
-group_cols <- c("latitude", "longitude", "MunicipalityID", "Deal", "Property Type")
+group_cols <- c("Latitude", "Longitude", "MunicipalityID", "Deal", "Property Type")
 df$group <- as.factor(md5(apply(df[, group_cols], 1, paste, collapse = "/")))
 unique_groups <- unique(df$group)
 df_groups <- data.frame(
@@ -181,7 +181,7 @@ count_enc_cols <- list(
   municipality='MunicipalityID',
   parish='ParishID',
   condition='Condition',
-  geo=c('latitude', 'longitude')
+  geo=c('Latitude', 'Longitude')
 )
 
 
@@ -212,7 +212,7 @@ for(k in 1:NFOLDS)
     match_tables[[k_name]][[col_name]] <- df %>%
       filter(Fold != k) %>%
       group_by_at(cols) %>%
-      summarize(!!col_name := median(area)) %>%
+      summarize(!!col_name := median(Area)) %>%
       na.omit()
   }
   
@@ -250,7 +250,7 @@ for(key in names(area_enc_cols))
   col_name <- paste('area.enc', key, sep='.')
   match_tables$ALL[[col_name]] <- df %>%
     group_by_at(cols) %>%
-    summarize(!!col_name := median(area)) %>%
+    summarize(!!col_name := median(Area)) %>%
     na.omit()
 }
 
@@ -286,7 +286,7 @@ fairobj <- function(preds, dtrain) {
 
 
 
-y <- log(dataset$price)
+y <- log(dataset$Price)
 
 reg$price <- xgb.train(
   data = xgb.DMatrix(data = as.matrix(X), label = y),
@@ -304,7 +304,7 @@ filt <- dataset$Deal == "Sale"
 filt <- filt & !(dataset$`Property Type` %in% c("Farm", "Terrain"))
 X <- dataset[filt, ] %>% mutate(Deal = "Rent") %>% get_features(match_tables)
 rent_pred <- exp(predict(reg$price, xgb.DMatrix(data = as.matrix(X))))
-dataset[filt, "xYield"] <- 12 * rent_pred / dataset[filt, "price"]
+dataset[filt, "xYield"] <- 12 * rent_pred / dataset[filt, "Price"]
 
 # filt <- dataset$Deal == "Rent"
 # X <- dataset[filt, ] %>% mutate(Deal = "Sale") %>% get_features(match_tables)
