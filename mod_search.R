@@ -34,7 +34,7 @@ ui_search <- function(id)
                  offset = 1
           ),
           column(4,
-                 numericInput(ns("max_investment"), "Maximum investment value",
+                 numericInput(ns("max_investment"), "Budget",
                               100000, min=0),
                  selectizeInput(ns("objective"), "Objective",
                                 c("Buy", "Rent", "Buy-to-Let")),
