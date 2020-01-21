@@ -12,7 +12,18 @@ ui_search <- function(id)
         status = "primary",
         collapsible = TRUE,
         collapsed = FALSE,
+        br(),
         fluidRow(
+          column(4,
+                 numericInput(ns("max_investment"), "Budget",
+                              100000, min=0),
+                 selectizeInput(ns("objective"), "Objective",
+                                c("Buy", "Rent", "Buy-to-Let")),
+                 selectizeInput(ns("prop_types"), "Property Types",
+                                prop_types, multiple = TRUE,
+                                selected = c("Apartment", "House")),
+                 offset = 1
+          ),
           column(4,
                  selectizeInput(ns("district"), "Location", district_list,#,  district
                                 size = 3,
@@ -20,7 +31,7 @@ ui_search <- function(id)
                                   placeholder = 'District',
                                   onInitialize = I('function() { this.setValue(""); }')
                                 )),
-                 selectizeInput(ns("city"), NULL, c(" "),
+                 selectizeInput(ns("municipality"), NULL, c(" "),
                                 options = list(
                                   placeholder = 'Municipality',
                                   onInitialize = I('function() { this.setValue(""); }')
@@ -33,15 +44,6 @@ ui_search <- function(id)
                                 )),
                  offset = 1
           ),
-          column(4,
-                 numericInput(ns("max_investment"), "Budget",
-                              100000, min=0),
-                 selectizeInput(ns("objective"), "Objective",
-                                c("Buy", "Rent", "Buy-to-Let")),
-                 selectizeInput(ns("prop_types"), "Property Types",
-                                prop_types, multiple = TRUE),
-                 offset = 1
-          )
         ),
         fluidRow(
           column(4,
@@ -62,29 +64,29 @@ ui_search <- function(id)
 
 server_search  <- function(input, output, session) {
   
-  # updates the city list, after selecting a new district
-  observe({
-    city_list <- c(NULL)
-    df <- city_meta %>% filter(code1 == input$district)
+  # updates the municipality list, after selecting a new district
+  observeEvent(input$district, {
+    municipality_list <- c(NULL)
+    df <- municipality_sh %>% filter(CCA_1 == input$district)
     
     if (nrow(df) > 0) {
-      city_list <- df$Dicofre
-      names(city_list) <- df$Designacao
+      municipality_list <- df$id
+      names(municipality_list) <- df$name
     }
     
-    updateSelectInput(session, "city", choices = city_list)
-    updateSelectInput(session, "parish", choices = c(" "))
+    updateSelectInput(session, "municipality", choices = municipality_list)
+    updateSelectInput(session, "parish",       choices = c(NULL))
   })
   
   
-  # updates the parish list, after selecting a new city
-  observe({
+  # updates the parish list, after selecting a new municipality
+  observeEvent(input$municipality, {
     parish_list <- c(NULL)
-    df <- parish_meta %>% filter(code1 == input$city)
+    df <- parish_sh %>% filter(CCA_2 == input$municipality)
     
     if (nrow(df) > 0) {
-      parish_list <- df$Dicofre
-      names(parish_list) <- df$Designacao
+      parish_list <- df$id
+      names(parish_list) <- df$name
     }
     
     updateSelectInput(session, "parish", choices = parish_list)
