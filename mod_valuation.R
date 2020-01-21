@@ -14,7 +14,7 @@ ui_valuation <- function(id)
         collapsed = FALSE,
         fluidRow(
           column(4,
-                 selectizeInput(ns("prop_type"), NULL,
+                 selectizeInput(ns("prop_type"), "Property Type",
                                 prop_types, selected = "Apartment"),
                  radioButtons(ns("deal"), NULL,
                               choices = c("Sale", "Rent"),
