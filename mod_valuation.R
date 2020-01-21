@@ -89,10 +89,12 @@ server_valuation <- function(input, output, session) {
   # updates the municipality list, after selecting a new district
   observeEvent(input$district, {
     municipality_list <- c(NULL)
-    
     df <- municipality_sh %>% filter(CCA_1 == input$district)
-    municipality_list <- df$id
-    names(municipality_list) <- df$name
+    
+    if (nrow(df) > 0) {
+      municipality_list <- df$id
+      names(municipality_list) <- df$name
+    }
     
     updateSelectInput(session, "municipality", choices = municipality_list)
     updateSelectInput(session, "parish",       choices = c(NULL))
@@ -102,10 +104,13 @@ server_valuation <- function(input, output, session) {
   # updates the parish list, after selecting a new municipality
   observeEvent(input$municipality, {
     parish_list <- c(NULL)
-    
     df <- parish_sh %>% filter(CCA_2 == input$municipality)
-    parish_list <- df$id
-    names(parish_list) <- df$name
+    
+    if (nrow(df) > 0) {
+      parish_list <- df$id
+      names(parish_list) <- df$name
+    }
+
     updateSelectInput(session, "parish", choices = parish_list)
   })
   
