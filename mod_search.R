@@ -14,8 +14,6 @@ ui_search <- function(id)
         collapsed = FALSE,
         fluidRow(
           column(4,
-                 selectizeInput(ns("prop_types"), "Types of property",
-                                prop_types, multiple = TRUE),
                  selectizeInput(ns("district"), "Location", district_list,#,  district
                                 size = 3,
                                 options = list(
@@ -32,31 +30,28 @@ ui_search <- function(id)
                                 options = list(
                                   placeholder = 'Parish',
                                   onInitialize = I('function() { this.setValue(""); }')
-                                ))
+                                )),
+                 offset = 1
           ),
           column(4,
-                 selectizeInput(ns("objective"), "Objective",
-                                c("Buy-to-Let", "Resell")),
                  numericInput(ns("max_investment"), "Maximum investment value",
                               100000, min=0),
-                 sliderInput(ns("yield_target"), "Target Return",
-                             min = 0, max = 10, value = 5, step = 0.01, post = " %")
-          ),
-          column(4,
-                 numericInput(ns("fixed_cost"), "Fixed costs per transaction",
-                              500, min = 0),
-                 numericInput(ns("var_cost"), "Variable costs per transaction",
-                              0.02, min = 0, max = 1)
+                 selectizeInput(ns("objective"), "Objective",
+                                c("Buy", "Rent", "Buy-to-Let")),
+                 selectizeInput(ns("prop_types"), "Property Types",
+                                prop_types, multiple = TRUE),
+                 offset = 1
           )
         ),
         fluidRow(
-          column(12,
+          column(4,
                  actionButton(
                    "search",
                    "Search",
                    icon = icon("search"),
                    style = "color: #ffffff; background-color: #474949"
-                 )
+                 ),
+                 offset = 1
           )
         ),
         width = 12
@@ -64,20 +59,6 @@ ui_search <- function(id)
     )
   )
 }
-  
-  # photo
-  # title
-  # location
-  # price
-  # area
-  # xPrice +- error
-  # xRent +- error
-  # explainability
-  #   price distribution in sale parish / city
-  #   map
-  #   points of interest
-  #   parish / city statistics
-  # results
 
 server_search  <- function(input, output, session) {
   
