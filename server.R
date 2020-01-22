@@ -247,8 +247,11 @@ shinyServer(function(input, output, session) {
         y = !!target_var,
         fill = !!cat_var
       )) +
-      stat_boxplot(geom = "errorbar", width = 0.2) +
-      geom_boxplot(outlier.alpha = 0.5) +
+      stat_boxplot(
+        geom = "errorbar",
+        width = 0.2
+      ) +
+      geom_boxplot(outlier.shape = NA) +
       scale_x_discrete(drop = FALSE) +
       scale_y_continuous(trans = 'log10') +
       theme(
@@ -363,8 +366,8 @@ shinyServer(function(input, output, session) {
     agg_col <- input$agg_level
     target1_col <- input$target1
     target2_col <- input$target2
-    target1 <- rlang::sym(target1)
-    target2 <- rlang::sym(target2)
+    target1 <- rlang::sym(target1_col)
+    target2 <- rlang::sym(target2_col)
 
     if(input$agg_prop_type)
     {
@@ -396,12 +399,12 @@ shinyServer(function(input, output, session) {
         group_by_at(vars(one_of(c(agg_col, "Property Type")))) %>%
         summarize(
           count = n(Price),
-          !!target1 := median(!!rlang::sym(target1)),
-          !!target2 := median(!!rlang::sym(target2))
+          !!target1_col := median(!!target1),
+          !!target2_col := median(!!target2)
         ) %>%
         filter(count >= MIN_DATAPOINTS) %>%
         hchart("scatter", hcaes(!!target1, !!target2, group = `Property Type`)) %>%
-        hc_tooltip(formatter=JS(sprintf(js, agg_col, target1, target2)))
+        hc_tooltip(formatter=JS(sprintf(js, target1, target2)))
     }
   })
   
@@ -587,6 +590,10 @@ shinyServer(function(input, output, session) {
       aes(
         x = reorder(tmp, !!target, FUN = median),
         y = !!target)
+      ) +
+      stat_boxplot(
+        geom = "errorbar",
+        width = 0.2
       ) +
       geom_boxplot(
         outlier.shape = NA,
