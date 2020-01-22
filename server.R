@@ -404,7 +404,7 @@ shinyServer(function(input, output, session) {
         ) %>%
         filter(count >= MIN_DATAPOINTS) %>%
         hchart("scatter", hcaes(!!target1, !!target2, group = `Property Type`)) %>%
-        hc_tooltip(formatter=JS(sprintf(js, target1, target2)))
+        hc_tooltip(formatter=JS(sprintf(js, agg_col, target1_col, target2_col)))
     }
   })
   
