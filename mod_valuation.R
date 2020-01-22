@@ -4,7 +4,6 @@ ui_valuation <- function(id)
   ns <- NS(id)
   tabItem(
     tabName = ns("valuationTab"),
-    tags$h2(tags$strong('Valuation')),
     fluidRow(
       box(
         title = tags$strong("Inputs"),
