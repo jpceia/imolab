@@ -9,7 +9,7 @@ sideBar <- dashboardSidebar(
   sidebarMenu(
     id = "sidebarmenu",
     # menuItem("Home", tabName = "homeTab"),
-    menuItem("Investment Search", icon = icon("search-dollar"),
+    menuItem("Search", icon = icon("search-dollar"),
              tabName = NS("mod_search")("investmentSearchTab")),
     menuItem("Valuation", icon = icon("brain"),
              tabName = NS("mod_valuation")("valuationTab")),
