@@ -10,7 +10,7 @@ library(shinyBS)
 library(tidyverse)
 library(dplyr)
 library(highcharter)
-library(leaflet)
+library(leaflet.extras)
 library(rapportools) # is.empty
 library(formattable)
 library(xgboost)
