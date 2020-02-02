@@ -287,9 +287,9 @@ fairobj <- function(preds, dtrain) {
 
 
 
-y <- log(dataset$Price)
+y <- log10(dataset$price_m2)
 
-reg$price <- xgb.train(
+reg$price_m2 <- xgb.train(
   data = xgb.DMatrix(data = as.matrix(X), label = y),
   objective = fairobj,
   eta = 0.08,

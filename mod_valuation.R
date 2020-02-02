@@ -192,7 +192,7 @@ server_valuation <- function(input, output, session) {
       "Condition",
       "Terrain Area",
       "Gross Area",
-      "Area",
+      #"Area",
       "ParishID",
       "MunicipalityID",
       "DistrictID"
@@ -217,20 +217,20 @@ server_valuation <- function(input, output, session) {
     
     X <- get_features(df, match_tables)
     
-    pred_price <- exp(predict(reg$price, xgb.DMatrix(data = as.matrix(X))))
+    pred_price_m2 <- 10 ^ (predict(reg$price_m2, xgb.DMatrix(data = as.matrix(X))))
     
     res <- list()
     
     res$breakdown <- data.frame(
       Characteristic = drop_cols_final,
-      #price_m2 = currency(pred_price_m2, "", 0),
-      price = currency(pred_price, "", 0),
-      impact = accounting(pred_price - lag(pred_price)),
+      price_m2 = currency(pred_price_m2, "", 0),
+      price = currency(pred_price_m2 * input$net_area, "", 0),
+      impact = accounting((pred_price_m2 - lag(pred_price_m2)) * input$net_area),
       row.names = NULL
     )
     
     res$price <- res$breakdown[nrow(res$breakdown), "price"]
-    res$price_m2 <- res$price / input$net_area
+    res$price_m2 <- res$breakdown[nrow(res$breakdown), "price_m2"]
     
     return(res)
   }, ignoreInit = TRUE)
