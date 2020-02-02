@@ -312,7 +312,7 @@ shinyServer(function(input, output, session) {
     df %>%
       group_by_at(vars(one_of(cat_col))) %>%
       summarize(
-        count = n(!!target),
+        count = n(),
         "25%" = currency(quantile(!!target, probs=0.25), "", 2),
         median= currency(quantile(!!target, probs=0.50), "", 2),
         "75%" = currency(quantile(!!target, probs=0.75), "", 2)
@@ -379,7 +379,7 @@ shinyServer(function(input, output, session) {
       df <- filtered_dataset() %>%
         group_by_at(vars(one_of(agg_col))) %>%
         summarize(
-          count = n(Price),
+          count = n(),
           !!target1_col := median(!!target1),
           !!target2_col := median(!!target2)
         ) %>%
@@ -398,7 +398,7 @@ shinyServer(function(input, output, session) {
       filtered_dataset() %>%
         group_by_at(vars(one_of(c(agg_col, "Property Type")))) %>%
         summarize(
-          count = n(Price),
+          count = n(),
           !!target1_col := median(!!target1),
           !!target2_col := median(!!target2)
         ) %>%
@@ -463,7 +463,7 @@ shinyServer(function(input, output, session) {
         df <- df %>%
           group_by(DistrictID) %>%
           summarize(
-            count = n(!!target),
+            count = n(),
             value = median(!!target)
           ) %>%
           filter(count >= MIN_DATAPOINTS)
@@ -476,7 +476,7 @@ shinyServer(function(input, output, session) {
           filter(DistrictID == code) %>%
           group_by(MunicipalityID) %>%
           summarize(
-            count = n(!!target),
+            count = n(),
             value = median(!!target)
           ) %>%
           filter(count >= MIN_DATAPOINTS)
@@ -489,7 +489,7 @@ shinyServer(function(input, output, session) {
           filter(MunicipalityID == code) %>%
           group_by(ParishID) %>%
           summarize(
-            count = n(!!target),
+            count = n(),
             value = median(!!target)
           ) %>%
           filter(count >= MIN_DATAPOINTS)
@@ -629,7 +629,7 @@ shinyServer(function(input, output, session) {
     df %>%
       group_by_at(vars(one_of(cat_col))) %>%
       summarize(
-        count=n(price_m2),
+        count = n(),
         "25%" = currency(quantile(!!target, probs=0.25), "", 2),
         median= currency(quantile(!!target, probs=0.50), "", 2),
         "75%" = currency(quantile(!!target, probs=0.75), "", 2)

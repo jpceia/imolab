@@ -5,6 +5,27 @@
 # ----------------------------------------------------------------------------------------
 
 
+is.empty <- function (x) 
+{
+  if (length(x) <= 1) {
+    if (is.null(x)) 
+      return(TRUE)
+    if (length(x) == 0) 
+      return(TRUE)
+    if (is.na(x) || is.nan(x)) 
+      return(TRUE)
+    if (is.character(x) && nchar(x) == 0) 
+      return(TRUE)
+    if (is.logical(x) && !isTRUE(x)) 
+      return(TRUE)
+    if (is.numeric(x) && x == 0) 
+      return(TRUE)
+    return(FALSE)
+  }
+  else sapply(x, is.empty)
+}
+
+
 qpal <- function(palette, x) {
   if (max(x) == min(x))
   {

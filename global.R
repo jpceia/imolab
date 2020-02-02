@@ -11,7 +11,6 @@ library(tidyverse)
 library(dplyr)
 library(highcharter)
 library(leaflet.extras)
-library(rapportools) # is.empty
 library(formattable)
 library(xgboost)
 library(openssl)
@@ -226,7 +225,7 @@ for(k in 1:NFOLDS)
     match_tables[[k_name]][[col_name]] <- df %>%
       filter(Fold != k) %>%
       group_by_at(cols) %>%
-      summarise(!!col_name := n(price_m2)) %>%
+      summarise(!!col_name := n()) %>%
       na.omit()
   }
 }
@@ -263,7 +262,7 @@ for(key in names(count_enc_cols))
   col_name <- paste('count.enc', key, sep='.')
   match_tables$ALL[[col_name]] <- df %>%
     group_by_at(cols) %>%
-    summarise(!!col_name := n(price_m2)) %>%
+    summarise(!!col_name := n()) %>%
     na.omit()
 }
 
