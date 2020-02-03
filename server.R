@@ -504,8 +504,6 @@ shinyServer(function(input, output, session) {
 
     df_map %>%
       leaflet(options = leafletOptions(
-        #zoomControl = FALSE,
-        #dragging = FALSE,
         attributionControl = FALSE,
         scrollWheelZoom = FALSE
       )) %>%
@@ -548,8 +546,6 @@ shinyServer(function(input, output, session) {
 
     df_map %>%
       leaflet(options = leafletOptions(
-        #zoomControl = FALSE,
-        #dragging = FALSE,
         attributionControl = FALSE,
         scrollWheelZoom = TRUE
       )) %>%
