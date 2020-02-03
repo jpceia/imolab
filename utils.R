@@ -164,10 +164,13 @@ load_dataset <- function()
   ) %>% select(names(col_types))
   
   df$Deal <-  plyr::mapvalues(df$Deal, 0:1, c("Rent", "Sale"))
-  df$`Property Type` <-  plyr::mapvalues(df$`Property Type`, prop_types_ids, prop_types)
+  df$`Property Type` <-  plyr::mapvalues(
+    as.integer(as.character(df$`Property Type`)),
+    prop_types_ids,
+    prop_types)
   
   df$Condition <- plyr::mapvalues(
-    as.integer(df$Condition),
+    as.integer(as.character(df$Condition)),
     condition_ids,
     condition_levels
   )
@@ -176,7 +179,11 @@ load_dataset <- function()
   df[!is.na(year) & !between(year, 1800, 2025), "Construction Year"] <- NA
   
   # df$`Energy Certificate` <- factor(df[["Energy Certificate"]])
-  levels(df$`Energy Certificate`) <- energy_certificate_levels
+  df$`Energy Certificate` <- plyr::mapvalues(
+    as.integer(as.character(df$`Energy Certificate`)),
+    energy_certificate_ids,
+    energy_certificate_levels
+  )
 
   df <- add_column(df, price_m2     = round(df$Price / df$Area, 2),                                       .after = "Price")
   df <- add_column(df, `Construction Decade` = cut(df[["Construction Year"]], decades, decades_labels),   .after = "Construction Year")

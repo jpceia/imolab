@@ -56,12 +56,11 @@ condition_levels <- c(
   "Usado",
   "Em Construcao",
   "Renovado",
-  "Novo",
-  "Projecto"
+  "Novo"
 )
 
 condition_ids <- c(
-  0, 1, 2, 5, 3, 4, 6
+  0, 1, 2, 5, 3, 4
 )
 
 
