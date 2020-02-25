@@ -14,6 +14,7 @@ library(leaflet.extras)
 library(formattable)
 library(xgboost)
 library(openssl)
+library(RMySQL)
 
 require(DT)
 require(sf)
@@ -32,6 +33,22 @@ SPINNER_TYPE <- 8
 MIN_DATAPOINTS <- 5
 MIN_DATAPOINTS_MSG <- "Filter too narrow: not enough datapoints"
 NFOLDS <- 5
+
+DB_HOST <- "#{DB_HOST}"
+DB_PORT <- 3306
+DB_NAME <- "rentalgo"
+DB_USER <- "admin"
+DB_PWD <- "***REMOVED***"
+DB_TABLE <- "imovirtual_prod"
+
+#for(conn in dbListConnections(dbDriver(drv = "MySQL")))
+#{
+#  dbDisconnect(conn)
+#}
+
+
+
+DB_CONNECTION <- dbConnect(MySQL(), user=DB_USER, password=DB_PWD, host=DB_HOST, dbname=DB_NAME, port=DB_PORT)
 
 
 
