@@ -27,11 +27,18 @@ is.empty <- function (x)
 
 
 qpal <- function(palette, x) {
-  if (max(x) == min(x))
+  na_mask <- is.na(x)
+  if (all(na_mask))
   {
     color <- colorQuantile(palette, c(0, 1))(0.5)
     colors <- x
-    colors[!is.na(colors)] <- color
+    colors[] <- color
+  }
+  else if (max(x, na.rm = TRUE) == min(x, na.rm = TRUE))
+  {
+    color <- colorQuantile(palette, c(0, 1))(0.5)
+    colors <- x
+    colors[!na_mask] <- color
   }
   else
   {
