@@ -127,7 +127,7 @@ shinyServer(function(input, output, session) {
         else
         {
           rv$location_type <- "StatisticalSection"
-          updateSelectInput(session, "parish", selected = code) 
+          updateSelectInput(session, "parish", selected = code)
         }
       }
     }
@@ -161,7 +161,7 @@ shinyServer(function(input, output, session) {
   filtered_dataset <- reactive({
     
     df <- filtered_dataset_noprop() %>%
-        filter(`Property Type` %in% input$prop_type)
+        filter(Property.Type %in% input$prop_type)
     
     validate(need(nrow(df) >= MIN_DATAPOINTS, MIN_DATAPOINTS_MSG))
     
@@ -331,9 +331,9 @@ shinyServer(function(input, output, session) {
   
   output$CategoryTextTargetName <- renderText(target_name(input$target_col))
   
-  output$EnergyCertificateBoxPlot <- renderPlot(F_catBoxPlot("Energy Certificate", input$target_col))
-  output$EnergyCertificateCount <- renderPlot(F_catCount("Energy Certificate", input$target_col))
-  output$EnergyCertificateTable <- renderFormattable(F_catTable("Energy Certificate", input$target_col))
+  output$EnergyCertificateBoxPlot <- renderPlot(F_catBoxPlot("Energy.Certificate", input$target_col))
+  output$EnergyCertificateCount <- renderPlot(F_catCount("Energy.Certificate", input$target_col))
+  output$EnergyCertificateTable <- renderFormattable(F_catTable("Energy.Certificate", input$target_col))
   
   output$ConditionBoxPlot <- renderPlot(F_catBoxPlot("Condition", input$target_col))
   output$ConditionCount <- renderPlot(F_catCount("Condition", input$target_col))
@@ -347,9 +347,9 @@ shinyServer(function(input, output, session) {
   output$BathroomsCount <- renderPlot(F_catCount("Bathrooms", input$target_col))
   output$BathroomsTable <- renderFormattable(F_catTable("Bathrooms", input$target_col))
   
-  output$ConstructionDecadeBoxPlot <- renderPlot(F_catBoxPlot("Construction Decade", input$target_col))
-  output$ConstructionDecadeCount <- renderPlot(F_catCount("Construction Decade", input$target_col))
-  output$ConstructionDecadeTable <- renderFormattable(F_catTable("Construction Decade", input$target_col))
+  output$ConstructionDecadeBoxPlot <- renderPlot(F_catBoxPlot("Construction.Decade", input$target_col))
+  output$ConstructionDecadeCount <- renderPlot(F_catCount("Construction.Decade", input$target_col))
+  output$ConstructionDecadeTable <- renderFormattable(F_catTable("Construction.Decade", input$target_col))
 
   
   # ----------------------------------------------------------------------------------------
@@ -396,14 +396,14 @@ shinyServer(function(input, output, session) {
                  '<strong>' + '%s:</strong> ' + this.point.x + '<br>' + 
                  '<strong>' + '%s:</strong> ' + this.point.y; }"
       filtered_dataset() %>%
-        group_by_at(vars(one_of(c(agg_col, "Property Type")))) %>%
+        group_by_at(vars(one_of(c(agg_col, "Property.Type")))) %>%
         summarize(
           count = n(),
           !!target1_col := median(!!target1),
           !!target2_col := median(!!target2)
         ) %>%
         filter(count >= MIN_DATAPOINTS) %>%
-        hchart("scatter", hcaes(!!target1, !!target2, group = `Property Type`)) %>%
+        hchart("scatter", hcaes(!!target1, !!target2, group = Property.Type)) %>%
         hc_tooltip(formatter=JS(sprintf(js, agg_col, target1_col, target2_col)))
     }
   })
@@ -541,7 +541,7 @@ shinyServer(function(input, output, session) {
       target_col,
       "price_m2" = "Eur/m2",
       "Area" = "m2",
-      "Construction Decade" = ""
+      "Construction.Decade" = ""
     )
 
     df_map %>%
@@ -643,16 +643,16 @@ shinyServer(function(input, output, session) {
   
   output$filtered_table <- DT::renderDataTable(
     filtered_dataset() %>% select(
-      `Property Type`,
+      Property.Type,
       Price,
       price_m2,
       Area,
-      `Gross Area`,
-      `Terrain Area`,
+      Gross.Area,
+      Terrain.Area,
       Bedrooms,
       Bathrooms,
-      `Energy Certificate`,
-      `Construction Year`,
+      Energy.Certificate,
+      Construction.Year,
       Condition),
     filter = 'top', options = list(scrollX = TRUE)
   )

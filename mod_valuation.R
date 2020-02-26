@@ -146,21 +146,21 @@ server_valuation <- function(input, output, session) {
     
     row <- list(
       Deal = input$deal,
-      `Property Type` = input$prop_type,
+      Property.Type = input$prop_type,
       
       DistrictID = input$district,
       MunicipalityID = input$municipality,
       ParishID = input$parish,
       
-      `Construction Year` = input$construction_year,
-      `Energy Certificate` = input$energy_certificate,
+      Construction.Year = input$construction_year,
+      Energy.Certificate = input$energy_certificate,
       Condition = input$condition,
       Bedrooms = input$bedrooms,
       Bathrooms = input$bathrooms,
       
       Area = input$net_area,
-      `Gross Area` = input$gross_area,
-      `Terrain Area` = input$terrain_area,
+      Gross.Area = input$gross_area,
+      Terrain.Area = input$terrain_area,
       
       Latitude = NA,
       Longitude = NA
@@ -177,8 +177,8 @@ server_valuation <- function(input, output, session) {
       tbl_df() %>%
       mutate(
         Area = as.double(Area),
-        `Gross Area` = as.double(`Gross Area`),
-        `Terrain Area` = as.double(`Terrain Area`)
+        Gross.Area = as.double(Gross.Area),
+        Terrain.Area = as.double(Terrain.Area)
       )
     
     ### DROPDOWN
@@ -187,11 +187,11 @@ server_valuation <- function(input, output, session) {
       input$attrs,
       "Bathrooms",
       "Bedrooms",
-      "Construction Year",
-      "Energy Certificate",
+      "Construction.Year",
+      "Energy.Certificate",
       "Condition",
-      "Terrain Area",
-      "Gross Area",
+      "Terrain.Area",
+      "Gross.Area",
       #"Area",
       "ParishID",
       "MunicipalityID",

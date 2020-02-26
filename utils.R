@@ -55,7 +55,7 @@ target_name <- function(target_col) {
     Area = "Area",
     Price = "Price",
     xYield = "Expected Yield",
-    `Construction Year` = "Construction Year"
+    Construction.Year = "Construction Year"
   )
 }
 
@@ -138,41 +138,16 @@ hc_hist <- function(df, col_name, xunits, xlabel = "", truncation = 1)
 
 load_dataset <- function()
 {
-  fname <- "imovirtual_20191230.csv"
-  col_types <- c(
-    Deal = "f",
-    `Property Type` = "f",
-    Area = "d",
-    `Gross Area` = "d",
-    `Terrain Area` = "d",
-    DistrictID = "f",
-    MunicipalityID = "f",
-    ParishID = "f",
-    `Energy Certificate` = "f",
-    `Construction Year` = "d",
-    Bedrooms = "d",
-    Bathrooms = "d",
-    Condition = "f",
-    Elevator = "d",
-    Balcony = "d",
-    View = "d",
-    Garden = "d",
-    `Swimming Pool` = "d",
-    Garage = "d",
-    Parking = "d",
-    Latitude = "d",
-    Longitude = "d",
-    Price = "d"
-  )
+  df <- dbReadTable(DB_CONNECTION, DB_TABLE)
+  df <- tbl_df(df)
   
-  df <- readr::read_csv(
-    file.path("data", "sm", fname),
-    col_types = col_types
-  ) %>% select(names(col_types))
+  df$DistrictID <- as.factor(sprintf("%02d", as.integer(df$DistrictID)))
+  df$MunicipalityID <- as.factor(sprintf("%04d", as.integer(df$MunicipalityID)))
+  df$ParishID <- as.factor(sprintf("%06d", as.integer(df$ParishID)))
   
   df$Deal <-  plyr::mapvalues(df$Deal, 0:1, c("Rent", "Sale"))
-  df$`Property Type` <-  plyr::mapvalues(
-    as.integer(as.character(df$`Property Type`)),
+  df$Property.Type <-  plyr::mapvalues(
+    as.integer(as.character(df$Property.Type)),
     prop_types_ids,
     prop_types)
   
@@ -182,18 +157,21 @@ load_dataset <- function()
     condition_levels
   )
   
-  year <- df[["Construction Year"]]
-  df[!is.na(year) & !between(year, 1800, 2025), "Construction Year"] <- NA
+  df$Condition <- factor(df$Condition, condition_levels)
   
-  # df$`Energy Certificate` <- factor(df[["Energy Certificate"]])
-  df$`Energy Certificate` <- plyr::mapvalues(
-    as.integer(as.character(df$`Energy Certificate`)),
+  year <- df$Construction.Year
+  df[!is.na(year) & !between(year, 1800, 2025), "Construction.Year"] <- NA
+  
+  df$Energy.Certificate <- plyr::mapvalues(
+    as.integer(as.character(df$Energy.Certificate)),
     energy_certificate_ids,
     energy_certificate_levels
   )
+  
+  df$Energy.Certificate <- factor(df$Energy.Certificate, energy_certificate_levels)
 
   df <- add_column(df, price_m2     = round(df$Price / df$Area, 2),                                       .after = "Price")
-  df <- add_column(df, `Construction Decade` = cut(df[["Construction Year"]], decades, decades_labels),   .after = "Construction Year")
+  df <- add_column(df, Construction.Decade = cut(df$Construction.Year, decades, decades_labels),   .after = "Construction.Year")
   df <- add_column(df, District     = district_sh$name[match(df$DistrictID, district_sh$id)],             .after = "DistrictID")
   df <- add_column(df, Municipality = municipality_sh$name[match(df$MunicipalityID, municipality_sh$id)], .after = "MunicipalityID")
   df <- add_column(df, Parish       = parish_sh$name[match(df$ParishID, parish_sh$id)],                   .after = "ParishID")
@@ -209,7 +187,7 @@ get_features <- function(df, match_tables)
   df <- df %>%
     mutate(
       Deal = as.factor(Deal),
-      `Property Type` = as.factor(`Property Type`),
+      Property.Type = as.factor(Property.Type),
       DistrictID = as.factor(DistrictID),
       MunicipalityID = as.factor(MunicipalityID),
       ParishID = as.factor(ParishID),
@@ -217,7 +195,7 @@ get_features <- function(df, match_tables)
     )
   
   energy_certificate_ord <- c("G", "F", "E", "D", "C", "B-", "B", "A", "A+")
-  df$energy_certificate_ord <- match(df[["Energy Certificate"]], energy_certificate_ord)
+  df$energy_certificate_ord <- match(df$Energy.Certificate, energy_certificate_ord)
   
   if(!("Fold" %in% names(df)))
   {
@@ -269,9 +247,9 @@ get_features <- function(df, match_tables)
   df[filt, "target.enc.deal.municipality"] <- df[filt, "target.enc.deal.district"]
   
   feat_cols <- c(
-    "Area", "Gross Area", "Terrain Area",
+    "Area", "Gross.Area", "Terrain.Area",
     "Bedrooms", "Bathrooms",
-    "Construction Year",
+    "Construction.Year",
     "energy_certificate_ord",
     unlist(other_attrs, use.names=FALSE),
     enc_cols

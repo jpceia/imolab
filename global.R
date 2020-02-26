@@ -95,7 +95,7 @@ other_attrs <- list(
   Balcony = 'Balcony',
   View = 'View',
   Garden = 'Garden',
-  'Swimming Pool' = 'Swimming Pool',
+  Swimming.Pool = 'Swimming.Pool',
   Garage = 'Garage',
   Parking = 'Parking'
 )
@@ -108,7 +108,7 @@ target_list <- list(
   'Price/m2' = 'price_m2',
   'Area' = 'Area',
   'xYield' = 'xYield',
-  'Construction Year' = 'Construction Year'
+  'Construction Year' = 'Construction.Year'
 )
 
 
@@ -159,7 +159,7 @@ df <- load_dataset()
 
 # -------------------------------------- GroupKFold --------------------------------------
 
-group_cols <- c("Latitude", "Longitude", "MunicipalityID", "Deal", "Property Type")
+group_cols <- c("Latitude", "Longitude", "MunicipalityID", "Deal", "Property.Type")
 df$group <- as.factor(md5(apply(df[, group_cols], 1, paste, collapse = "/")))
 unique_groups <- unique(df$group)
 df_groups <- data.frame(
@@ -180,7 +180,7 @@ match_tables <- list()
 
 
 target_enc_cols <- list(
-  deal.prop_type=c('Deal', 'Property Type'),
+  deal.prop_type=c('Deal', 'Property.Type'),
   deal.district=c('Deal', 'DistrictID'),
   deal.municipality=c('Deal', 'MunicipalityID'),
   deal.parish=c('Deal', 'ParishID'),
@@ -188,12 +188,12 @@ target_enc_cols <- list(
 )
 
 area_enc_cols <- list(
-  prop_type='Property Type',
+  prop_type='Property.Type',
   condition='Condition'
 )
 
 count_enc_cols <- list(
-  prop_type='Property Type',
+  prop_type='Property.Type',
   district='DistrictID',
   municipality='MunicipalityID',
   parish='ParishID',
@@ -318,7 +318,7 @@ reg$price_m2 <- xgb.train(
 
 
 filt <- dataset$Deal == "Sale"
-filt <- filt & !(dataset$`Property Type` %in% c("Farm", "Terrain"))
+filt <- filt & !(dataset$Property.Type %in% c("Farm", "Terrain"))
 X <- dataset[filt, ] %>% mutate(Deal = "Rent") %>% get_features(match_tables)
 rent_pred <- exp(predict(reg$price, xgb.DMatrix(data = as.matrix(X))))
 dataset[filt, "xYield"] <- 12 * rent_pred / dataset[filt, "Price"]
