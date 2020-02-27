@@ -4,6 +4,8 @@
 #                                        SIDE BAR
 # ----------------------------------------------------------------------------------------
 
+condition <- "['histogramsTab', 'categoriesTab', 'correlationTab', 'territoryTab'].indexOf(input.sidebarmenu) >= 0"
+
 sideBar <- dashboardSidebar(
   tags$head(includeHTML("google-analytics.js")),
   sidebarMenu(
@@ -27,15 +29,15 @@ sideBar <- dashboardSidebar(
     ),
     hr(),
     conditionalPanel(
-      condition = "['histogramsTab', 'categoriesTab', 'correlationTab', 'territoryTab'].indexOf(input.sidebarmenu) >= 0",
+      condition = condition,
       radioButtons("deal", NULL, c("Sale", "Rent"), inline = TRUE)
     ),
     conditionalPanel(
-      condition = "['histogramsTab', 'categoriesTab', 'correlationTab', 'territoryTab'].indexOf(input.sidebarmenu) >= 0",
+      condition = condition,
       selectizeInput("prop_type", NULL, prop_types, selected = c("Apartment", "House"), multiple = TRUE)
     ),
     conditionalPanel(
-      condition = "['histogramsTab', 'categoriesTab', 'correlationTab', 'territoryTab'].indexOf(input.sidebarmenu) >= 0",
+      condition = condition,
       selectizeInput("district", "Location", district_list,
                      size = 3,
                      options = list(
@@ -61,7 +63,7 @@ sideBar <- dashboardSidebar(
       )
     ),
     conditionalPanel(
-      condition = "['histogramsTab'].indexOf(input.sidebarmenu) >= 0",
+      condition = "'histogramsTab' == input.sidebarmenu",
       radioButtons(
         "truncation",
         "Truncation",
