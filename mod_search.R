@@ -180,8 +180,6 @@ server_search  <- function(input, output, session) {
        ORDER BY %s
        LIMIT 100", pred_query, filt_query, rank_query)
     
-    print(query)
-    
     df <- dbGetQuery(DB_CONNECTION, query)
     
     df$Link <- createLink(df$Link)
