@@ -47,7 +47,6 @@ DB_TABLE <- "imovirtual_prod"
 #}
 
 
-
 DB_CONNECTION <- dbConnect(MySQL(), user=DB_USER, password=DB_PWD, host=DB_HOST, dbname=DB_NAME, port=DB_PORT)
 
 
@@ -122,30 +121,37 @@ decades_labels <- decades_labels[1: length(decades_labels) - 1]
 
 
 district_sh <- sf::read_sf(file.path("data", "geo", "distritos-shapefile", "distritos.shp"))
-district_sh <- rmapshaper::ms_simplify(district_sh ) # polygon simplification to speedup rendering
 district_sh  <- district_sh[district_sh$TYPE_1 == "Distrito", ]
+names <- district_sh$NAME_1
+
+# polygon simplification to speedup rendering
+district_sh <- rmapshaper::ms_simplify(district_sh, keep = 0.1, keep_shapes = TRUE)
 district_sh$CCA_1 <- as.factor(district_sh$CCA_1)
 district_sh$id <- district_sh$CCA_1
-district_sh$name <- district_sh$NAME_1
+district_sh$name <- names
+district_sh$NAME_1 <- names
 
 
 municipality_sh <- sf::read_sf(file.path("data", "geo", "concelhos-shapefile", "concelhos.shp"))
-municipality_sh <- rmapshaper::ms_simplify(municipality_sh)
+names <- municipality_sh$NAME_2
+municipality_sh <- rmapshaper::ms_simplify(municipality_sh, keep_shapes = TRUE)
 #municipality_sh <- municipality_sh[municipality_sh$ID_1 %in% district_sh$ID_1, ]
 municipality_sh$CCA_1 <- as.factor(stringr::str_sub(municipality_sh$CCA_2, 1, -3))
 municipality_sh$CCA_2 <- as.factor(municipality_sh$CCA_2)
 municipality_sh$id <- municipality_sh$CCA_2
-municipality_sh$name <- municipality_sh$NAME_2
+municipality_sh$name <- names
+municipality_sh$NAME_2 <- names
 
 ## LOADING PARISH DATA
 # https://dados.gov.pt/s/resources/freguesias-de-portugal/20181112-195834/cont-aad-caop2017.zip
 parish_sh <- sf::read_sf(file.path("data", "geo", "cont-aad-caop2017", "Cont_AAD_CAOP2017.shp"))
-parish_sh <- rmapshaper::ms_simplify(parish_sh)
+names <- parish_sh$Freguesia
+parish_sh <- rmapshaper::ms_simplify(parish_sh, keep_shapes = TRUE)
 parish_sh$CCA_1 <- as.factor(stringr::str_sub(parish_sh$Dicofre, 1, -5))
 parish_sh$CCA_2 <- as.factor(stringr::str_sub(parish_sh$Dicofre, 1, -3))
 parish_sh$CCA_3 <- as.factor(sprintf("%06d", as.integer(parish_sh$Dicofre)))
 parish_sh$id <- parish_sh$CCA_3
-parish_sh$name <- parish_sh$Freguesia
+parish_sh$name <- names
 parish_sh <- sf::st_transform(parish_sh, "+init=epsg:4326")
 
 
