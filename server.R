@@ -139,32 +139,22 @@ shinyServer(function(input, output, session) {
     
   }, ignoreInit = TRUE)
   
-  filtered_dataset_noprop <- reactive({
-    df <- dataset %>%
-      filter(Deal == input$deal)
-    
-    df <- switch(
-      rv$location_type,
-      District           = df %>% filter(DistrictID  %in% district_sh$CCA_1),
-      Municipality       = df %>% filter(DistrictID     == rv$location_code),
-      Parish             = df %>% filter(MunicipalityID == rv$location_code),
-      StatisticalSection = df %>% filter(ParishID       == rv$location_code),
-      stop("Invalid data")
-    )
-    
-    validate(need(nrow(df) >= MIN_DATAPOINTS, MIN_DATAPOINTS_MSG))
-    
-    return(df)
-  })
-  
-  
   filtered_dataset <- reactive({
     
-    df <- filtered_dataset_noprop() %>%
-        filter(Property.Type %in% input$prop_type)
+    df <- dataset %>%
+      filter(Deal == input$deal) %>%
+      filter(Property.Type %in% input$prop_type)
     
+    df <- switch(
+      location_type(rv$code),
+      country      = df %>% filter(DistrictID  %in% district_sh$CCA_1),
+      district     = df %>% filter(DistrictID     == rv$code),
+      municipality = df %>% filter(MunicipalityID == rv$code),
+      parish       = df %>% filter(ParishID       == rv$code),
+      stop("Invalid data")
+    )
+
     validate(need(nrow(df) >= MIN_DATAPOINTS, MIN_DATAPOINTS_MSG))
-    
     return(df)
   })
   
