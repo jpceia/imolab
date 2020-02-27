@@ -26,6 +26,31 @@ is.empty <- function (x)
 }
 
 
+location_type <- function(s)
+{
+  # location_type
+  # country
+  # district
+  # municipality
+  # parish
+  # section
+  
+  if(is.empty(s)){
+    return("country")
+  }
+  switch(
+    as.character(stringr::str_length(s)),
+    '1' = 'district',
+    '2' = 'district',
+    '3' = 'municipality',
+    '4' = 'municipality',
+    '5' = 'parish',
+    '6' = 'parish',
+    'section'
+  )
+}
+
+
 qpal <- function(palette, x) {
   na_mask <- is.na(x)
   if (all(na_mask))
