@@ -20,8 +20,9 @@ ui_search <- function(id)
                  selectizeInput(ns("objective"), "Objective",
                                 c("Buy", "Rent", "Buy-to-Let")),
                  selectizeInput(ns("prop_types"), "Property Types",
-                                prop_types, multiple = TRUE,
-                                selected = c("Apartment", "House")),
+                                choices = setNames(prop_types_ids, prop_types),
+                                multiple = TRUE,
+                                selected = c(1, 2)),
                  offset = 1
           ),
           column(4,
@@ -48,7 +49,7 @@ ui_search <- function(id)
         fluidRow(
           column(4,
                  actionButton(
-                   "search",
+                   ns("search"),
                    "Search",
                    icon = icon("search"),
                    style = "color: #ffffff; background-color: #474949"
@@ -56,6 +57,12 @@ ui_search <- function(id)
                  offset = 1
           )
         ),
+        width = 12
+      )
+    ),
+    fluidRow(
+      box(
+        DT::dataTableOutput(ns("searchOutput")) %>% withSpinner(type=SPINNER_TYPE),
         width = 12
       )
     )
@@ -91,4 +98,107 @@ server_search  <- function(input, output, session) {
     
     updateSelectInput(session, "parish", choices = parish_list)
   })
+  
+  rv <- reactiveValues(
+    queryOutput = data.frame(
+      'Url' = NULL,
+      'Agency' = NULL,
+      'Title' = NULL,
+      'Area' = NULL,
+      'Price' = NULL,
+      'Predicted Price' = NULL
+    )
+  )
+  
+  searchResult <- eventReactive(input$search, {
+    
+    rank_query <- ''
+    filter_query <- ''
+    if(input$objective == "Buy")
+    {
+      rank_query <- '(LOG10(Price / Area) - LOG10(`pred-price_m2`)) / `pred-std_price_m2`'
+      pred_query <- '`pred-price_m2` * Area'
+      filt_query <- 'Deal = 1'
+    }
+    else if(input$objective == "Rent")
+    {
+      rank_query <- '(LOG10(Price / Area) - LOG10(`pred-price_m2`)) / `pred-std_price_m2`'
+      pred_query <- '`pred-price_m2` * Area'
+      filt_query <- 'Deal = 0'
+    }
+    else if(input$objective == "Buy-to-Let")
+    {
+      rank_query <- '(LOG10(Price / Area) - LOG10(`pred-rent_m2`)) / `pred-std_rent_m2`'
+      pred_query <- '`pred-rent_m2` * Area'
+      filt_query <- 'Deal = 1'
+    }
+    else
+    {
+      stop("Invalid Field")
+    }
+    
+    filt_query <- c(
+      filt_query,
+      paste('Price <', as.character(input$max_investment))
+    )
+    
+    if(!is.empty(input$prop_types))
+    {
+      filt_query <- c(
+        filt_query,
+        sprintf("`Property Type` IN (%s)", paste(input$prop_types, collapse=", "))
+      )
+    }
+    
+    if(!is.empty(input$district))
+    {
+      filt_query <- c(filt_query, sprintf("DistrictID = %s", input$district))
+    }
+    
+    if(!is.empty(input$municipality))
+    {
+      filt_query <- c(filt_query, sprintf("MunicipalityID = %s", input$municipality))
+    }
+    
+    if(!is.empty(input$parish))
+    {
+      filt_query <- c(filt_query, sprintf("ParishID = %s", input$parish))
+    }
+    
+    filt_query <- paste(filt_query, collapse = " AND ")
+    
+    query <- sprintf(
+      "SELECT
+          Url AS Link,
+          Agency,
+          Title,
+          Area,
+          Price,
+          ROUND(%s, 0) AS `Predicted Price`
+       FROM daily_table
+       WHERE %s
+       ORDER BY %s
+       LIMIT 100", pred_query, filt_query, rank_query)
+    
+    print(query)
+    
+    df <- dbGetQuery(DB_CONNECTION, query)
+    
+    df$Link <- createLink(df$Link)
+    
+    if(length(df$Link) > 0)
+      df$Link <- return(paste0('<a href="', df$Link, '" target="_blank">link</a>'))
+    
+    return(df)
+  })
+  
+  
+  output$searchOutput <- DT::renderDataTable(
+    searchResult(),
+    escape = FALSE,
+    filter = 'top',
+    options = list(scrollX = TRUE))
+  
+  
+
 }
