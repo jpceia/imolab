@@ -13,23 +13,18 @@ shinyServer(function(input, output, session) {
   
   session$allowReconnect(TRUE)
   
-  rv <- reactiveValues(
-    location_code = NULL,
-    location_type = "District")
+  rv <- reactiveValues(code = NULL)
   
   observeEvent(input$district, {
     
     if(is.empty(input$district))
     {
-      rv$location_code <- NULL
-      rv$location_type <- "District"
-      
+      rv$code <- NULL
       municipality_list <- c(NULL)
     }
     else
     {
-      rv$location_code <- input$district
-      rv$location_type <- "Municipality"
+      rv$code <- input$district
       
       df <- municipality_sh %>% filter(CCA_1 == input$district)
       municipality_list <- df$id
@@ -45,15 +40,12 @@ shinyServer(function(input, output, session) {
 
     if(is.empty(input$municipality))
     {
-      rv$location_code <- input$district
-      rv$location_type <- "Municipality"
-      
+      rv$code <- input$district
       parish_list <- c(NULL)
     }
     else
     {
-      rv$location_code <- input$municipality
-      rv$location_type <- "Parish"
+      rv$code <- input$municipality
       
       df <- parish_sh %>% filter(CCA_2 == input$municipality)
       parish_list <- df$id
@@ -67,13 +59,11 @@ shinyServer(function(input, output, session) {
     
     if(is.empty(input$parish))
     {
-      rv$location_code <- input$municipality
-      rv$location_type <- "Parish"
+      rv$code <- input$municipality
     }
     else
     {
-      rv$location_code <- input$parish
-      rv$location_type <- "StatisticalSection"
+      rv$code <- input$parish
     }
   }, ignoreInit = TRUE)
   
@@ -83,16 +73,11 @@ shinyServer(function(input, output, session) {
     code <- input$territory_map_shape_click$id
     modify_code <- TRUE
     
-    if(is.empty(code))
-    {
-      rv$location_type <- "District"
-    }
-    else
+    if(!is.empty(code))
     {
       len <- stringr::str_length(code)
       if(len <= 2) # district
       {
-        rv$location_type <- "Municipality"
         df <- municipality_sh %>% filter(CCA_1 == code)
         municipality_list <- df$id
         names(municipality_list) <- df$name
@@ -109,7 +94,6 @@ shinyServer(function(input, output, session) {
         }
         else
         {
-          rv$location_type <- "Parish"
           df <- parish_sh %>% filter(CCA_2 == code)
           parish_list <- df$id
           names(parish_list) <- df$name
@@ -126,7 +110,6 @@ shinyServer(function(input, output, session) {
         }
         else
         {
-          rv$location_type <- "StatisticalSection"
           updateSelectInput(session, "parish", selected = code)
         }
       }
@@ -134,7 +117,7 @@ shinyServer(function(input, output, session) {
     
     if(modify_code)
     {
-      rv$location_code <- code
+      rv$code <- code
     }
     
   }, ignoreInit = TRUE)
@@ -406,7 +389,7 @@ shinyServer(function(input, output, session) {
   output$TerritoryTextTargetName <- renderText(target_name(input$target_col))
   
   output$territory_tab <- renderUI({
-    if(rv$location_type != "StatisticalSection")
+    if(location_type(rv$code) != "parish")
     {
       html <- fluidRow(
         box(
@@ -439,8 +422,6 @@ shinyServer(function(input, output, session) {
   
   output$territory_map <- renderLeaflet({
     
-    #validate(need(rv$location_type != "StatisticalSection", "Invalid location"))
-    code <- rv$location_code
     target_col <- input$target_col
     target <- rlang::sym(target_col)
     
@@ -448,8 +429,8 @@ shinyServer(function(input, output, session) {
     df <- df[!is.na(df[[target_col]]), ]
 
     switch (
-      rv$location_type,
-      District = {
+      location_type(rv$code),
+      country = {
         df <- df %>%
           group_by(DistrictID) %>%
           summarize(
@@ -461,9 +442,9 @@ shinyServer(function(input, output, session) {
         df_map <- district_sh
         df_map$value <- df[match(df_map$id, df$DistrictID), ]$value
       },
-      Municipality = {
+      district = {
         df <- df %>%
-          filter(DistrictID == code) %>%
+          filter(DistrictID == rv$code) %>%
           group_by(MunicipalityID) %>%
           summarize(
             count = n(),
@@ -471,12 +452,12 @@ shinyServer(function(input, output, session) {
           ) %>%
           filter(count >= MIN_DATAPOINTS)
         
-        df_map <- municipality_sh %>% filter(CCA_1 == code)
+        df_map <- municipality_sh %>% filter(CCA_1 == rv$code)
         df_map$value <- df[match(df_map$CCA_2, df$MunicipalityID), ]$value
       },
-      Parish = {
+      municipality = {
         df <- df %>%
-          filter(MunicipalityID == code) %>%
+          filter(MunicipalityID == rv$code) %>%
           group_by(ParishID) %>%
           summarize(
             count = n(),
@@ -484,7 +465,7 @@ shinyServer(function(input, output, session) {
           ) %>%
           filter(count >= MIN_DATAPOINTS)
         
-        df_map <- parish_sh %>% filter(CCA_2 == code)
+        df_map <- parish_sh %>% filter(CCA_2 == rv$code)
         df_map$value <- df[match(df_map$CCA_3, df$ParishID), ]$value
       }, 
       {
@@ -492,7 +473,7 @@ shinyServer(function(input, output, session) {
       }
     )
 
-    df_map %>%
+    df_map <- df_map %>%
       leaflet(options = leafletOptions(
         attributionControl = FALSE,
         scrollWheelZoom = FALSE
@@ -509,15 +490,15 @@ shinyServer(function(input, output, session) {
     
     target_col <- input$target_col
     
-    validate(need(rv$location_type == "StatisticalSection", ""))
-    validate(need(target_col != "xYield", "xYield target not allowed for parish level view"))
+    validate(need(location_type(rv$code) == "parish", ""))
+    validate(need(target_col != "xYield", ""))
     
     target <- rlang::sym(target_col)
     
     df <- filtered_dataset()
     df <- df[!is.na(df[[target_col]]), ]
     
-    df_map <- parish_sh %>% filter(CCA_3 == rv$location_code)
+    df_map <- parish_sh %>% filter(CCA_3 == rv$code)
     
     df <- df %>% 
       group_by(Latitude, Longitude) %>%
@@ -555,8 +536,13 @@ shinyServer(function(input, output, session) {
   
   output$territory_boxplot <- renderPlot({
     
-    cat_col <- rv$location_type
-    validate(need(cat_col != "StatisticalSection", ""))
+    cat_col <- switch(
+      location_type(rv$code),
+      country = "District",
+      district = "Municipality",
+      municipality = "Parish",
+      validate(FALSE, "")
+    )
     
     target_col <- input$target_col
     target <- rlang::sym(target_col)
@@ -602,8 +588,13 @@ shinyServer(function(input, output, session) {
   
   output$territory_table <- renderFormattable({
     
-    cat_col <- rv$location_type
-    validate(need(cat_col != "StatisticalSection", ""))
+    cat_col <- switch(
+      location_type(rv$code),
+      country = "District",
+      district = "Municipality",
+      municipality = "Parish",
+      validate(FALSE, "")
+    )
     
     target_col <- input$target_col
     target <- rlang::sym(target_col)
