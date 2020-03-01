@@ -197,11 +197,6 @@ shinyServer(function(input, output, session) {
     df <- df[!is.na(df[[cat_col]]), ]
     df <- df[!is.na(df[[target_col]]), ]
     
-    validate(need(
-      nrow(df) >= MIN_DATAPOINTS,
-      MIN_DATAPOINTS_MSG
-    ))
-    
     q <- 0.001 #as.numeric(input$truncation) / 100.0
     quantiles <- quantile(df[[target_col]], probs = c(q, 1 - q))
     df <- df[between(df[[target_col]], quantiles[1], quantiles[2]), ]
@@ -241,11 +236,6 @@ shinyServer(function(input, output, session) {
     df <- df[!is.na(df[[cat_col]]), ]
     df <- df[!is.na(df[[target_col]]), ]
     
-    validate(need(
-      nrow(df) >= MIN_DATAPOINTS,
-      MIN_DATAPOINTS_MSG
-    ))
-    
     if (is.numeric(df[[cat_col]]))
     {
       df[[cat_col]] <- as.factor(df[[cat_col]])
@@ -274,11 +264,6 @@ shinyServer(function(input, output, session) {
     df <- filtered_dataset()
     df <- df[!is.na(df[[cat_col]]), ]
     df <- df[!is.na(df[[target_col]]), ]
-    
-    validate(need(
-      nrow(df) >= MIN_DATAPOINTS,
-      MIN_DATAPOINTS_MSG
-    ))
     
     target <- rlang::sym(target_col)
     
