@@ -142,7 +142,7 @@ server_search  <- function(input, output, session) {
       paste('Price <', as.character(input$max_investment))
     )
     
-    if(!is.empty(input$prop_types))
+    if(length(input$prop_types) > 0)
     {
       filt_query <- c(
         filt_query,
