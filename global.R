@@ -47,11 +47,6 @@ for(conn in dbListConnections(dbDriver(drv = "MySQL")))
   dbDisconnect(conn)
 }
 
-
-DB_CONNECTION <- dbConnect(MySQL(), user=DB_USER, password=DB_PWD, host=DB_HOST, dbname=DB_NAME, port=DB_PORT)
-
-
-
 prop_types <- c(
   'Apartment',
   'House',

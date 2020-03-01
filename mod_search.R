@@ -180,12 +180,12 @@ server_search  <- function(input, output, session) {
        ORDER BY %s
        LIMIT 100", pred_query, filt_query, rank_query)
     
-    df <- dbGetQuery(DB_CONNECTION, query)
-    
-    df$Link <- createLink(df$Link)
+    conn <- dbConnect(MySQL(), user=DB_USER, password=DB_PWD, host=DB_HOST, dbname=DB_NAME, port=DB_PORT)
+    df <- dbGetQuery(conn, query)
+    dbDisconnect(conn)
     
     if(length(df$Link) > 0)
-      df$Link <- return(paste0('<a href="', df$Link, '" target="_blank">link</a>'))
+      df$Link <- paste0("<a href='", df$Link, "' target='_blank'>link</a>")
     
     return(df)
   })

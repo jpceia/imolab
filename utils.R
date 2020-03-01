@@ -5,7 +5,7 @@
 # ----------------------------------------------------------------------------------------
 
 
-is.empty <- function (x) 
+is.empty <- function (x)
 {
   if (length(x) <= 1) {
     if (is.null(x)) 
@@ -163,7 +163,9 @@ hc_hist <- function(df, col_name, xunits, xlabel = "", truncation = 1)
 
 load_dataset <- function()
 {
-  df <- dbReadTable(DB_CONNECTION, DB_TABLE)
+  conn <- dbConnect(MySQL(), user=DB_USER, password=DB_PWD, host=DB_HOST, dbname=DB_NAME, port=DB_PORT)
+  df <- dbReadTable(conn, DB_TABLE)
+  dbDisconnect(conn)
   df <- tbl_df(df)
   
   df$DistrictID <- as.factor(sprintf("%02d", as.integer(df$DistrictID)))
