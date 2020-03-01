@@ -41,10 +41,11 @@ DB_USER <- "admin"
 DB_PWD <- "***REMOVED***"
 DB_TABLE <- "imovirtual_prod"
 
-#for(conn in dbListConnections(dbDriver(drv = "MySQL")))
-#{
-#  dbDisconnect(conn)
-#}
+for(conn in dbListConnections(dbDriver(drv = "MySQL")))
+{
+  print(conn)
+  dbDisconnect(conn)
+}
 
 
 DB_CONNECTION <- dbConnect(MySQL(), user=DB_USER, password=DB_PWD, host=DB_HOST, dbname=DB_NAME, port=DB_PORT)
