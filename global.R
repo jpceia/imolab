@@ -102,7 +102,7 @@ bedrooms_levels <- 0:10
 target_list <- list(
   'Price/m2' = 'price_m2',
   'Area' = 'Area',
-  'xYield' = 'xYield',
+  'Yield' = 'Yield',
   'Construction Year' = 'Construction.Year'
 )
 
@@ -322,13 +322,13 @@ reg$price_m2 <- xgb.train(
 filt <- dataset$Deal == "Sale"
 filt <- filt & !(dataset$Property.Type %in% c("Farm", "Terrain"))
 X <- dataset[filt, ] %>% mutate(Deal = "Rent") %>% get_features(match_tables)
-rent_pred <- exp(predict(reg$price, xgb.DMatrix(data = as.matrix(X))))
-dataset[filt, "xYield"] <- 12 * rent_pred / dataset[filt, "Price"]
+rent_pred <- 10^(predict(reg$price_m2, xgb.DMatrix(data = as.matrix(X))))
+dataset[filt, "Yield"] <- 12 * rent_pred / dataset[filt, "Price"]
 
 # filt <- dataset$Deal == "Rent"
 # X <- dataset[filt, ] %>% mutate(Deal = "Sale") %>% get_features(match_tables)
 # sell_pred <- 10^(predict(xgb$price, xgb.DMatrix(data = as.matrix(X))))
-# dataset[filt, "xYield"] <- dataset[filt, "price"] / sell_pred
+# dataset[filt, "Yield"] <- dataset[filt, "price"] / sell_pred
 
                                                             
 rm(X)

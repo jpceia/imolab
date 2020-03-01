@@ -491,7 +491,7 @@ shinyServer(function(input, output, session) {
     target_col <- input$target_col
     
     validate(need(location_type(rv$code) == "parish", ""))
-    validate(need(target_col != "xYield", ""))
+    validate(need(target_col != "Yield", ""))
     
     target <- rlang::sym(target_col)
     
