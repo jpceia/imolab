@@ -4,7 +4,6 @@
 #                                        SIDE BAR
 # ----------------------------------------------------------------------------------------
 
-condition <- "['histogramsTab', 'categoriesTab', 'correlationTab', 'territoryTab'].indexOf(input.sidebarmenu) >= 0"
 
 sideBar <- dashboardSidebar(
   tags$head(includeHTML("google-analytics.js")),
@@ -29,38 +28,10 @@ sideBar <- dashboardSidebar(
     ),
     hr(),
     conditionalPanel(
-      condition = condition,
-      radioButtons("deal", NULL, c("Sale", "Rent"), inline = TRUE)
-    ),
-    conditionalPanel(
-      condition = condition,
-      selectizeInput("prop_type", NULL, prop_types, selected = c("Apartment", "House"), multiple = TRUE)
-    ),
-    conditionalPanel(
-      condition = condition,
-      selectizeInput("district", "Location", district_list,
-                     size = 3,
-                     options = list(
-                       placeholder = 'District',
-                       onInitialize = I('function() { this.setValue(""); }')
-                     )),
-      conditionalPanel(
-        condition = "input.district != ''",
-        selectizeInput("municipality", NULL, c(" "),
-                       options = list(
-                         placeholder = 'Municipality',
-                         onInitialize = I('function() { this.setValue(""); }')
-                       )),
-        conditionalPanel(
-          condition = "input.municipality != ''",
-          selectizeInput("parish", NULL, c(" "),
-                         multiple = FALSE,
-                         options = list(
-                           placeholder = 'Parish',
-                           onInitialize = I('function() { this.setValue(""); }')
-                         ))
-        )
-      )
+      condition = "['histogramsTab', 'categoriesTab', 'correlationTab', 'territoryTab'].indexOf(input.sidebarmenu) >= 0",
+      radioButtons("deal", NULL, c("Sale", "Rent"), inline = TRUE),
+      selectizeInput("prop_type", NULL, prop_types, selected = c("Apartment", "House"), multiple = TRUE),
+      htmlOutput("geomenu")
     ),
     conditionalPanel(
       condition = "'histogramsTab' == input.sidebarmenu",

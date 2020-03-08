@@ -16,111 +16,104 @@ shinyServer(function(input, output, session) {
   rv <- reactiveValues(code = NULL)
   
   observeEvent(input$district, {
-    
-    if(is.empty(input$district))
-    {
-      rv$code <- NULL
-      municipality_list <- c(NULL)
-    }
-    else
-    {
-      rv$code <- input$district
-      
-      df <- municipality_sh %>% filter(CCA_1 == input$district)
-      municipality_list <- df$id
-      names(municipality_list) <- df$name
-    }
-    
-    updateSelectInput(session, "municipality", choices = municipality_list)
-    updateSelectInput(session, "parish",       choices = c(NULL))
+    rv$code <- input$district
   }, ignoreInit = TRUE)
   
-  
   observeEvent(input$municipality, {
-
-    if(is.empty(input$municipality))
-    {
-      rv$code <- input$district
-      parish_list <- c(NULL)
-    }
-    else
-    {
-      rv$code <- input$municipality
-      
-      df <- parish_sh %>% filter(CCA_2 == input$municipality)
-      parish_list <- df$id
-      names(parish_list) <- df$name
-    }
-
-    updateSelectInput(session, "parish", choices = parish_list)
+    rv$code <- ifelse(is.empty(input$municipality), input$district, input$municipality)
   }, ignoreInit = TRUE)
   
   observeEvent(input$parish, {
-    
-    if(is.empty(input$parish))
-    {
-      rv$code <- input$municipality
-    }
-    else
-    {
-      rv$code <- input$parish
-    }
+    rv$code <- ifelse(is.empty(input$parish), input$municipality, input$parish)
   }, ignoreInit = TRUE)
-  
-  
   
   observeEvent(input$territory_map_shape_click$id, {
-    code <- input$territory_map_shape_click$id
-    modify_code <- TRUE
-    
-    if(!is.empty(code))
-    {
-      len <- stringr::str_length(code)
-      if(len <= 2) # district
-      {
-        df <- municipality_sh %>% filter(CCA_1 == code)
-        municipality_list <- df$id
-        names(municipality_list) <- df$name
-        updateSelectInput(session, "district", selected = code)
-        updateSelectInput(session, "municipality", choices = municipality_list)
-        updateSelectInput(session, "parish", choices = c(NULL))
+    rv$code <- input$territory_map_shape_click$id
+  })
+  
+  output$geomenu <- renderUI({
+    html <- switch(
+      location_type(rv$code),
+      country = {
+        tags$div(
+          selectizeInput("district", "Location", district_list,
+                         options = list(
+                           placeholder = 'District',
+                           onInitialize = I('function() { this.setValue(""); }')
+                         )
+          )
+        )
+      },
+      district = {
+        district_code <- rv$code
+        
+        tmp <- municipality_sh %>% filter(CCA_1 == district_code)
+        municipality_list <- setNames(tmp$id, tmp$name)
+        
+        tags$div(
+          selectizeInput("district", "Location", district_list,
+                         selected = district_code
+          ),
+          selectizeInput("municipality", NULL, municipality_list,
+                         options = list(
+                           placeholder = 'Municipality',
+                           onInitialize = I('function() { this.setValue(""); }')
+                         )
+          )
+        )
+      },
+      municipality = {
+        municipality_code <- rv$code
+        district_code <-  stringr::str_sub(municipality_code, end = -3)
+        
+        tmp <- parish_sh %>% filter(CCA_2 == municipality_code)
+        parish_list <- setNames(tmp$id, tmp$name)
+        
+        tmp <- municipality_sh %>% filter(CCA_1 == district_code)
+        municipality_list <- setNames(tmp$id, tmp$name)
+        
+        tags$div(
+          selectizeInput("district", "Location", district_list,
+                         selected = district_code
+          ),
+          selectizeInput("municipality", NULL, municipality_list,
+                         selected = municipality_code
+          ),
+          selectizeInput("parish", NULL, parish_list,
+                         options = list(
+                           placeholder = 'Parish',
+                           onInitialize = I('function() { this.setValue(""); }')
+                         )
+          )
+        )
+      },
+      parish = {
+        parish_code <- rv$code
+        municipality_code <- stringr::str_sub(parish_code, end = -3)
+        district_code <-  stringr::str_sub(municipality_code, end = -3)
+        
+        tmp <- parish_sh %>% filter(CCA_2 == municipality_code)
+        parish_list <- setNames(tmp$id, tmp$name)
+        
+        tmp <- municipality_sh %>% filter(CCA_1 == district_code)
+        municipality_list <- setNames(tmp$id, tmp$name)
+        
+        tags$div(
+          selectizeInput("district", "Location", district_list,
+                         selected = district_code
+          ),
+          selectizeInput("municipality", NULL, municipality_list,
+                         selected = municipality_code
+          ),
+          selectizeInput("parish", NULL, parish_list,
+                         selected = parish_code
+          )
+        )
       }
-      else if(len <= 4) # municipality
-      {
-        n_points <- nrow(filtered_dataset() %>% filter(MunicipalityID == code))
-        if(n_points < MIN_DATAPOINTS)
-        {
-          modify_code <- FALSE
-        }
-        else
-        {
-          df <- parish_sh %>% filter(CCA_2 == code)
-          parish_list <- df$id
-          names(parish_list) <- df$name
-          updateSelectInput(session, "municipality", selected = code)
-          updateSelectInput(session, "parish",       choices = parish_list) 
-        }
-      }
-      else if(len <= 6) # parish
-      {
-        n_points <- nrow(filtered_dataset() %>% filter(ParishID == code))
-        if(n_points < MIN_DATAPOINTS)
-        {
-          modify_code <- FALSE
-        }
-        else
-        {
-          updateSelectInput(session, "parish", selected = code)
-        }
-      }
-    }
+    )
     
-    if(modify_code)
-    {
-      rv$code <- code
-    }
-    
-  }, ignoreInit = TRUE)
+    return(html)
+  })
   
   filtered_dataset <- reactive({
     
