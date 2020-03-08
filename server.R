@@ -117,17 +117,27 @@ shinyServer(function(input, output, session) {
   
   filtered_dataset <- reactive({
     
-    df <- dataset %>%
-      filter(Deal == input$deal) %>%
-      filter(Property.Type %in% input$prop_type)
+    df <- dataset[
+      (Deal == input$deal) &
+      (Property.Type %in% input$prop_type)
+    ]
+    
+    code <- rv$code
     
     df <- switch(
-      location_type(rv$code),
-      country      = df %>% filter(DistrictID  %in% district_sh$CCA_1),
-      district     = df %>% filter(DistrictID     == rv$code),
-      municipality = df %>% filter(MunicipalityID == rv$code),
-      parish       = df %>% filter(ParishID       == rv$code),
-      stop("Invalid data")
+      location_type(code),
+      country = {
+        df[DistrictID  %in% district_sh$CCA_1]
+      },
+      district = {
+        df[DistrictID == code]
+      },
+      municipality = {
+        df[MunicipalityID == code]
+      },
+      parish = {
+        df[ParishID == code]
+      }
     )
 
     validate(need(nrow(df) >= MIN_DATAPOINTS, MIN_DATAPOINTS_MSG))
@@ -186,9 +196,10 @@ shinyServer(function(input, output, session) {
   
   F_catBoxPlot <- function(cat_col, target_col = "price_m2") {
     
-    df <- filtered_dataset()
-    df <- df[!is.na(df[[cat_col]]), ]
-    df <- df[!is.na(df[[target_col]]), ]
+    df <- filtered_dataset()[
+      !is.na(get(cat_col)) &
+      !is.na(get(target_col))
+    ]
     
     q <- 0.001 #as.numeric(input$truncation) / 100.0
     quantiles <- quantile(df[[target_col]], probs = c(q, 1 - q))
@@ -225,9 +236,10 @@ shinyServer(function(input, output, session) {
   
   F_catCount <- function(cat_col, target_col = "price_m2") {
     
-    df <- filtered_dataset()
-    df <- df[!is.na(df[[cat_col]]), ]
-    df <- df[!is.na(df[[target_col]]), ]
+    df <- filtered_dataset()[
+      !is.na(get(cat_col)) &
+      !is.na(get(target_col))
+    ]
     
     if (is.numeric(df[[cat_col]]))
     {
@@ -254,22 +266,18 @@ shinyServer(function(input, output, session) {
   
   F_catTable <- function(cat_col,  target_col = "price_m2") {
     
-    df <- filtered_dataset()
-    df <- df[!is.na(df[[cat_col]]), ]
-    df <- df[!is.na(df[[target_col]]), ]
-    
-    target <- rlang::sym(target_col)
-    
-    df %>%
-      group_by_at(vars(one_of(cat_col))) %>%
-      summarize(
-        count = n(),
-        "25%" = currency(quantile(!!target, probs=0.25), "", 2),
-        median= currency(quantile(!!target, probs=0.50), "", 2),
-        "75%" = currency(quantile(!!target, probs=0.75), "", 2)
-      ) %>%
-      arrange(-row_number()) %>%
-      drop_na() %>%
+    filtered_dataset()[
+      !is.na(get(cat_col)) & !is.na(get(target_col)),
+      .(
+        count = .N,
+        "25%" = currency(quantile(get(target_col), probs=0.25), "", 2),
+        median= currency(quantile(get(target_col), probs=0.50), "", 2),
+        "75%" = currency(quantile(get(target_col), probs=0.75), "", 2)
+      ),
+      cat_col
+    ][
+      rev(order(get(cat_col)))
+    ] %>%
       formattable(
         align = c("l", "r", "r", "r", "r"),
         list(
@@ -327,14 +335,24 @@ shinyServer(function(input, output, session) {
           return '  <strong>' + this.point.%s + '</strong><br>' + 
                  '<strong>' + '%s:</strong> ' + this.point.x + '<br>' + 
                  '<strong>' + '%s:</strong> ' + this.point.y; }"
-      df <- filtered_dataset() %>%
-        group_by_at(vars(one_of(agg_col))) %>%
-        summarize(
-          count = n(),
-          !!target1_col := median(!!target1),
-          !!target2_col := median(!!target2)
-        ) %>%
-        filter(count >= MIN_DATAPOINTS) %>%
+      df <- filtered_dataset()[
+        ,
+        as.list(setNames(
+          c(
+            .N,
+            median(get(target1_col)),
+            median(get(target2_col))
+          ),
+          c(
+            "count",
+            target1_col,
+            target2_col
+          )
+        )),
+        agg_col
+      ][
+        count >= MIN_DATAPOINTS
+      ] %>%
         hchart("scatter", hcaes(!!target1, !!target2)) %>%
         hc_tooltip(formatter=JS(sprintf(js, agg_col, target1_col, target2_col)))
     }
@@ -346,14 +364,27 @@ shinyServer(function(input, output, session) {
                  '<span style=\"color:' + this.series.color + '\">\u25CF</span> ' + this.series.name + '<br><br>' + 
                  '<strong>' + '%s:</strong> ' + this.point.x + '<br>' + 
                  '<strong>' + '%s:</strong> ' + this.point.y; }"
-      filtered_dataset() %>%
-        group_by_at(vars(one_of(c(agg_col, "Property.Type")))) %>%
-        summarize(
-          count = n(),
-          !!target1_col := median(!!target1),
-          !!target2_col := median(!!target2)
-        ) %>%
-        filter(count >= MIN_DATAPOINTS) %>%
+      filtered_dataset()[
+        ,
+        as.list(setNames(
+          c(
+            .N,
+            median(get(target1_col)),
+            median(get(target2_col))
+          ),
+          c(
+            "count",
+            target1_col,
+            target2_col
+          )
+        )),
+        c(
+          agg_col,
+          "Property.Type"
+        )
+      ][
+        count >= MIN_DATAPOINTS
+      ] %>%
         hchart("scatter", hcaes(!!target1, !!target2, group = Property.Type)) %>%
         hc_tooltip(formatter=JS(sprintf(js, agg_col, target1_col, target2_col)))
     }
@@ -385,7 +416,7 @@ shinyServer(function(input, output, session) {
     {
       html <- fluidRow(
         box(
-          leafletOutput("parish_map")  %>% withSpinner(type=SPINNER_TYPE),
+          leafletOutput("territory_map")  %>% withSpinner(type=SPINNER_TYPE),
           width = 12
         ),
         box(
@@ -401,114 +432,112 @@ shinyServer(function(input, output, session) {
   output$territory_map <- renderLeaflet({
     
     target_col <- input$target_col
-    target <- rlang::sym(target_col)
+    
+    loc_type <- location_type(rv$code)
     
     df <- filtered_dataset()
-    df <- df[!is.na(df[[target_col]]), ]
+    df <- df[
+      !is.na(get(target_col))
+    ]
+    
+    map <- leaflet(options = leafletOptions(
+      attributionControl = FALSE,
+      scrollWheelZoom = FALSE)
+    ) %>%
+      addTiles()
 
     switch (
-      location_type(rv$code),
+      loc_type,
       country = {
-        df <- df %>%
-          group_by(DistrictID) %>%
-          summarize(
-            count = n(),
-            value = median(!!target)
-          ) %>%
-          filter(count >= MIN_DATAPOINTS)
+        df <- df[
+          ,
+          .(
+            count = .N,
+            value = median(get(target_col), rm.na = TRUE)
+          ),
+          DistrictID
+        ][
+          count >= MIN_DATAPOINTS
+        ]
         
         df_map <- district_sh
         df_map$value <- df[match(df_map$id, df$DistrictID), ]$value
       },
       district = {
-        df <- df %>%
-          filter(DistrictID == rv$code) %>%
-          group_by(MunicipalityID) %>%
-          summarize(
-            count = n(),
-            value = median(!!target)
-          ) %>%
-          filter(count >= MIN_DATAPOINTS)
+        df <- df[
+          DistrictID == rv$code,
+          .(
+            count = .N,
+            value = median(get(target_col), rm.na = TRUE)
+          ),
+          MunicipalityID
+        ][
+          count >= MIN_DATAPOINTS
+        ]
         
         df_map <- municipality_sh %>% filter(CCA_1 == rv$code)
         df_map$value <- df[match(df_map$CCA_2, df$MunicipalityID), ]$value
       },
       municipality = {
-        df <- df %>%
-          filter(MunicipalityID == rv$code) %>%
-          group_by(ParishID) %>%
-          summarize(
-            count = n(),
-            value = median(!!target)
-          ) %>%
-          filter(count >= MIN_DATAPOINTS)
+        df <- df[
+          MunicipalityID == rv$code,
+          .(
+            count = .N,
+            value = median(get(target_col), rm.na = TRUE)
+          ),
+          ParishID
+        ][
+          count >= MIN_DATAPOINTS
+        ]
         
         df_map <- parish_sh %>% filter(CCA_2 == rv$code)
         df_map$value <- df[match(df_map$CCA_3, df$ParishID), ]$value
-      }, 
+      },
+      parish = {
+        
+        coords <- df[
+          ,
+          .(
+            value = round(median(get(target_col), na.rm = TRUE), 2)
+          ),
+          .(Latitude, Longitude)
+        ][
+          !is.na(value)
+        ]
+        
+        
+        df_map <- parish_sh %>% filter(CCA_3 == rv$code)
+        
+        pts <- coords %>% sf::st_as_sf(coords = c('Longitude', 'Latitude'), crs = 4326)
+        coords <- coords[sf::st_contains(df_map, pts)[[1]]]
+        
+        unit_str <- switch(
+          target_col,
+          "price_m2" = "Eur/m2",
+          "Area" = "m2",
+          "Construction.Decade" = ""
+        )
+        
+        map <- map %>%
+          addPolygons(
+            data = df_map,
+            color = "#444444", weight = 1, smoothFactor = 0.5,
+            opacity = 1.0, fillOpacity = 0.25, fillColor = "cornflowerblue") %>%
+          addCircleMarkers(
+            data = coords,
+            radius = 3, color = ~qpal(c("red", "green"), value),
+            lng = ~Longitude, lat = ~Latitude,
+            popup = ~htmltools::htmlEscape(paste(value, unit_str)),
+            stroke = 0.5, fill = FALSE, fillOpacity = 1,
+            group = "Historical"
+          )
+      },
       {
         validate(FALSE, "")
       }
     )
-
-    df_map <- df_map %>%
-      leaflet(options = leafletOptions(
-        attributionControl = FALSE,
-        scrollWheelZoom = FALSE
-      )) %>%
-      addTiles() %>%
-      addPolygons(
-        color = "#444444", weight = 1, smoothFactor = 0.5, label = ~name, layerId = ~id,
-        opacity = 1.0, fillOpacity = 0.75, fillColor = ~qpal("Blues", value),
-        highlightOptions = highlightOptions(color = "white", weight = 2, bringToFront = TRUE))
-  })
-  
-  
-  output$parish_map <- renderLeaflet({
     
-    target_col <- input$target_col
-    
-    validate(need(location_type(rv$code) == "parish", ""))
-    validate(need(target_col != "Yield", ""))
-    
-    target <- rlang::sym(target_col)
-    
-    df <- filtered_dataset()
-    df <- df[!is.na(df[[target_col]]), ]
-    
-    df_map <- parish_sh %>% filter(CCA_3 == rv$code)
-    
-    df <- df %>% 
-      group_by(Latitude, Longitude) %>%
-      summarize(value = round(median(!!target), 2)) %>%
-      ungroup()
-    
-    pts <- df %>% sf::st_as_sf(coords = c('Longitude', 'Latitude'), crs = 4326)
-    df <- df[sf::st_contains(df_map, pts)[[1]], ]
-    
-    unit_str <- switch(
-      target_col,
-      "price_m2" = "Eur/m2",
-      "Area" = "m2",
-      "Construction.Decade" = ""
-    )
-
-    df_map %>%
-      leaflet(options = leafletOptions(
-        attributionControl = FALSE,
-        scrollWheelZoom = TRUE
-      )) %>%
-      addTiles() %>%
-      addPolygons(
-        color = "#444444", weight = 1, smoothFactor = 0.5,
-        opacity = 1.0, fillOpacity = 0.25, fillColor = "cornflowerblue") %>%
-      addCircleMarkers(
-        data = df,
-        radius = 5, color = ~qpal(c("red", "green"), value),
-        lng = ~Longitude, lat = ~Latitude,
-        popup = ~htmltools::htmlEscape(paste(value, unit_str)),
-        stroke = FALSE, fillOpacity = 0.75
-      )
+    return(map)
   })
   
   
@@ -525,14 +554,15 @@ shinyServer(function(input, output, session) {
     target_col <- input$target_col
     target <- rlang::sym(target_col)
     
-    df <- filtered_dataset()
-    df <- df[!is.na(df[[target_col]]), ]
-    df <- df[!is.na(df[[cat_col]]), ]
+    df <- filtered_dataset()[
+      !is.na(get(target_col)) & !is.na(get(cat_col)),
+    ]
+    
     df$tmp <- stringr::str_wrap(df[[cat_col]], 25)
     
     q <- 0.001 #as.numeric(input$truncation) / 100.0
     quantiles <- quantile(df[[target_col]], probs = c(q, 1 - q))
-    df <- df[between(df[[target_col]], quantiles[1], quantiles[2]), ]
+    df <- df[between(df[[target_col]], quantiles[1], quantiles[2])]
     
     median_val <- median(df[[target_col]])
     
@@ -547,7 +577,6 @@ shinyServer(function(input, output, session) {
       ) +
       geom_boxplot(
         outlier.shape = NA,
-        #fill = "#8DBEDA",
       ) +
       scale_y_continuous(trans = 'log10') +
       theme(
@@ -577,18 +606,19 @@ shinyServer(function(input, output, session) {
     target_col <- input$target_col
     target <- rlang::sym(target_col)
     
-    df <- filtered_dataset()
-    df <- df[!is.na(df[[target_col]]), ]
-    df <- df[!is.na(df[[cat_col]]), ]
-    
-    df %>%
-      group_by_at(vars(one_of(cat_col))) %>%
-      summarize(
-        count = n(),
-        "25%" = currency(quantile(!!target, probs=0.25), "", 2),
-        median= currency(quantile(!!target, probs=0.50), "", 2),
-        "75%" = currency(quantile(!!target, probs=0.75), "", 2)
-      ) %>%
+    filtered_dataset()[
+      !is.na(get(target_col)) &
+      !is.na(get(cat_col)),
+      .(
+        count = .N,
+        "25%" = currency(quantile(get(target_col), probs=0.25), "", 2),
+        median= currency(quantile(get(target_col), probs=0.50), "", 2),
+        "75%" = currency(quantile(get(target_col), probs=0.75), "", 2)
+      ),
+      cat_col
+    ][
+      order(get(cat_col))
+    ] %>%
       formattable(
         align = c("l", "r", "r", "r", "r"),
         list(
@@ -601,18 +631,22 @@ shinyServer(function(input, output, session) {
   })
   
   output$filtered_table <- DT::renderDataTable(
-    filtered_dataset() %>% select(
-      Property.Type,
-      Price,
-      price_m2,
-      Area,
-      Gross.Area,
-      Terrain.Area,
-      Bedrooms,
-      Bathrooms,
-      Energy.Certificate,
-      Construction.Year,
-      Condition),
+    filtered_dataset()[
+      ,
+      .(
+        Property.Type,
+        Price,
+        price_m2,
+        Area,
+        Gross.Area,
+        Terrain.Area,
+        Bedrooms,
+        Bathrooms,
+        Energy.Certificate,
+        Construction.Year,
+        Condition
+      )
+    ],
     filter = 'top', options = list(scrollX = TRUE)
   )
 

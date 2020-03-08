@@ -287,7 +287,7 @@ for(key in names(count_enc_cols))
 
 # ------------------------------------- XGBOOST MODEL ------------------------------------
 
-X <- get_features(dataset, match_tables)
+X <- get_features(df, match_tables)
 
 
 cat("Started XGBoost training\n")
@@ -330,7 +330,9 @@ dataset[filt, "Yield"] <- 12 * rent_pred / dataset[filt, "Price"]
 # sell_pred <- 10^(predict(xgb$price, xgb.DMatrix(data = as.matrix(X))))
 # dataset[filt, "Yield"] <- dataset[filt, "price"] / sell_pred
 
-                                                            
+dataset <- data.table(dataset)
+
+rm(df)
 rm(X)
 rm(y)
 
