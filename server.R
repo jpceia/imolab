@@ -201,34 +201,42 @@ shinyServer(function(input, output, session) {
       !is.na(get(target_col))
     ]
     
-    q <- 0.001 #as.numeric(input$truncation) / 100.0
-    quantiles <- quantile(df[[target_col]], probs = c(q, 1 - q))
-    df <- df[between(df[[target_col]], quantiles[1], quantiles[2]), ]
-    
     if (is.numeric(df[[cat_col]]))
     {
       df[[cat_col]] <- as.factor(df[[cat_col]])
     }
     
-    cat_var <- rlang::sym(cat_col)
-    target_var <- rlang::sym(target_col)
-    
-    df %>% ggplot(
-      aes(
-        x = !!cat_var,
-        y = !!target_var,
-        fill = !!cat_var
-      )) +
-      stat_boxplot(
-        geom = "errorbar",
-        width = 0.2
-      ) +
-      geom_boxplot(outlier.shape = NA) +
+    df[
+      ,
+      .(
+        min = quantile(get(target_col), probs = 0.05),
+        low = quantile(get(target_col), probs = 0.25),
+        mid = quantile(get(target_col), probs = 0.50),
+        top = quantile(get(target_col), probs = 0.75),
+        max = quantile(get(target_col), probs = 0.95)
+      ),
+      cat_col
+    ][
+      !is.na(get(cat_col))
+    ] %>% ggplot(
+      aes_string(
+        x = cat_col,
+        fill = cat_col,
+        ymin = 'min',
+        lower = 'low',
+        middle = 'mid', 
+        upper = 'top', 
+        ymax = 'max'
+      )
+    ) +
+      geom_errorbar(width = 0.2) +
+      geom_boxplot(stat = "identity") +
       scale_x_discrete(drop = FALSE) +
       scale_y_continuous(trans = 'log10') +
       theme(
-        axis.text.x = element_text(size = 12),
         axis.text.y = element_text(size = 12),
+        axis.title.y = element_text(size = 12),
+        axis.text.x = element_text(size = 12),
         legend.position = "none"
       ) +
       coord_flip()
@@ -246,19 +254,27 @@ shinyServer(function(input, output, session) {
       df[[cat_col]] <- as.factor(df[[cat_col]])
     }
     
-    cat_var <- rlang::sym(cat_col)
-    
-    ggplot(df, aes(
-        x = !!cat_var,
-        fill = !!cat_var
+    df[
+      ,
+      .(count = .N),
+      cat_col
+    ][
+      !is.na(get(cat_col))
+    ] %>%
+    ggplot(aes_string(
+        x = cat_col,
+        fill = cat_col,
+        y = 'count',
+        label = 'count'
       )) +
-      geom_bar(color = "black", lwd = 0.5) +
-      geom_text(stat = 'count', aes(label=..count..),
-                hjust=-0.3, check_overlap = TRUE) +
+      geom_bar(stat = "identity", color = "black", lwd = 0.5) +
+      geom_text(stat = "identity", hjust = -0.3, check_overlap = TRUE) +
       scale_x_discrete(drop = FALSE) +
       theme(
-        axis.text.x = element_text(size = 12),
         axis.text.y = element_text(size = 12),
+        axis.title.y = element_blank(),
+        axis.text.x = element_text(size = 12),
+        axis.title.x = element_blank(),
         legend.position = "none"
       ) +
       coord_flip()
