@@ -197,11 +197,11 @@ load_dataset <- function()
   
   df$Energy.Certificate <- factor(df$Energy.Certificate, energy_certificate_levels)
 
-  df <- add_column(df, price_m2     = round(df$Price / df$Area, 2),                                       .after = "Price")
-  df <- add_column(df, Construction.Decade = cut(df$Construction.Year, decades, decades_labels),   .after = "Construction.Year")
-  df <- add_column(df, District     = district_sh$name[match(df$DistrictID, district_sh$id)],             .after = "DistrictID")
-  df <- add_column(df, Municipality = municipality_sh$name[match(df$MunicipalityID, municipality_sh$id)], .after = "MunicipalityID")
-  df <- add_column(df, Parish       = parish_sh$name[match(df$ParishID, parish_sh$id)],                   .after = "ParishID")
+  df <- add_column(df, price_m2     = round(df$Price / df$Area, 2),                                          .after = "Price")
+  df <- add_column(df, Construction.Decade = cut(df$Construction.Year, decades, decades_labels),             .after = "Construction.Year")
+  df <- add_column(df, District     = district_sh$name[match(df$DistrictID, district_sh$CCA_1)],             .after = "DistrictID")
+  df <- add_column(df, Municipality = municipality_sh$name[match(df$MunicipalityID, municipality_sh$CCA_2)], .after = "MunicipalityID")
+  df <- add_column(df, Parish       = parish_sh$name[match(df$ParishID, parish_sh$CCA_3)],                   .after = "ParishID")
   
   df <- df %>% filter(!is.na(price_m2) & (price_m2 > 0))
   

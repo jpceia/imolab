@@ -91,7 +91,7 @@ server_valuation <- function(input, output, session) {
     df <- municipality_sh %>% filter(CCA_1 == input$district)
     
     if (nrow(df) > 0) {
-      municipality_list <- df$id
+      municipality_list <- df$CCA_2
       names(municipality_list) <- df$name
     }
     
@@ -106,7 +106,7 @@ server_valuation <- function(input, output, session) {
     df <- parish_sh %>% filter(CCA_2 == input$municipality)
     
     if (nrow(df) > 0) {
-      parish_list <- df$id
+      parish_list <- df$CCA_3
       names(parish_list) <- df$name
     }
 

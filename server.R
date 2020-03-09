@@ -48,7 +48,7 @@ shinyServer(function(input, output, session) {
         district_code <- rv$code
         
         tmp <- municipality_sh %>% filter(CCA_1 == district_code)
-        municipality_list <- setNames(tmp$id, tmp$name)
+        municipality_list <- setNames(tmp$CCA_2, tmp$name)
         
         tags$div(
           selectizeInput("district", "Location", district_list,
@@ -67,10 +67,10 @@ shinyServer(function(input, output, session) {
         district_code <-  stringr::str_sub(municipality_code, end = -3)
         
         tmp <- parish_sh %>% filter(CCA_2 == municipality_code)
-        parish_list <- setNames(tmp$id, tmp$name)
+        parish_list <- setNames(tmp$CCA_3, tmp$name)
         
         tmp <- municipality_sh %>% filter(CCA_1 == district_code)
-        municipality_list <- setNames(tmp$id, tmp$name)
+        municipality_list <- setNames(tmp$CCA_2, tmp$name)
         
         tags$div(
           selectizeInput("district", "Location", district_list,
@@ -93,10 +93,10 @@ shinyServer(function(input, output, session) {
         district_code <-  stringr::str_sub(municipality_code, end = -3)
         
         tmp <- parish_sh %>% filter(CCA_2 == municipality_code)
-        parish_list <- setNames(tmp$id, tmp$name)
+        parish_list <- setNames(tmp$CCA_3, tmp$name)
         
         tmp <- municipality_sh %>% filter(CCA_1 == district_code)
-        municipality_list <- setNames(tmp$id, tmp$name)
+        municipality_list <- setNames(tmp$CCA_2, tmp$name)
         
         tags$div(
           selectizeInput("district", "Location", district_list,
@@ -461,7 +461,8 @@ shinyServer(function(input, output, session) {
         ]
         
         df_map <- district_sh
-        df_map$value <- df[match(df_map$id, df$DistrictID), ]$value
+        df_map$id <- df_map$CCA_1
+        df_map$value <- df[match(df_map$CCA_1, df$DistrictID), ]$value
       },
       district = {
         df <- df[
@@ -476,6 +477,7 @@ shinyServer(function(input, output, session) {
         ]
         
         df_map <- municipality_sh %>% filter(CCA_1 == rv$code)
+        df_map$id <- df_map$CCA_2
         df_map$value <- df[match(df_map$CCA_2, df$MunicipalityID), ]$value
       },
       municipality = {
@@ -491,6 +493,7 @@ shinyServer(function(input, output, session) {
         ]
         
         df_map <- parish_sh %>% filter(CCA_2 == rv$code)
+        df_map$id <- df_map$CCA_3
         df_map$value <- df[match(df_map$CCA_3, df$ParishID), ]$value
       },
       parish = {
