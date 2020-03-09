@@ -570,33 +570,36 @@ shinyServer(function(input, output, session) {
       validate(FALSE, "")
     )
     
+    df <- filtered_dataset()
+    
     target_col <- input$target_col
-    target <- rlang::sym(target_col)
-    
-    df <- filtered_dataset()[
-      !is.na(get(target_col)) & !is.na(get(cat_col)),
-    ]
-    
-    df$tmp <- stringr::str_wrap(df[[cat_col]], 25)
-    
-    q <- 0.001 #as.numeric(input$truncation) / 100.0
-    quantiles <- quantile(df[[target_col]], probs = c(q, 1 - q))
-    df <- df[between(df[[target_col]], quantiles[1], quantiles[2])]
-    
     median_val <- median(df[[target_col]])
     
-    df %>% ggplot(
-      aes(
-        x = reorder(tmp, !!target, FUN = median),
-        y = !!target)
-      ) +
-      stat_boxplot(
-        geom = "errorbar",
-        width = 0.2
-      ) +
-      geom_boxplot(
-        outlier.shape = NA,
-      ) +
+    df[
+      !is.na(get(target_col)) & !is.na(get(cat_col)),
+      .(
+        min = quantile(get(target_col), probs = 0.05),
+        low = quantile(get(target_col), probs = 0.25),
+        mid = quantile(get(target_col), probs = 0.50),
+        top = quantile(get(target_col), probs = 0.75),
+        max = quantile(get(target_col), probs = 0.95)
+      ),
+      .(label = stringr::str_wrap(get(cat_col), 25))
+    ][
+      !is.na(label)
+    ] %>%
+      ggplot(
+        aes(
+          x = reorder(label, mid, FUN = median),
+          ymin = min,
+          lower = low,
+          middle = mid,
+          upper = top, 
+          ymax = max
+      )
+    ) +
+      geom_errorbar(width = 0.2) +
+      geom_boxplot(stat = "identity") +
       scale_y_continuous(trans = 'log10') +
       theme(
         axis.title.y = element_blank(),
