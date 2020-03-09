@@ -9,6 +9,7 @@ library(shinydashboard)
 library(shinyBS)
 library(tidyverse)
 library(dplyr)
+library(data.table)
 library(highcharter)
 library(leaflet)
 library(formattable)
@@ -152,7 +153,7 @@ parish_sh <- sf::st_transform(parish_sh, "+init=epsg:4326")
 
 
 district_list <- district_sh$CCA_1
-names(district_list) <- district_sh$NAME_1
+names(district_list) <- district_sh$name
 
 
 # ------------------------------- Loading the main Dataset -------------------------------
