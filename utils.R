@@ -79,7 +79,6 @@ target_name <- function(target_col) {
     price_m2 = "Price / m2",
     Area = "Area",
     Price = "Price",
-    xYield = "Expected Yield",
     Construction.Year = "Construction Year"
   )
 }
@@ -204,85 +203,6 @@ load_dataset <- function()
   df <- add_column(df, Parish       = parish_sh$name[match(df$ParishID, parish_sh$CCA_3)],                   .after = "ParishID")
   
   df <- df %>% filter(!is.na(price_m2) & (price_m2 > 0))
-  
-  return(df)
-}
-
-
-get_features <- function(df, match_tables)
-{
-  df <- df %>%
-    mutate(
-      Deal = as.factor(Deal),
-      Property.Type = as.factor(Property.Type),
-      DistrictID = as.factor(DistrictID),
-      MunicipalityID = as.factor(MunicipalityID),
-      ParishID = as.factor(ParishID),
-      Condition = as.factor(Condition)
-    )
-  
-  energy_certificate_ord <- c("G", "F", "E", "D", "C", "B-", "B", "A", "A+")
-  df$energy_certificate_ord <- match(df$Energy.Certificate, energy_certificate_ord)
-  
-  if(!("Fold" %in% names(df)))
-  {
-    df$Fold <- NA
-  }
-  
-  # ------------------ APPLYING ENCODINGS TO THE TRAINING SET -------------------
-  enc_cols <- names(match_tables$ALL)
-  df$oof <- TRUE
-  
-  for(k in 1:NFOLDS)
-  {
-    k_name <- paste('F', k, sep='')
-    mapping <- match_tables[[k_name]]
-    filt <- df$Fold == k
-    filt[is.na(filt)] <- FALSE
-    df$oof <- df$oof & !filt
-    
-    for(c in enc_cols)
-    {
-      curr_map <- mapping[[c]]
-      cols <- names(curr_map[, 1:(length(curr_map) - 1)])
-      df[filt, c] <- left_join(df[filt, cols], curr_map, by=cols)[[c]]
-    }
-  }
-  
-  # ------------------ APPLYING ENCODINGS TO NEW DATA -------------------
-  
-  for(c in enc_cols)
-  {
-    curr_map <- match_tables$ALL[[c]]
-    cols <- names(curr_map[, 1:(length(curr_map) - 1)])
-    df[df$oof, c] <- left_join(df[df$oof, cols], curr_map, by=cols)[[c]]
-  }
-  
-  # ------------- Replace NA's by zeros for Count Encodings -------------
-
-  for(c in c("count.enc.municipality", "count.enc.parish", "count.enc.geo"))
-  {
-    df[is.na(df[[c]]), c] <- 0
-  }
-  
-  # Replace NA's by zeros for hierarchical target Encoding
-  
-  filt <- is.na(df$target.enc.deal.parish)
-  df[filt, "target.enc.deal.parish"] <- df[filt, "target.enc.deal.municipality"]
-  
-  filt <- is.na(df$target.enc.deal.municipality)
-  df[filt, "target.enc.deal.municipality"] <- df[filt, "target.enc.deal.district"]
-  
-  feat_cols <- c(
-    "Area", "Gross.Area", "Terrain.Area",
-    "Bedrooms", "Bathrooms",
-    "Construction.Year",
-    "energy_certificate_ord",
-    unlist(other_attrs, use.names=FALSE),
-    enc_cols
-  )
-  
-  df <- df[, feat_cols]
   
   return(df)
 }

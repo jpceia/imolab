@@ -13,10 +13,11 @@ library(data.table)
 library(highcharter)
 library(leaflet)
 library(formattable)
-library(xgboost)
 library(openssl)
 library(RMySQL)
 
+require(jsonlite)
+require(httr)
 require(DT)
 require(sf)
 require(ids)
@@ -33,7 +34,6 @@ source("mod_search.R")
 SPINNER_TYPE <- 8
 MIN_DATAPOINTS <- 5
 MIN_DATAPOINTS_MSG <- "Filter too narrow: not enough datapoints"
-NFOLDS <- 5
 
 DB_HOST <- "#{DB_HOST}"
 DB_PORT <- 3306
@@ -76,6 +76,15 @@ condition_ids <- c(
   0, 1, 2, 5, 3, 4
 )
 
+condition_codes <- c(
+  "ruina",
+  "para_recuperar",
+  "usado",
+  "em_construcao",
+  "renovado",
+  "novo"
+)
+
 
 energy_certificate_levels <- c(
   "Isento",
@@ -91,7 +100,7 @@ other_attrs <- list(
   Balcony = 'Balcony',
   View = 'View',
   Garden = 'Garden',
-  Swimming.Pool = 'Swimming.Pool',
+  Swimming.Pool = 'Swimming Pool',
   Garage = 'Garage',
   Parking = 'Parking'
 )
@@ -103,7 +112,6 @@ bedrooms_levels <- 0:10
 target_list <- list(
   'Price/m2' = 'price_m2',
   'Area' = 'Area',
-  'Yield' = 'Yield',
   'Construction Year' = 'Construction.Year'
 )
 
@@ -158,183 +166,4 @@ names(district_list) <- district_sh$name
 
 # ------------------------------- Loading the main Dataset -------------------------------
 
-df <- load_dataset()
-
-# -------------------------------------- GroupKFold --------------------------------------
-
-group_cols <- c("Latitude", "Longitude", "MunicipalityID", "Deal", "Property.Type")
-df$group <- as.factor(md5(apply(df[, group_cols], 1, paste, collapse = "/")))
-unique_groups <- unique(df$group)
-df_groups <- data.frame(
-  group=unique_groups,
-  Fold=sample(1:NFOLDS, length(unique_groups), replace = TRUE)
-) %>% tbl_df()
-
-df <- left_join(df, df_groups, by="group")
-
-
-dataset <- df
-
-
-# ------------------------------ MATCH TABLES (ENCODINGS) --------------------------------
-
-
-match_tables <- list()
-
-
-target_enc_cols <- list(
-  deal.prop_type=c('Deal', 'Property.Type'),
-  deal.district=c('Deal', 'DistrictID'),
-  deal.municipality=c('Deal', 'MunicipalityID'),
-  deal.parish=c('Deal', 'ParishID'),
-  deal.condition=c('Deal', 'Condition')
-)
-
-area_enc_cols <- list(
-  prop_type='Property.Type',
-  condition='Condition'
-)
-
-count_enc_cols <- list(
-  prop_type='Property.Type',
-  district='DistrictID',
-  municipality='MunicipalityID',
-  parish='ParishID',
-  condition='Condition',
-  geo=c('Latitude', 'Longitude')
-)
-
-
-
-# ------------------ ENCODINGS W/ FOR EACH FOLD -------------------
-for(k in 1:NFOLDS)
-{
-  k_name <- paste('F', k, sep='')
-  match_tables[[k_name]] <- list()
-  
-  # encodings w/ targets
-  for(key in names(target_enc_cols))
-  {
-    cols <- target_enc_cols[[key]]
-    col_name <- paste('target.enc', key, sep='.')
-    match_tables[[k_name]][[col_name]] <- df %>%
-      filter(Fold != k) %>%
-      group_by_at(cols) %>%
-      summarize(!!col_name := median(price_m2)) %>%
-      na.omit()
-  }
-  
-  # encodings w/ median areas
-  for(key in names(area_enc_cols))
-  {
-    cols <- area_enc_cols[[key]]
-    col_name <- paste('area.enc', key, sep='.')
-    match_tables[[k_name]][[col_name]] <- df %>%
-      filter(Fold != k) %>%
-      group_by_at(cols) %>%
-      summarize(!!col_name := median(Area)) %>%
-      na.omit()
-  }
-  
-  # encodings w/ counts
-  for(key in names(count_enc_cols))
-  {
-    cols <- count_enc_cols[[key]]
-    col_name <- paste('count.enc', key, sep='.')
-    match_tables[[k_name]][[col_name]] <- df %>%
-      filter(Fold != k) %>%
-      group_by_at(cols) %>%
-      summarise(!!col_name := n()) %>%
-      na.omit()
-  }
-}
-
-# ------------------ ENCODINGS W/ THE WHOLE DATASET -------------------
-match_tables$ALL <- list()
-
-# encodings w/ targets
-for(key in names(target_enc_cols))
-{
-  cols <- target_enc_cols[[key]]
-  col_name <- paste('target.enc', key, sep='.')
-  match_tables$ALL[[col_name]] <- df %>%
-    group_by_at(cols) %>%
-    summarize(!!col_name := median(price_m2)) %>%
-    na.omit()
-}
-
-# encodings w/ areas
-for(key in names(area_enc_cols))
-{
-  cols <- area_enc_cols[[key]]
-  col_name <- paste('area.enc', key, sep='.')
-  match_tables$ALL[[col_name]] <- df %>%
-    group_by_at(cols) %>%
-    summarize(!!col_name := median(Area)) %>%
-    na.omit()
-}
-
-# encodings w/ counts
-for(key in names(count_enc_cols))
-{
-  cols <- count_enc_cols[[key]]
-  col_name <- paste('count.enc', key, sep='.')
-  match_tables$ALL[[col_name]] <- df %>%
-    group_by_at(cols) %>%
-    summarise(!!col_name := n()) %>%
-    na.omit()
-}
-
-
-# ------------------------------------- XGBOOST MODEL ------------------------------------
-
-X <- get_features(df, match_tables)
-
-
-cat("Started XGBoost training\n")
-
-reg <- list()
-
-fairobj <- function(preds, dtrain) {
-  labels <- getinfo(dtrain, "label")
-  c <- 2 # the higher the "slower/smoother" the loss is. Cross-Validate.
-  x <-  preds-labels
-  grad <- c * x / (abs(x) + c)
-  hess <- c ^ 2 / (abs(x) + c) ^ 2
-  return(list(grad = grad, hess = hess))
-}
-
-
-
-y <- log10(dataset$price_m2)
-
-reg$price_m2 <- xgb.train(
-  data = xgb.DMatrix(data = as.matrix(X), label = y),
-  objective = fairobj,
-  eta = 0.08,
-  max.depth = 6,
-  nround = 100,
-  seed = 0,
-  nthread = 4,
-  verbose = 2
-)
-
-
-filt <- dataset$Deal == "Sale"
-filt <- filt & !(dataset$Property.Type %in% c("Farm", "Terrain"))
-X <- dataset[filt, ] %>% mutate(Deal = "Rent") %>% get_features(match_tables)
-rent_pred <- 10^(predict(reg$price_m2, xgb.DMatrix(data = as.matrix(X))))
-dataset[filt, "Yield"] <- 12 * rent_pred / dataset[filt, "Price"]
-
-# filt <- dataset$Deal == "Rent"
-# X <- dataset[filt, ] %>% mutate(Deal = "Sale") %>% get_features(match_tables)
-# sell_pred <- 10^(predict(xgb$price, xgb.DMatrix(data = as.matrix(X))))
-# dataset[filt, "Yield"] <- dataset[filt, "price"] / sell_pred
-
-dataset <- data.table(dataset)
-
-rm(df)                                                 
-rm(X)
-rm(y)
-
-cat("Ended XGBoost training\n")
+dataset <- data.table(load_dataset())

@@ -1,4 +1,7 @@
 
+APPRAISAL_URL <- "#{APPRAISAL_URL}"
+
+
 ui_valuation <- function(id)
 {
   ns <- NS(id)
@@ -14,17 +17,17 @@ ui_valuation <- function(id)
         fluidRow(
           column(4,
                  selectizeInput(ns("prop_type"), "Property Type",
-                                prop_types, selected = "Apartment"),
+                                setNames(prop_types_ids, prop_types), selected = "Apartment"),
                  radioButtons(ns("deal"), NULL,
-                              choices = c("Sale", "Rent"),
+                              choices = setNames(c(1, 0), c("Sale", "Rent")),
                               inline = TRUE),
                  selectInput(ns("energy_certificate"),
                              "Energy Certificate", NULL,
                              choices = energy_certificate_levels),
                  selectInput(ns("condition"),
                              "Condition",
-                             selected = "Usado",
-                             choices = condition_levels),
+                             selected = "usado",
+                             choices = setNames(condition_codes, condition_levels)),
                  numericInput(ns("construction_year"),
                               "Construction Year", NULL, min=0, max=2020)
           ),
@@ -118,7 +121,7 @@ server_valuation <- function(input, output, session) {
   output$coordinates_map <- renderLeaflet({
     
     code <- input$parish
-    validate(need(!is.empty(code), label = "Parish"))
+    shiny::validate(need(!is.empty(code), label = "Parish"))
     parish_sh %>%
       filter(CCA_3 == code) %>%
       leaflet(options = leafletOptions(
@@ -138,118 +141,55 @@ server_valuation <- function(input, output, session) {
   
   # performs the actual valuation
   valuationResult <- eventReactive(input$calculate, {
-    validate(
+    shiny::validate(
       need(!is.empty(input$district),     label = "District"),
       need(!is.empty(input$municipality), label = "Municipality"),
       need(!is.empty(input$net_area),     label = "Area")
     )
     
-    row <- list(
+    body <- list(
       Deal = input$deal,
-      Property.Type = input$prop_type,
+      `Property Type` = input$prop_type,
       
       DistrictID = input$district,
       MunicipalityID = input$municipality,
       ParishID = input$parish,
       
-      Construction.Year = input$construction_year,
-      Energy.Certificate = input$energy_certificate,
-      Condition = input$condition,
+      Latitude = NA,
+      Longitude = NA,
+      
       Bedrooms = input$bedrooms,
       Bathrooms = input$bathrooms,
-      
+      Condition = input$condition,
       Area = input$net_area,
-      Gross.Area = input$gross_area,
-      Terrain.Area = input$terrain_area,
+      `Gross Area` = input$gross_area,
+      `Terrain Area` = input$terrain_area,
       
-      Latitude = NA,
-      Longitude = NA
+      `Energy Certificate` = input$energy_certificate,
+      `Construction Year` = input$construction_year
     )
     
     for(c in unlist(other_attrs, use.names = FALSE))
     {
-      row[[c]] <- 1.0 * (c %in% input$attrs)
+      body[[c]] <- 1.0 * (c %in% input$attrs)
     }
     
-    row <- data.frame(
-      lapply(row, function(x) ifelse(is.null(x), NA, x)),
-      check.names = FALSE) %>%
-      tbl_df() %>%
-      mutate(
-        Area = as.double(Area),
-        Gross.Area = as.double(Gross.Area),
-        Terrain.Area = as.double(Terrain.Area)
-      )
+    body <- jsonlite::toJSON(list(body), auto_unbox = TRUE)
+    res <- httr::POST(APPRAISAL_URL, body=body, encode="json")
     
-    ### DROPDOWN
+    print("Request:")
+    print(body)
     
-    drop_cols <- c(
-      input$attrs,
-      "Bathrooms",
-      "Bedrooms",
-      "Construction.Year",
-      "Energy.Certificate",
-      "Condition",
-      "Terrain.Area",
-      "Gross.Area",
-      #"Area",
-      "ParishID",
-      "MunicipalityID",
-      "DistrictID"
-    )
+    print("Response:")
+    print(content(res))
+
+    appraisal <- list()
+    appraisal$price_m2 <- jsonlite::fromJSON(content(res)$data)$`0`$`pred-price_m2`
+    appraisal$price <- appraisal$price_m2 * input$net_area
     
-    df <- row
-    drop_cols_final <- NULL
-    for(c in drop_cols)
-    {
-      if(!is.na(df[1, c]))
-      {
-        row[, c] <- NA
-        drop_cols_final <- rbind(drop_cols_final, c)
-        df <- rbind(df, row)
-      }
-    }
-    
-    drop_cols_final <- rev(rbind(drop_cols_final, "Property and Deal Type"))
-    
-    
-    df <- df %>% map_df(rev)
-    
-    X <- get_features(df, match_tables)
-    
-    pred_price_m2 <- 10 ^ (predict(reg$price_m2, xgb.DMatrix(data = as.matrix(X))))
-    
-    res <- list()
-    
-    res$breakdown <- data.frame(
-      Characteristic = drop_cols_final,
-      price_m2 = currency(pred_price_m2, "", 0),
-      price = currency(pred_price_m2 * input$net_area, "", 0),
-      impact = accounting((pred_price_m2 - lag(pred_price_m2)) * input$net_area),
-      row.names = NULL
-    )
-    
-    res$price <- res$breakdown[nrow(res$breakdown), "price"]
-    res$price_m2 <- res$breakdown[nrow(res$breakdown), "price_m2"]
-    
-    return(res)
+    return(appraisal)
   }, ignoreInit = TRUE)
   
-  
-  # formats the impact table
-  output$valuationResultTable <- renderFormattable({
-    valuationResult()$breakdown %>%
-      formattable(
-        align = c("l", "r", "r", "r"),
-        list(
-          area(col = "Characteristic") ~ formatter(
-            "span", style = ~formattable::style(color = "grey", font.weight = "bold")),
-          price = normalize_bar("pink", 0.2),
-          impact = formatter(
-            "span", style = x ~ formattable::style(color = ifelse(x < 0, "red", "green")))
-        )
-      )
-  })
   
   # renderUI
   output$valuationOutput <- renderUI({
@@ -277,8 +217,6 @@ server_valuation <- function(input, output, session) {
               icon = icon("home")
             )
           ),
-          tags$h3("Valuation breakdown"),
-          formattableOutput(session$ns("valuationResultTable")),
           solidHeader = FALSE,
           width = 12
         )

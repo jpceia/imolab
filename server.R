@@ -140,7 +140,7 @@ shinyServer(function(input, output, session) {
       }
     )
 
-    validate(need(nrow(df) >= MIN_DATAPOINTS, MIN_DATAPOINTS_MSG))
+    shiny::validate(need(nrow(df) >= MIN_DATAPOINTS, MIN_DATAPOINTS_MSG))
     return(df)
   })
   
@@ -552,7 +552,7 @@ shinyServer(function(input, output, session) {
           )
       },
       {
-        validate(FALSE, "")
+        shiny::validate(FALSE, "")
       }
     )
     
@@ -567,7 +567,7 @@ shinyServer(function(input, output, session) {
       country = "District",
       district = "Municipality",
       municipality = "Parish",
-      validate(FALSE, "")
+      shiny::validate(FALSE, "")
     )
     
     df <- filtered_dataset()
@@ -622,7 +622,7 @@ shinyServer(function(input, output, session) {
       country = "District",
       district = "Municipality",
       municipality = "Parish",
-      validate(FALSE, "")
+      shiny::validate(FALSE, "")
     )
     
     target_col <- input$target_col
