@@ -12,7 +12,7 @@ sideBar <- dashboardSidebar(
     # menuItem("Home", tabName = "homeTab"),
     menuItem("Search", icon = icon("search-dollar"),
              tabName = NS("mod_search")("investmentSearchTab")),
-    menuItem("Valuation", icon = icon("brain"),
+    menuItem("Appraisal", icon = icon("brain"),
              tabName = NS("mod_valuation")("valuationTab")),
              #badgeLabel = "Beta",
              #badgeColor = "blue"),
