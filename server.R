@@ -331,6 +331,32 @@ shinyServer(function(input, output, session) {
   #                               CORRELATION EXPLORER SECTION
   # ----------------------------------------------------------------------------------------
   
+  output$corr_level_input <- renderUI({
+
+    switch(
+      location_type(rv$code),
+      country = {
+        levels <- c("District", "Municipality")
+        selected <- "District"
+      },
+      district = {
+        levels <- c("Municipality", "Parish")
+        selected <- "Municipality"
+      },
+      municipality = {
+        levels <- c("Parish")
+        selected <- "Parish"
+      },
+      parish = {
+        levels <- c("Parish")
+        selected <- "Parish"
+      }
+    )
+    
+    selectizeInput("agg_level", "Aggregation Level",
+                   levels, selected = selected)
+  })
+  
   output$CorrelationTextTargetName <- renderText({
     target1 <- target_name(input$target1)
     target2 <- target_name(input$target2)
@@ -339,11 +365,9 @@ shinyServer(function(input, output, session) {
   
   output$CorrelationPlot <- renderHighchart({
     agg_col <- input$agg_level
-    target1_col <- input$target1
-    target2_col <- input$target2
-    target1 <- rlang::sym(target1_col)
-    target2 <- rlang::sym(target2_col)
-
+    target1 <- input$target1
+    target2 <- input$target2
+    
     if(input$agg_prop_type)
     {
       js <- "
@@ -351,26 +375,24 @@ shinyServer(function(input, output, session) {
           return '  <strong>' + this.point.%s + '</strong><br>' + 
                  '<strong>' + '%s:</strong> ' + this.point.x + '<br>' + 
                  '<strong>' + '%s:</strong> ' + this.point.y; }"
-      df <- filtered_dataset()[
+      filtered_dataset()[
         ,
         as.list(setNames(
           c(
             .N,
-            median(get(target1_col)),
-            median(get(target2_col))
+            median(get(target2), na.rm = TRUE),
+            median(get(target1), na.rm = TRUE)
           ),
-          c(
-            "count",
-            target1_col,
-            target2_col
-          )
+          c("count", "X", "Y")
         )),
         agg_col
       ][
         count >= MIN_DATAPOINTS
       ] %>%
-        hchart("scatter", hcaes(!!target1, !!target2)) %>%
-        hc_tooltip(formatter=JS(sprintf(js, agg_col, target1_col, target2_col)))
+        hchart("scatter", hcaes(X, Y)) %>%
+        hc_xAxis(title = list(text = target2)) %>%
+        hc_yAxis(title = list(text = target1)) %>%
+        hc_tooltip(formatter=JS(sprintf(js, agg_col, target2, target1)))
     }
     else
     {
@@ -385,24 +407,19 @@ shinyServer(function(input, output, session) {
         as.list(setNames(
           c(
             .N,
-            median(get(target1_col)),
-            median(get(target2_col))
+            median(get(target2), na.rm = TRUE),
+            median(get(target1), na.rm = TRUE)
           ),
-          c(
-            "count",
-            target1_col,
-            target2_col
-          )
+          c("count", "X", "Y")
         )),
-        c(
-          agg_col,
-          "Property.Type"
-        )
+        c(agg_col, "Property.Type")
       ][
         count >= MIN_DATAPOINTS
       ] %>%
-        hchart("scatter", hcaes(!!target1, !!target2, group = Property.Type)) %>%
-        hc_tooltip(formatter=JS(sprintf(js, agg_col, target1_col, target2_col)))
+        hchart("scatter", hcaes(X, Y, group = Property.Type)) %>%
+        hc_xAxis(title = list(text = target2)) %>%
+        hc_yAxis(title = list(text = target1)) %>%
+        hc_tooltip(formatter=JS(sprintf(js, agg_col, target2, target1)))
     }
   })
   

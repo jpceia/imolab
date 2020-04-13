@@ -156,12 +156,10 @@ body <- dashboardBody(
           fluidRow(
             column(4,
                    selectizeInput("target1", "Target1",
-                                  target_list, selected = "Area"),
-                   selectizeInput("target2", "Target2",
                                   target_list, selected = "price_m2"),
-                   selectizeInput("agg_level", "Aggregation Level",
-                                  c("District", "Municipality", "Parish"),
-                                  selected = "District"),
+                   selectizeInput("target2", "Target2",
+                                  target_list, selected = "Area"),
+                   htmlOutput("corr_level_input"),
                    checkboxInput("agg_prop_type", "Aggregate different property types")
             ),
             column(8, highchartOutput("CorrelationPlot") %>% withSpinner(type=SPINNER_TYPE))
