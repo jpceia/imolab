@@ -99,7 +99,7 @@ server_valuation <- function(input, output, session) {
     }
     
     updateSelectInput(session, "municipality", choices = municipality_list)
-    updateSelectInput(session, "parish",       choices = c(NULL))
+    updateSelectInput(session, "parish", choices = c(NULL), selected = "")
   })
   
   
