@@ -451,10 +451,6 @@ shinyServer(function(input, output, session) {
         box(
           leafletOutput("territory_map")  %>% withSpinner(type=SPINNER_TYPE),
           width = 12
-        ),
-        box(
-          DT::dataTableOutput("filtered_table") %>% withSpinner(type=SPINNER_TYPE),
-          width = 12
         )
       )
     }
@@ -668,26 +664,6 @@ shinyServer(function(input, output, session) {
         )
       )
   })
-  
-  output$filtered_table <- DT::renderDataTable(
-    filtered_dataset()[
-      ,
-      .(
-        Property.Type,
-        Price,
-        price_m2,
-        Area,
-        Gross.Area,
-        Terrain.Area,
-        Bedrooms,
-        Bathrooms,
-        Energy.Certificate,
-        Construction.Year,
-        Condition
-      )
-    ],
-    filter = 'top', options = list(scrollX = TRUE)
-  )
 
   # ----------------------------------------------------------------------------------------
   #                                     VALUATION SECTION
