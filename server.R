@@ -13,7 +13,9 @@ shinyServer(function(input, output, session) {
   
   session$allowReconnect(TRUE)
   
-  rv <- reactiveValues(code = NULL)
+  rv <- reactiveValues(
+    df = NULL,
+    code = NULL)
   
   observeEvent(input$district, {
     rv$code <- input$district
@@ -115,7 +117,7 @@ shinyServer(function(input, output, session) {
     return(html)
   })
   
-  filtered_dataset <- reactive({
+  observe({
     
     df <- dataset[
       (Deal == input$deal) &
@@ -124,7 +126,7 @@ shinyServer(function(input, output, session) {
     
     code <- rv$code
     
-    df <- switch(
+    rv$df <- switch(
       location_type(code),
       country = {
         df[DistrictID  %in% district_sh$CCA_1]
@@ -139,9 +141,6 @@ shinyServer(function(input, output, session) {
         df[ParishID == code]
       }
     )
-
-    shiny::validate(need(nrow(df) >= MIN_DATAPOINTS, MIN_DATAPOINTS_MSG))
-    return(df)
   })
   
   
@@ -152,27 +151,26 @@ shinyServer(function(input, output, session) {
   # -------------------------------------- HIGHCHARTS --------------------------------------
 
   output$HistogramPrice_m2 <- renderHighchart(
-    filtered_dataset() %>% hc_hist("price_m2", "EUR/m2", "", input$truncation)
+    rv$df %>% hc_hist("price_m2", "EUR/m2", "", input$truncation)
   )
   
   output$HistogramPrice <- renderHighchart(
-    filtered_dataset() %>% hc_hist("Price", "EUR", "", input$truncation)
+    rv$df %>% hc_hist("Price", "EUR", "", input$truncation)
   )
   
   output$HistogramArea <- renderHighchart(
-    filtered_dataset() %>% hc_hist("Area", "m2", "", input$truncation)
+    rv$df %>% hc_hist("Area", "m2", "", input$truncation)
   )
   
   # -------------------------------------- FORMATTABLE -------------------------------------
   
   output$tableQuantiles <- renderFormattable({
-    df <- filtered_dataset() 
     probs <- c(0.95, 0.90, 0.75, 0.50, 0.25, 0.10, 0.05)
     table <- data.frame(
       quantile = percent(probs, 0),
-      Price = currency(quantile(df$Price, probs = probs), "", 0),
-      Area = currency(quantile(df$Area, probs = probs), "", 0),
-      price_m2 = currency(quantile(df$price_m2, probs = probs), "", 0)
+      Price = currency(quantile(rv$df$Price, probs = probs), "", 0),
+      Area = currency(quantile(rv$df$Area, probs = probs), "", 0),
+      price_m2 = currency(quantile(rv$df$price_m2, probs = probs), "", 0)
     )
     row.names(table) <- NULL
     
@@ -196,7 +194,7 @@ shinyServer(function(input, output, session) {
   
   F_catBoxPlot <- function(cat_col, target_col = "price_m2") {
     
-    df <- filtered_dataset()[
+    df <- rv$df[
       !is.na(get(cat_col)) &
       !is.na(get(target_col))
     ]
@@ -244,7 +242,7 @@ shinyServer(function(input, output, session) {
   
   F_catCount <- function(cat_col, target_col = "price_m2") {
     
-    df <- filtered_dataset()[
+    df <- rv$df[
       !is.na(get(cat_col)) &
       !is.na(get(target_col))
     ]
@@ -282,7 +280,7 @@ shinyServer(function(input, output, session) {
   
   F_catTable <- function(cat_col,  target_col = "price_m2") {
     
-    filtered_dataset()[
+    rv$df[
       !is.na(get(cat_col)) & !is.na(get(target_col)),
       .(
         count = .N,
@@ -375,7 +373,7 @@ shinyServer(function(input, output, session) {
           return '  <strong>' + this.point.%s + '</strong><br>' + 
                  '<strong>' + '%s:</strong> ' + this.point.x + '<br>' + 
                  '<strong>' + '%s:</strong> ' + this.point.y; }"
-      filtered_dataset()[
+      rv$df[
         ,
         as.list(setNames(
           c(
@@ -402,7 +400,7 @@ shinyServer(function(input, output, session) {
                  '<span style=\"color:' + this.series.color + '\">\u25CF</span> ' + this.series.name + '<br><br>' + 
                  '<strong>' + '%s:</strong> ' + this.point.x + '<br>' + 
                  '<strong>' + '%s:</strong> ' + this.point.y; }"
-      filtered_dataset()[
+      rv$df[
         ,
         as.list(setNames(
           c(
@@ -464,8 +462,7 @@ shinyServer(function(input, output, session) {
     
     loc_type <- location_type(rv$code)
     
-    df <- filtered_dataset()
-    df <- df[
+    df <- rv$df[
       !is.na(get(target_col))
     ]
     
@@ -583,12 +580,10 @@ shinyServer(function(input, output, session) {
       shiny::validate(FALSE, "")
     )
     
-    df <- filtered_dataset()
-    
     target_col <- input$target_col
-    median_val <- median(df[[target_col]])
+    median_val <- median(rv$df[[target_col]])
     
-    df[
+    rv$df[
       !is.na(get(target_col)) & !is.na(get(cat_col)),
       .(
         min = quantile(get(target_col), probs = 0.05),
@@ -641,7 +636,7 @@ shinyServer(function(input, output, session) {
     target_col <- input$target_col
     target <- rlang::sym(target_col)
     
-    filtered_dataset()[
+    rv$df[
       !is.na(get(target_col)) &
       !is.na(get(cat_col)),
       .(
