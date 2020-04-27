@@ -465,6 +465,55 @@ shinyServer(function(input, output, session) {
       rv$code <- stringr::str_sub(rv$code, end = -3)
   })
   
+  # New Feature
+  observeEvent(input$territory_map_draw_new_feature, {
+    print("New Feature")
+    print(input$territory_map_draw_new_feature)
+    pts <- rv$df %>% sf::st_as_sf(coords = c('Longitude', 'Latitude'))
+    coords <- input$territory_map_draw_new_feature$geometry$coordinates[[1]]
+    p <- sf::st_polygon(list(t(sapply(coords, function(x) sapply(x, cbind)))))
+    filt <- p %>% sf::st_contains(pts)
+    target_col <- input$target_col
+    
+    stats <- rv$df[
+      filt[[1]],
+      .(
+        min = quantile(get(target_col), probs = 0.05, na.rm = TRUE),
+        low = quantile(get(target_col), probs = 0.25, na.rm = TRUE),
+        mid = quantile(get(target_col), probs = 0.50, na.rm = TRUE),
+        top = quantile(get(target_col), probs = 0.75, na.rm = TRUE),
+        max = quantile(get(target_col), probs = 0.95, na.rm = TRUE)
+      ),
+      ]
+    
+    css <- "
+      #draw {
+        display: block;
+        border: 1px solid black;
+        border-radius: 0px;
+        opacity: 100%;
+      }
+      
+      #draw strong {
+        display: inline-block;
+        width: 120px;
+        text-align: right;
+        margin-right: 0 10px;
+      }
+    "
+    
+    proxy <- leafletProxy("territory_map")
+    proxy %>% addControl(
+      tags$div(
+        tags$style(css),
+        tags$div(tags$strong("Lower Quartile:"), round(stats$low, 2)),
+        tags$div(tags$strong("Median:"),         round(stats$mid, 2)),
+        tags$div(tags$strong("Upper Quartile:"), round(stats$top, 2)),
+      ),
+      layerId = "draw",
+      position = "topright")
+  })
+  
   output$territory_map <- renderLeaflet({
     leaflet(options = leafletOptions(
       attributionControl = FALSE,
@@ -535,6 +584,9 @@ shinyServer(function(input, output, session) {
         )
       )
     
+    proxy %>% removeControl(layerId = 'draw')
+    proxy %>% removeDrawToolbar(clearFeatures = TRUE)
+    
     bb <- sf::st_bbox(map_sh)
     proxy %>% fitBounds(
       lat1 = bb[[2]],
@@ -560,6 +612,17 @@ shinyServer(function(input, output, session) {
         stroke = 0, fill = TRUE, fillOpacity = 1,
         group = "points"
       )
+      
+      proxy %>%
+        addDrawToolbar(
+          polylineOptions = FALSE,
+          circleOptions = FALSE,
+          rectangleOptions = FALSE,
+          markerOptions = FALSE,
+          circleMarkerOptions = FALSE,
+          # editOptions = editToolbarOptions(),
+          singleFeature = TRUE
+        )
     }
   })
 
