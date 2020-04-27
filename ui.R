@@ -143,9 +143,8 @@ body <- dashboardBody(
     ),
     tabItem(
       tabName = "territoryTab",
-      tags$h2(tags$strong("Territory")),
-      tags$h5(tags$strong(textOutput("TerritoryTextTargetName")), style='color:grey'),
-      uiOutput("territory_tab")
+      tags$style(type = "text/css", "#territory_map {height: calc(100vh - 80px) !important;}"),
+      leafletOutput("territory_map")
     ),
     tabItem(
       tabName = "correlationTab",

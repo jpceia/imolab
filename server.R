@@ -426,238 +426,121 @@ shinyServer(function(input, output, session) {
   #                                     TERRITORY SECTION
   # ----------------------------------------------------------------------------------------
   
-  output$TerritoryTextTargetName <- renderText(target_name(input$target_col))
-  
-  output$territory_tab <- renderUI({
-    if(location_type(rv$code) != "parish")
-    {
-      html <- fluidRow(
-        box(
-          column(6, leafletOutput("territory_map")  %>% withSpinner(type=SPINNER_TYPE)),
-          column(6, plotOutput("territory_boxplot")  %>% withSpinner(type=SPINNER_TYPE)),
-          width = 12
-        ),
-        box(
-          column(12, formattableOutput("territory_table")),
-          width = 12
-        )
-      )
-    }
-    else
-    {
-      html <- fluidRow(
-        box(
-          leafletOutput("territory_map")  %>% withSpinner(type=SPINNER_TYPE),
-          width = 12
-        )
-      )
-    }
-    return(html)
-  })
-  
-  
-  output$territory_map <- renderLeaflet({
+  territory_quantiles <- reactive({
+    
+    cat_col <- switch(
+      location_type(rv$code),
+      country = "DistrictID",
+      district = "MunicipalityID",
+      municipality = "ParishID",
+      parish = NULL,
+      shiny::validate(FALSE, "")
+    )
     
     target_col <- input$target_col
-    
-    loc_type <- location_type(rv$code)
-    
-    df <- rv$df[
-      !is.na(get(target_col))
-    ]
-    
-    map <- leaflet(options = leafletOptions(
-      attributionControl = FALSE,
-      scrollWheelZoom = FALSE)
-    ) %>%
-      addTiles()
 
-    switch (
-      loc_type,
-      country = {
-        df <- df[
-          ,
-          .(
-            count = .N,
-            value = median(get(target_col), rm.na = TRUE)
-          ),
-          DistrictID
-        ][
-          count >= MIN_DATAPOINTS
-        ]
-        
-        df_map <- district_sh
-        df_map$id <- df_map$CCA_1
-        df_map$value <- df[match(df_map$CCA_1, df$DistrictID), ]$value
-      },
-      district = {
-        df <- df[
-          DistrictID == rv$code,
-          .(
-            count = .N,
-            value = median(get(target_col), rm.na = TRUE)
-          ),
-          MunicipalityID
-        ][
-          count >= MIN_DATAPOINTS
-        ]
-        
-        df_map <- municipality_sh %>% filter(CCA_1 == rv$code)
-        df_map$id <- df_map$CCA_2
-        df_map$value <- df[match(df_map$CCA_2, df$MunicipalityID), ]$value
-      },
-      municipality = {
-        df <- df[
-          MunicipalityID == rv$code,
-          .(
-            count = .N,
-            value = median(get(target_col), rm.na = TRUE)
-          ),
-          ParishID
-        ][
-          count >= MIN_DATAPOINTS
-        ]
-        
-        df_map <- parish_sh %>% filter(CCA_2 == rv$code)
-        df_map$id <- df_map$CCA_3
-        df_map$value <- df[match(df_map$CCA_3, df$ParishID), ]$value
-      },
-      parish = {
-        
-        coords <- df[
-          ,
-          .(
-            value = round(median(get(target_col), na.rm = TRUE), 2)
-          ),
-          .(Latitude, Longitude)
-        ][
-          !is.na(value)
-        ]
-        
-        
-        df_map <- parish_sh %>% filter(CCA_3 == rv$code)
-        
-        pts <- coords %>% sf::st_as_sf(coords = c('Longitude', 'Latitude'), crs = 4326)
-        coords <- coords[sf::st_contains(df_map, pts)[[1]]]
-        
-        unit_str <- switch(
-          target_col,
-          "price_m2" = "Eur/m2",
-          "Area" = "m2",
-          "Construction.Decade" = ""
-        )
-        
-        map <- map %>%
-          addPolygons(
-            data = df_map,
-            color = "#444444", weight = 1, smoothFactor = 0.5,
-            opacity = 1.0, fillOpacity = 0.25, fillColor = "cornflowerblue") %>%
-          addCircleMarkers(
-            data = coords,
-            radius = 3, color = ~qpal(c("red", "green"), value),
-            lng = ~Longitude, lat = ~Latitude,
-            popup = ~htmltools::htmlEscape(paste(value, unit_str)),
-            stroke = 0.5, fill = FALSE, fillOpacity = 1,
-            group = "Historical"
-          )
-      },
-      {
-        shiny::validate(FALSE, "")
-      }
-    )
-    
-    return(map)
-  })
-  
-  
-  output$territory_boxplot <- renderPlot({
-    
-    cat_col <- switch(
-      location_type(rv$code),
-      country = "District",
-      district = "Municipality",
-      municipality = "Parish",
-      shiny::validate(FALSE, "")
-    )
-    
-    target_col <- input$target_col
-    median_val <- median(rv$df[[target_col]])
-    
-    rv$df[
-      !is.na(get(target_col)) & !is.na(get(cat_col)),
-      .(
-        min = quantile(get(target_col), probs = 0.05),
-        low = quantile(get(target_col), probs = 0.25),
-        mid = quantile(get(target_col), probs = 0.50),
-        top = quantile(get(target_col), probs = 0.75),
-        max = quantile(get(target_col), probs = 0.95)
-      ),
-      .(label = stringr::str_wrap(get(cat_col), 25))
-    ][
-      !is.na(label)
-    ] %>%
-      ggplot(
-        aes(
-          x = reorder(label, mid, FUN = median),
-          ymin = min,
-          lower = low,
-          middle = mid,
-          upper = top, 
-          ymax = max
-      )
-    ) +
-      geom_errorbar(width = 0.2) +
-      geom_boxplot(stat = "identity") +
-      scale_y_continuous(trans = 'log10') +
-      theme(
-        axis.title.y = element_blank(),
-        axis.text.x = element_text(size = 12),
-        axis.text.y = element_text(size = 12),
-        legend.position = "none"
-      ) +
-      geom_hline(
-        yintercept = median_val,
-        linetype = "dashed", 
-        color = "red",
-        size = 1) +
-      coord_flip()
-  })
-  
-  output$territory_table <- renderFormattable({
-    
-    cat_col <- switch(
-      location_type(rv$code),
-      country = "District",
-      district = "Municipality",
-      municipality = "Parish",
-      shiny::validate(FALSE, "")
-    )
-    
-    target_col <- input$target_col
-    target <- rlang::sym(target_col)
-    
-    rv$df[
-      !is.na(get(target_col)) &
-      !is.na(get(cat_col)),
+    df <- rv$df[
+      ,
       .(
         count = .N,
-        "25%" = currency(quantile(get(target_col), probs=0.25), "", 2),
-        median= currency(quantile(get(target_col), probs=0.50), "", 2),
-        "75%" = currency(quantile(get(target_col), probs=0.75), "", 2)
+        min = quantile(get(target_col), probs = 0.05, na.rm = TRUE),
+        low = quantile(get(target_col), probs = 0.25, na.rm = TRUE),
+        mid = quantile(get(target_col), probs = 0.50, na.rm = TRUE),
+        top = quantile(get(target_col), probs = 0.75, na.rm = TRUE),
+        max = quantile(get(target_col), probs = 0.95, na.rm = TRUE)
       ),
       cat_col
-    ][
-      order(get(cat_col))
-    ] %>%
-      formattable(
-        align = c("l", "r", "r", "r", "r"),
-        list(
-          area(col = cat_col) ~ formatter(
-            "span", style = ~formattable::style(color = "grey", font.weight = "bold")),
-          count = normalize_bar("pink", 0.2),
-          median = normalize_bar("lightblue", 0.2)
+    ]
+    
+    if(!is.null(cat_col)) {
+      setnames(df, cat_col, "label")
+      df <- df[!is.na(label)]
+    }
+    
+    return(df)
+  })
+  
+  observeEvent(input$zoom_out, {
+    if(!is.empty(rv$code))
+      rv$code <- stringr::str_sub(rv$code, end = -3)
+  })
+  
+  output$territory_map <- renderLeaflet({
+    leaflet(options = leafletOptions(
+      attributionControl = FALSE,
+      scrollWheelZoom = FALSE
+    )) %>%
+      addTiles() %>%
+      addPolygons(
+        data = district_sh,
+        color = "#444444", weight = 1, smoothFactor = 0.5, label = NA, layerId = ~id,
+        opacity = 1.0, 
+        highlightOptions = highlightOptions(
+          color = "white",
+          weight = 2,
+          bringToFront = TRUE)
+      ) %>%
+      addControl(
+        actionButton("zoom_out", "Zoom Out", style = 'font-weight: bold; font-size: small'),
+        position = "topright")
+  })
+  
+  observeEvent(c(
+      rv$df,
+      input$target_col,
+      input$sidebarmenu
+    ), {
+    
+    need(input$sidebarmenu == "territoryTab", "")
+    
+    code <- rv$code
+    loc_type <- location_type(code)
+    is_parish <- loc_type == "parish"
+    
+    proxy <- leafletProxy("territory_map")
+    
+    df_territory <- territory_quantiles()
+    
+    map_sh <- switch(
+      loc_type,
+      country = district_sh,
+      district = municipality_sh[municipality_sh$CCA_1 == code, ],
+      municipality = parish_sh[parish_sh$CCA_2 == code, ],
+      parish = parish_sh[parish_sh$CCA_3 == code, ]
+    )
+    
+    map_sh$label <- df_territory[match(map_sh$id, df_territory$label), ]$mid
+    
+    fillOpacity <- ifelse(is_parish, 0.25, 0.75)
+    weight <- ifelse(is_parish, 2, 1)
+    
+    proxy %>%
+      clearShapes() %>%
+      clearMarkers() %>%
+      addPolygons(
+        data = map_sh,
+        smoothFactor = 0.5, opacity = 0,
+        fillOpacity = fillOpacity, fillColor = ~qpal("Blues", label),
+        group = "Polygons"
+      ) %>%
+      addPolygons(
+        data = map_sh,
+        color = "#444444", weight = weight, smoothFactor = 0.5,
+        opacity = 1.0, fillOpacity = 0,
+        label = ~name, layerId = ~id,
+        highlightOptions = highlightOptions(
+          color = "white",
+          weight = weight + 1,
+          bringToFront = TRUE
         )
       )
+    
+    bb <- sf::st_bbox(map_sh)
+    proxy %>% fitBounds(
+      lat1 = bb[[2]],
+      lng1 = bb[[1]],
+      lat2 = bb[[4]],
+      lng2 = bb[[3]])
   })
 
   # ----------------------------------------------------------------------------------------

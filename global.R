@@ -124,45 +124,44 @@ decades_labels <- decades_labels[1: length(decades_labels) - 1]
 
 # ------------------------------------ TERRITORY MAPS ------------------------------------
 
+start_time <- Sys.time()
 
 district_sh <- sf::read_sf(file.path("data", "geo", "distritos-shapefile", "distritos.shp"))
 district_sh  <- district_sh[district_sh$TYPE_1 == "Distrito", ]
-names <- as.data.frame(district_sh)[, c("CCA_1", "NAME_1")]
-
+names <- district_sh$NAME_1
 # polygon simplification to speedup rendering
-district_sh <- rmapshaper::ms_simplify(district_sh)
-# district_sh$CCA_1 <- district_sh$CCA_1
-# district_sh$id <- district_sh$CCA_1
-district_sh$name <- names$NAME_1[match(district_sh$CCA_1, names$CCA_1)]
+district_sh <- rmapshaper::ms_simplify(district_sh, keep_shapes = TRUE)
+district_sh$id <- district_sh$CCA_1
+district_sh$name <- names
 
 
 municipality_sh <- sf::read_sf(file.path("data", "geo", "concelhos-shapefile", "concelhos.shp"))
-names <- as.data.frame(municipality_sh)[, c("CCA_2", "NAME_2")]
-municipality_sh <- rmapshaper::ms_simplify(municipality_sh)
+names <- municipality_sh$NAME_2
+municipality_sh <- rmapshaper::ms_simplify(municipality_sh, keep_shapes = TRUE)
 #municipality_sh <- municipality_sh[municipality_sh$ID_1 %in% district_sh$ID_1, ]
 municipality_sh$CCA_1 <- stringr::str_sub(municipality_sh$CCA_2, 1, -3)
-# municipality_sh$CCA_2 <- municipality_sh$CCA_2
-# municipality_sh$id <- municipality_sh$CCA_2
-municipality_sh$name <- names$NAME_2[match(municipality_sh$CCA_2, names$CCA_2)]
+municipality_sh$id <- municipality_sh$CCA_2
+municipality_sh$name <- names
 
 
 ## LOADING PARISH DATA
 # https://dados.gov.pt/s/resources/freguesias-de-portugal/20181112-195834/cont-aad-caop2017.zip
 parish_sh <- sf::read_sf(file.path("data", "geo", "cont-aad-caop2017", "Cont_AAD_CAOP2017.shp"))
+print(object.size(parish_sh) / 1024 / 1024)
 names <- as.data.frame(parish_sh)[, c("Dicofre", "Freguesia", "Des_Simpli")]
 parish_sh <- rmapshaper::ms_simplify(parish_sh)
+print(object.size(parish_sh) / 1024 / 1024)
 parish_sh$CCA_1 <- stringr::str_sub(parish_sh$Dicofre, 1, -5)
 parish_sh$CCA_2 <- stringr::str_sub(parish_sh$Dicofre, 1, -3)
 parish_sh$CCA_3 <- parish_sh$Dicofre
-# parish_sh$id <- parish_sh$CCA_3
-parish_sh$name <- names$Des_Simpli[match(parish_sh$CCA_3, names$Dicofre)]
+parish_sh$id <- parish_sh$CCA_3
+parish_sh$name <- names$Des_Simpli[match(parish_sh$Dicofre, names$Dicofre)]
 parish_sh <- sf::st_transform(parish_sh, "+init=epsg:4326")
 
+end_time <- Sys.time()
 
 
-district_list <- district_sh$CCA_1
-names(district_list) <- district_sh$name
-
+district_list <- setNames(district_sh$CCA_1, district_sh$NAME_1)
 
 # ------------------------------- Loading the main Dataset -------------------------------
 
