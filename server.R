@@ -541,6 +541,26 @@ shinyServer(function(input, output, session) {
       lng1 = bb[[1]],
       lat2 = bb[[4]],
       lng2 = bb[[3]])
+    
+    if(loc_type %in% c("municipality", "parish"))
+    {
+      pts <- rv$df[,  median(get(input$target_col), na.rm = TRUE), by = .(Latitude, Longitude)]
+      pts <- pts[!is.na(V1)]
+      
+      if(nrow(pts) > SAMPLING_THRESHOLD)
+        coord <- pts[sample(.N, SAMPLING_THRESHOLD)]
+      
+      radius <- ifelse(is_parish, 8, 4)
+      
+      proxy %>% addCircleMarkers(
+        data = pts,
+        radius = radius, 
+        fillColor = ~qpal(c("green", "red"), V1),
+        lng = ~Longitude, lat = ~Latitude,
+        stroke = 0, fill = TRUE, fillOpacity = 1,
+        group = "points"
+      )
+    }
   })
 
   # ----------------------------------------------------------------------------------------

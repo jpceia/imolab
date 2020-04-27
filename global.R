@@ -33,6 +33,7 @@ source("mod_search.R")
 
 SPINNER_TYPE <- 8
 MIN_DATAPOINTS <- 5
+SAMPLING_THRESHOLD <- 2500
 MIN_DATAPOINTS_MSG <- "Filter too narrow: not enough datapoints"
 
 DB_HOST <- "#{DB_HOST}"
