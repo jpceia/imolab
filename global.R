@@ -31,6 +31,8 @@ source("mod_search.R")
 #                                       STATIC DATA
 # ----------------------------------------------------------------------------------------
 
+
+SEARCH_TAB <- FALSE
 SPINNER_TYPE <- 8
 MIN_DATAPOINTS <- 5
 SAMPLING_THRESHOLD <- 2500
