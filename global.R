@@ -17,6 +17,7 @@ library(openssl)
 library(RMySQL)
 
 require(jsonlite)
+require(scales)
 require(httr)
 require(DT)
 require(sf)

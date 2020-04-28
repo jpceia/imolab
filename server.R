@@ -558,25 +558,40 @@ shinyServer(function(input, output, session) {
       parish = parish_sh[parish_sh$CCA_3 == code, ]
     )
     
-    map_sh$label <- df_territory[match(map_sh$id, df_territory$label), ]$mid
+    map_sh$value <- df_territory[match(map_sh$id, df_territory$label), ]$mid
     
     fillOpacity <- ifelse(is_parish, 0.25, 0.75)
     weight <- ifelse(is_parish, 2, 1)
+    
+    unit_format <- switch(
+      input$target_col,
+      price_m2 = "euro_m2",
+      Area = "area_format",
+      Construction.Year = "year_format"
+    )
+    
+    if(is_parish)
+      label_mock <- ""
     
     proxy %>%
       clearShapes() %>%
       clearMarkers() %>%
       addPolygons(
         data = map_sh,
+        group = "Polygons",
         smoothFactor = 0.5, opacity = 0,
-        fillOpacity = fillOpacity, fillColor = ~qpal("Blues", label),
-        group = "Polygons"
+        fillOpacity = fillOpacity,
+        fillColor = ~qpal("Blues", value)
       ) %>%
       addPolygons(
         data = map_sh,
         color = "#444444", weight = weight, smoothFactor = 0.5,
         opacity = 1.0, fillOpacity = 0,
-        label = ~name, layerId = ~id,
+        layerId = ~id,
+        label = ~map2(name, value, function(name, value) htmltools::HTML(
+          stringr::str_glue(paste("<b>{name}</b><br/>{", unit_format, "(value)}"))
+        )),
+        labelOptions = labelOptions(),
         highlightOptions = highlightOptions(
           color = "white",
           weight = weight + 1,

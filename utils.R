@@ -5,6 +5,12 @@
 # ----------------------------------------------------------------------------------------
 
 
+euro <- scales::dollar_format(prefix = "", suffix = " \u20ac", big.mark = " ")
+euro_m2 <- scales::dollar_format(prefix = "", suffix = " \u20ac/m\u00b2", big.mark = " ")
+area_format <- scales::unit_format(unit = "m\u00b2")
+year_format <- scales::comma_format(big.mark = "")
+
+
 is.empty <- function (x)
 {
   if (length(x) <= 1) {
