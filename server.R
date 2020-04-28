@@ -29,8 +29,8 @@ shinyServer(function(input, output, session) {
     rv$code <- ifelse(is.empty(input$parish), input$municipality, input$parish)
   }, ignoreInit = TRUE)
   
-  observeEvent(input$territory_map_shape_click$id, {
-    rv$code <- input$territory_map_shape_click$id
+  observeEvent(input$map_shape_click$id, {
+    rv$code <- input$map_shape_click$id
   })
   
   output$geomenu <- renderUI({
@@ -465,12 +465,11 @@ shinyServer(function(input, output, session) {
       rv$code <- stringr::str_sub(rv$code, end = -3)
   })
   
-  # New Feature
-  observeEvent(input$territory_map_draw_new_feature, {
-    print("New Feature")
-    print(input$territory_map_draw_new_feature)
+  observeEvent(input$map_draw_new_feature, {
+    # print("New Feature")
+    # print(input$map_draw_new_feature)
     pts <- rv$df %>% sf::st_as_sf(coords = c('Longitude', 'Latitude'))
-    coords <- input$territory_map_draw_new_feature$geometry$coordinates[[1]]
+    coords <- input$map_draw_new_feature$geometry$coordinates[[1]]
     p <- sf::st_polygon(list(t(sapply(coords, function(x) sapply(x, cbind)))))
     filt <- p %>% sf::st_contains(pts)
     target_col <- input$target_col
@@ -502,19 +501,20 @@ shinyServer(function(input, output, session) {
       }
     "
     
-    proxy <- leafletProxy("territory_map")
-    proxy %>% addControl(
-      tags$div(
-        tags$style(css),
-        tags$div(tags$strong("Lower Quartile:"), round(stats$low, 2)),
-        tags$div(tags$strong("Median:"),         round(stats$mid, 2)),
-        tags$div(tags$strong("Upper Quartile:"), round(stats$top, 2)),
-      ),
-      layerId = "draw",
-      position = "topright")
+    leafletProxy("map") %>%
+      addControl(
+        tags$div(
+          tags$style(css),
+          tags$div(tags$strong("Lower Quartile:"), round(stats$low, 2)),
+          tags$div(tags$strong("Median:"),         round(stats$mid, 2)),
+          tags$div(tags$strong("Upper Quartile:"), round(stats$top, 2)),
+        ),
+        layerId = "draw",
+        position = "topright"
+      )
   })
   
-  output$territory_map <- renderLeaflet({
+  output$map <- renderLeaflet({
     leaflet(options = leafletOptions(
       attributionControl = FALSE,
       scrollWheelZoom = FALSE
@@ -546,7 +546,7 @@ shinyServer(function(input, output, session) {
     loc_type <- location_type(code)
     is_parish <- loc_type == "parish"
     
-    proxy <- leafletProxy("territory_map")
+    proxy <- leafletProxy("map")
     
     df_territory <- territory_quantiles()
     
