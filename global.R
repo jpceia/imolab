@@ -165,7 +165,7 @@ parish_sh <- sf::st_transform(parish_sh, "+init=epsg:4326")
 end_time <- Sys.time()
 
 
-district_list <- setNames(district_sh$CCA_1, district_sh$NAME_1)
+district_list <- setNames(district_sh$id, district_sh$name)
 
 # ------------------------------- Loading the main Dataset -------------------------------
 
