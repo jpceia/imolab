@@ -5,10 +5,21 @@
 # ----------------------------------------------------------------------------------------
 
 
-euro <- scales::dollar_format(prefix = "", suffix = " \u20ac", big.mark = " ")
-euro_m2 <- scales::dollar_format(prefix = "", suffix = " \u20ac/m\u00b2", big.mark = " ")
-area_format <- scales::unit_format(unit = "m\u00b2")
+euro <- scales::dollar_format(prefix = "", suffix = " \u20ac", big.mark = ",", largest_with_cents = 100)
+euro_m2 <- scales::dollar_format(prefix = "", suffix = " \u20ac/m\u00b2", big.mark = " ", largest_with_cents = 100)
+area_format <- scales::unit_format(unit = "m\u00b2", big.mark = ",")
 year_format <- scales::comma_format(big.mark = "")
+
+
+format_value <- function(type, value) {
+  switch(
+    tolower(type),
+    price = euro,
+    price_m2 = euro_m2,
+    area = area_format,
+    construction.year = year_format
+  )(value)
+}
 
 
 is.empty <- function (x)
@@ -32,18 +43,10 @@ is.empty <- function (x)
 }
 
 
-location_type <- function(s)
-{
-  # location_type
-  # country
-  # district
-  # municipality
-  # parish
-  # section
-  
-  if(is.empty(s)){
+location_type <- function(s) {
+  if(is.empty(s))
     return("country")
-  }
+  
   switch(
     as.character(stringr::str_length(s)),
     '1' = 'district',
