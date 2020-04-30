@@ -2,11 +2,11 @@
 APPRAISAL_URL <- "#{APPRAISAL_URL}"
 
 
-ui_valuation <- function(id)
+ui_appraisal <- function(id)
 {
   ns <- NS(id)
   tabItem(
-    tabName = ns("valuationTab"),
+    tabName = ns("appraisalTab"),
     fluidRow(
       box(
         title = tags$strong("Inputs"),
@@ -82,11 +82,11 @@ ui_valuation <- function(id)
         width = 12
       )
     ),
-    fluidRow(htmlOutput(ns("valuationOutput")))
+    fluidRow(htmlOutput(ns("appraisalOutput")))
   )
 }
 
-server_valuation <- function(input, output, session) {
+server_appraisal <- function(input, output, session) {
   
   # updates the municipality list, after selecting a new district
   observeEvent(input$district, {
@@ -139,8 +139,8 @@ server_valuation <- function(input, output, session) {
   })
   
   
-  # performs the actual valuation
-  valuationResult <- eventReactive(input$calculate, {
+  # performs the actual appraisal
+  appraisalResult <- eventReactive(input$calculate, {
     shiny::validate(
       need(!is.empty(input$district),     label = "District"),
       need(!is.empty(input$municipality), label = "Municipality"),
@@ -192,8 +192,8 @@ server_valuation <- function(input, output, session) {
   
   
   # renderUI
-  output$valuationOutput <- renderUI({
-    res <- valuationResult()
+  output$appraisalOutput <- renderUI({
+    res <- appraisalResult()
     
     box(
       title = tags$h2("Simulation Results"),

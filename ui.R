@@ -25,7 +25,7 @@ sideBar <- dashboardSidebar(
       ""
     ),
     menuItem("Appraisal", icon = icon("brain"),
-             tabName = NS("mod_valuation")("valuationTab")),
+             tabName = NS("mod_appraisal")("appraisalTab")),
              #badgeLabel = "Beta",
              #badgeColor = "blue"),
     menuItem("Exploration", icon = icon("poll"),
@@ -179,7 +179,7 @@ body <- dashboardBody(
         )
       )
     ),
-    ui_valuation("mod_valuation"),
+    ui_appraisal("mod_appraisal"),
     ui_search("mod_search")
   )
 )

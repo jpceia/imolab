@@ -650,10 +650,10 @@ shinyServer(function(input, output, session) {
   })
 
   # ----------------------------------------------------------------------------------------
-  #                                     VALUATION SECTION
+  #                                     APPRAISAL SECTION
   # ----------------------------------------------------------------------------------------
   
-  callModule(server_valuation, "mod_valuation")
+  callModule(server_appraisal, "mod_appraisal")
   
 
   # ----------------------------------------------------------------------------------------
