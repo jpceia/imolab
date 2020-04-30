@@ -552,6 +552,7 @@ shinyServer(function(input, output, session) {
     need(input$sidebarmenu == "territoryTab", "")
     
     code <- rv$code
+    target <- input$target_col
     loc_type <- location_type(code)
     is_parish <- loc_type == "parish"
     
@@ -572,41 +573,39 @@ shinyServer(function(input, output, session) {
     fillOpacity <- ifelse(is_parish, 0.25, 0.75)
     weight <- ifelse(is_parish, 2, 1)
     
-    unit_format <- switch(
-      input$target_col,
-      price_m2 = "euro_m2",
-      Area = "area_format",
-      Construction.Year = "year_format"
-    )
-    
-    if(is_parish)
-      label_mock <- ""
-    
+    proxy %>% clearShapes()
+    proxy %>% clearMarkers()
     proxy %>%
-      clearShapes() %>%
-      clearMarkers() %>%
       addPolygons(
         data = map_sh,
         group = "Polygons",
         smoothFactor = 0.5, opacity = 0,
         fillOpacity = fillOpacity,
         fillColor = ~qpal("Blues", value)
-      ) %>%
-      addPolygons(
-        data = map_sh,
-        color = "#444444", weight = weight, smoothFactor = 0.5,
+      )
+    
+    if(is_parish) {
+      proxy %>% addPolygons(
+        data = map_sh, layerId = ~id,
+        color = "#444444", weight = 3, smoothFactor = 0.5,
+        opacity = 1.0, fillOpacity = 0
+      )
+    }
+    else {
+      proxy %>% addPolygons(
+        data = map_sh, layerId = ~id,
+        color = "#444444", weight = 1, smoothFactor = 0.5,
         opacity = 1.0, fillOpacity = 0,
-        layerId = ~id,
         label = ~map2(name, value, function(name, value) htmltools::HTML(
-          stringr::str_glue(paste("<b>{name}</b><br/>{", unit_format, "(value)}"))
+          paste(sep = "", "<b>", name, "</b><br/>", format_value(target, value))
         )),
         labelOptions = labelOptions(),
         highlightOptions = highlightOptions(
-          color = "white",
-          weight = weight + 1,
+          color = "white", weight = 2,
           bringToFront = TRUE
         )
       )
+    }
     
     proxy %>% removeControl(layerId = 'draw')
     proxy %>% removeDrawToolbar(clearFeatures = TRUE)
@@ -620,7 +619,7 @@ shinyServer(function(input, output, session) {
     
     if(loc_type %in% c("municipality", "parish"))
     {
-      pts <- rv$df[,  median(get(input$target_col), na.rm = TRUE), by = .(Latitude, Longitude)]
+      pts <- rv$df[,  median(get(target), na.rm = TRUE), by = .(Latitude, Longitude)]
       pts <- pts[!is.na(V1)]
       
       if(nrow(pts) > SAMPLING_THRESHOLD)
