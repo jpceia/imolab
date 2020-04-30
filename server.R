@@ -490,24 +490,27 @@ shinyServer(function(input, output, session) {
         display: block;
         border: 1px solid black;
         border-radius: 0px;
-        opacity: 100%;
+        opacity: 1.0;
+        font-size: x-small;
       }
       
       #draw strong {
         display: inline-block;
-        width: 120px;
+        width: 70px;
         text-align: right;
-        margin-right: 0 10px;
+        margin: 0px 6px 0px 0px;
       }
     "
+    
+    target <- input$target_col
     
     leafletProxy("map") %>%
       addControl(
         tags$div(
           tags$style(css),
-          tags$div(tags$strong("Lower Quartile:"), round(stats$low, 2)),
-          tags$div(tags$strong("Median:"),         round(stats$mid, 2)),
-          tags$div(tags$strong("Upper Quartile:"), round(stats$top, 2)),
+          tags$div(tags$strong("Lower Quartile"), format_value(target, stats$low)),
+          tags$div(tags$strong("Median"),         format_value(target, stats$mid)),
+          tags$div(tags$strong("Upper Quartile"), format_value(target, stats$top)),
         ),
         layerId = "draw",
         position = "topright"
@@ -530,7 +533,13 @@ shinyServer(function(input, output, session) {
           bringToFront = TRUE)
       ) %>%
       addControl(
-        actionButton("zoom_out", "Zoom Out", style = 'font-weight: bold; font-size: small'),
+        layerId = "rleaflet_control",
+        actionButton("zoom_out", "Zoom Out", style = "
+          font-weight: bold;
+          font-size: small;
+          border-radius: 0px;
+          border: 1px solid black;"
+        ),
         position = "topright")
   })
   

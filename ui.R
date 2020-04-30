@@ -6,7 +6,15 @@
 
 
 sideBar <- dashboardSidebar(
-  tags$head(includeHTML("google-analytics.js")),
+  tags$head(
+    includeHTML("google-analytics.js"),
+    tags$style("
+      #rleaflet_control {
+        padding: 0px;
+        border-radius: 0px;
+      }
+    ")
+  ),
   sidebarMenu(
     id = "sidebarmenu",
     # menuItem("Home", tabName = "homeTab"),
