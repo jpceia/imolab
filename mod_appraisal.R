@@ -201,7 +201,7 @@ server_appraisal <- function(input, output, session) {
         label = ~name,
         fillColor = "orange", fillOpacity = 0.75,
         color = "#444444", opacity = 1,
-        weight = 1, smoothFactor = 0.5,
+        weight = 2, smoothFactor = 0.5,
         highlightOptions = highlightOptions(
           color = "white",
           weight = 2,
@@ -238,7 +238,6 @@ server_appraisal <- function(input, output, session) {
     )
     
     fillOpacity <- ifelse(is_parish, 0.25, 0.75)
-    weight <- ifelse(is_parish, 3, 2)
 
     proxy %>% clearShapes()
     proxy %>% clearMarkers()
@@ -249,16 +248,25 @@ server_appraisal <- function(input, output, session) {
         fillOpacity = fillOpacity, fillColor = "orange"
       )
     
-    proxy %>% addPolygons(
-      data = map_sh, layerId = ~id,
-      color = "#444444", weight = 1, smoothFactor = 0.5,
-      opacity = 1.0, fillOpacity = 0,
-      label = ~htmltools::HTML(paste(sep="", "<b>", name, "</b>")),
-      highlightOptions = highlightOptions(
-        color = "white", weight = 2,
-        bringToFront = TRUE
+    if(is_parish) {
+      proxy %>% addPolygons(
+        data = map_sh, layerId = ~id,
+        color = "#444444", weight = 2, smoothFactor = 0.5,
+        opacity = 1.0, fillOpacity = 0,
       )
-    )
+    }
+    else {
+      proxy %>% addPolygons(
+        data = map_sh, layerId = ~id,
+        color = "#444444", weight = 1, smoothFactor = 0.5,
+        opacity = 1.0, fillOpacity = 0,
+        label = ~map(name, function(name) htmltools::HTML(paste(sep="", "<b>", name, "</b>"))),
+        highlightOptions = highlightOptions(
+          color = "white", weight = 3,
+          bringToFront = TRUE
+        )
+      )      
+    }
     
     bb <- sf::st_bbox(map_sh)
     proxy %>% fitBounds(
