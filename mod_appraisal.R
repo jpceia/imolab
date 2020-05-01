@@ -82,7 +82,9 @@ ui_appraisal <- function(id)
 
 server_appraisal <- function(input, output, session) {
   
-  rv <- reactiveValues(code = NULL)
+  rv <- reactiveValues(
+    validCoords = FALSE,
+    code = NULL)
   
   observeEvent(input$district, {
     rv$code <- input$district
@@ -218,7 +220,10 @@ server_appraisal <- function(input, output, session) {
   })
   
   observeEvent(rv$code, {
-    
+    rv$validCoords <- FALSE
+  })
+  
+  observeEvent(rv$code, {
     code <- rv$code
     loc_type <- location_type(code)
     is_parish <- loc_type == "parish"
@@ -264,6 +269,24 @@ server_appraisal <- function(input, output, session) {
     
   })
   
+  observeEvent(input$map_click, {
+    shiny::req(location_type(rv$code) == "parish")
+    shiny::req(!is.empty(input$parish))
+    
+    coords <- input$map_click
+    rv$validCoords <- TRUE
+    
+    leafletProxy("map") %>%
+      clearMarkers() %>%
+      addCircleMarkers(
+        layerId = "coordsMarker",
+        radius = 8,  weight = 3,
+        color = "red", opacity = 1.0,
+        fillOpacity = 0.25,
+        lng = coords$lng, lat = coords$lat
+      )
+  })
+  
   
   # performs the actual appraisal
   appraisalResult <- eventReactive(input$calculate, {
@@ -273,6 +296,16 @@ server_appraisal <- function(input, output, session) {
       need(!is.empty(input$net_area),     label = "Area")
     )
     
+    coords <- input$map_click
+    if(!is.empty(coords$lat) & !is.empty(coords$lng) & rv$validCoords) {
+      lat <- coords$lat
+      lng <- coords$lng
+    }
+    else {
+      lat <- NA
+      lng <- NA
+    }
+    
     body <- list(
       Deal = input$deal,
       `Property Type` = input$prop_type,
@@ -281,8 +314,8 @@ server_appraisal <- function(input, output, session) {
       MunicipalityID = input$municipality,
       ParishID = input$parish,
       
-      Latitude = NA,
-      Longitude = NA,
+      Latitude = lat,
+      Longitude = lng,
       
       Bedrooms = input$bedrooms,
       Bathrooms = input$bathrooms,
