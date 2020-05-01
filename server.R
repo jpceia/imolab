@@ -571,7 +571,6 @@ shinyServer(function(input, output, session) {
     map_sh$value <- df_territory[match(map_sh$id, df_territory$label), ]$mid
     
     fillOpacity <- ifelse(is_parish, 0.25, 0.75)
-    weight <- ifelse(is_parish, 2, 1)
     
     proxy %>% clearShapes()
     proxy %>% clearMarkers()
