@@ -170,8 +170,10 @@ server_appraisal <- function(input, output, session) {
       }
     )
   )
-
-    updateSelectInput(session, "parish", choices = parish_list)
+  
+  observeEvent(input$zoom_out, {
+    if(!is.empty(rv$code))
+      rv$code <- stringr::str_sub(rv$code, end = -3)
   })
   
   # map of the parish to select the coordinates
@@ -191,6 +193,16 @@ server_appraisal <- function(input, output, session) {
           color = "white",
           weight = 2,
           bringToFront = TRUE)
+      ) %>%
+      addControl(
+        layerId = "rleaflet_control",
+        actionButton(session$ns("zoom_out"), "Zoom Out", style = "
+          font-weight: bold;
+          font-size: small;
+          border-radius: 0px;
+          border: 1px solid black;"
+        ),
+        position = "topright"
       )
   })
   
