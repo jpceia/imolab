@@ -65,7 +65,18 @@ ui_appraisal <- function(id)
         width = 12
       )
     ),
-    fluidRow(htmlOutput(ns("appraisalOutput")))
+    fluidRow(
+      box(
+        title = "Simulation Results",
+        status = "primary",
+        solidHeader = TRUE,
+        width = 12,
+        #collapsible = TRUE,
+        #collapsed = TRUE,
+        
+        htmlOutput(ns("appraisalOutput")) %>% withSpinner(type=SPINNER_TYPE)
+      )
+    )
   )
 }
 
@@ -310,33 +321,19 @@ server_appraisal <- function(input, output, session) {
   output$appraisalOutput <- renderUI({
     res <- appraisalResult()
     
-    box(
-      title = tags$h2("Simulation Results"),
-      #status = "primary",
-      solidHeader = TRUE,
-      #collapsible = TRUE,
-      #collapsed = TRUE,
-      fluidRow(
-        box(
-          fluidRow(
-            valueBox(
-              paste(round(res$price, 2), "\u20ac"),
-              "Predicted price",
-              color = "green",
-              icon = icon("euro-sign")
-            ),
-            valueBox(
-              paste(round(res$price_m2, 2), "\u20ac"),
-              "Predicted price / m2",
-              color = "light-blue",
-              icon = icon("home")
-            )
-          ),
-          solidHeader = FALSE,
-          width = 12
-        )
+    fluidRow(
+      valueBox(
+        paste(round(res$price, 2), "\u20ac"),
+        "Predicted price",
+        color = "green",
+        icon = icon("euro-sign")
       ),
-      width = 12
+      valueBox(
+        paste(round(res$price_m2, 2), "\u20ac"),
+        "Predicted price / m2",
+        color = "light-blue",
+        icon = icon("home")
+      )
     )
   })
 }
