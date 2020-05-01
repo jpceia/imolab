@@ -167,7 +167,7 @@ shinyServer(function(input, output, session) {
   output$tableQuantiles <- renderFormattable({
     probs <- c(0.95, 0.90, 0.75, 0.50, 0.25, 0.10, 0.05)
     table <- data.frame(
-      quantile = percent(probs, 0),
+      quantile = percent(probs, 1),
       Price = currency(quantile(rv$df$Price, probs = probs), "", 0),
       Area = currency(quantile(rv$df$Area, probs = probs), "", 0),
       price_m2 = currency(quantile(rv$df$price_m2, probs = probs), "", 0)
