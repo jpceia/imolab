@@ -648,6 +648,55 @@ shinyServer(function(input, output, session) {
         )
     }
   })
+  
+  
+  output$territory_boxplot <- renderPlot({
+    
+    median_val <- median(rv$df[[input$target_col]])  # must be converted to reactive value
+    
+    territory_quantiles() %>%
+      ggplot(
+        aes(
+          x = reorder(label, mid, FUN = median),
+          ymin = min,
+          lower = low,
+          middle = mid,
+          upper = top, 
+          ymax = max
+      )
+    ) +
+      geom_errorbar(width = 0.2) +
+      geom_boxplot(stat = "identity") +
+      scale_y_continuous(trans = 'log10') +
+      theme(
+        axis.title.y = element_blank(),
+        axis.text.x = element_text(size = 12),
+        axis.text.y = element_text(size = 12),
+        legend.position = "none"
+      ) +
+      geom_hline(
+        yintercept = median_val,
+        linetype = "dashed", 
+        color = "red",
+        size = 1) +
+      coord_flip()
+  })
+  
+  output$territory_table <- renderFormattable({
+    
+    territory_quantiles() %>%
+      select(count, low, mid, top) %>%
+      rename("25%" = low, "median" = mid, "75%" = top) %>%
+      formattable(
+        align = c("l", "r", "r", "r", "r"),
+        list(
+          area(col = 'label') ~ formatter(
+            "span", style = ~formattable::style(color = "grey", font.weight = "bold")),
+          count = normalize_bar("pink", 0.2),
+          median = normalize_bar("lightblue", 0.2)
+        )
+      )
+  })
 
   # ----------------------------------------------------------------------------------------
   #                                     APPRAISAL SECTION
