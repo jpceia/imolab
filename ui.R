@@ -8,10 +8,15 @@
 sideBar <- dashboardSidebar(
   tags$head(
     includeHTML("google-analytics.js"),
-    tags$style("
+    tags$style(type = "text/css",
+    "
       #rleaflet_control {
         padding: 0px;
         border-radius: 0px;
+      }
+      
+      .modal-lg {
+        width: 75%;
       }
     ")
   ),
