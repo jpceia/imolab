@@ -133,14 +133,14 @@ district_sh <- sf::read_sf(file.path("data", "geo", "distritos-shapefile", "dist
 district_sh  <- district_sh[district_sh$TYPE_1 == "Distrito", ]
 names <- district_sh$NAME_1
 # polygon simplification to speedup rendering
-district_sh <- rmapshaper::ms_simplify(district_sh, keep_shapes = TRUE)
+district_sh <- sf::st_simplify(district_sh, dTolerance=0.001)
 district_sh$id <- district_sh$CCA_1
 district_sh$name <- names
 
 
 municipality_sh <- sf::read_sf(file.path("data", "geo", "concelhos-shapefile", "concelhos.shp"))
 names <- municipality_sh$NAME_2
-municipality_sh <- rmapshaper::ms_simplify(municipality_sh, keep_shapes = TRUE)
+municipality_sh <- sf::st_simplify(municipality_sh, dTolerance=0.001)
 #municipality_sh <- municipality_sh[municipality_sh$ID_1 %in% district_sh$ID_1, ]
 municipality_sh$CCA_1 <- stringr::str_sub(municipality_sh$CCA_2, 1, -3)
 municipality_sh$id <- municipality_sh$CCA_2
@@ -152,7 +152,7 @@ municipality_sh$name <- names
 parish_sh <- sf::read_sf(file.path("data", "geo", "cont-aad-caop2017", "Cont_AAD_CAOP2017.shp"))
 print(object.size(parish_sh) / 1024 / 1024)
 names <- as.data.frame(parish_sh)[, c("Dicofre", "Freguesia", "Des_Simpli")]
-parish_sh <- rmapshaper::ms_simplify(parish_sh)
+parish_sh <- sf::st_simplify(parish_sh, dTolerance=10)
 print(object.size(parish_sh) / 1024 / 1024)
 parish_sh$CCA_1 <- stringr::str_sub(parish_sh$Dicofre, 1, -5)
 parish_sh$CCA_2 <- stringr::str_sub(parish_sh$Dicofre, 1, -3)
