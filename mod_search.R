@@ -175,7 +175,7 @@ server_search  <- function(input, output, session) {
           Area,
           Price,
           ROUND(%s, 0) AS `Predicted Price`
-       FROM daily_table
+       FROM VIEW_daily
        WHERE %s
        ORDER BY %s
        LIMIT 100", pred_query, filt_query, rank_query)
