@@ -116,19 +116,19 @@ server_search  <- function(input, output, session) {
     filter_query <- ''
     if(input$objective == "Buy")
     {
-      rank_query <- '(LOG10(Price / Area) - LOG10(`pred-price_m2`)) / `pred-std_price_m2`'
+      rank_query <- '(LOG10(%f / Area) - LOG10(`pred-price_m2`)) / LOG10(`std-price_m2`)'
       pred_query <- '`pred-price_m2` * Area'
       filt_query <- 'Deal = 1'
     }
     else if(input$objective == "Rent")
     {
-      rank_query <- '(LOG10(Price / Area) - LOG10(`pred-price_m2`)) / `pred-std_price_m2`'
+      rank_query <- '(LOG10(%f / Area) - LOG10(`pred-price_m2`)) / LOG10(`std-price_m2`)'
       pred_query <- '`pred-price_m2` * Area'
       filt_query <- 'Deal = 0'
     }
     else if(input$objective == "Buy-to-Let")
     {
-      rank_query <- '(LOG10(Price / Area) - LOG10(`pred-rent_m2`)) / `pred-std_rent_m2`'
+      rank_query <- '(LOG10(%f / Area) - LOG10(`pred-rent_m2`)) / LOG10(`std-rent_m2`)'
       pred_query <- '`pred-rent_m2` * Area'
       filt_query <- 'Deal = 1'
     }
@@ -136,6 +136,8 @@ server_search  <- function(input, output, session) {
     {
       stop("Invalid Field")
     }
+    
+    rank_query <- sprintf(rank_query, input$max_investment)
     
     filt_query <- c(
       filt_query,
