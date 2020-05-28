@@ -1,5 +1,5 @@
 
-APPRAISAL_URL <- "#{APPRAISAL_URL}"
+APPRAISAL_URL <- "https://fdtzmjlla2.execute-api.eu-central-1.amazonaws.com/dev2/appraisal"
 
 
 ui_appraisal <- function(id)

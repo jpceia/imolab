@@ -26,23 +26,14 @@ ui_search <- function(id)
                  offset = 1
           ),
           column(4,
-                 selectizeInput(ns("district"), "Location", district_list,#,  district
-                                size = 3,
-                                options = list(
-                                  placeholder = 'District',
-                                  onInitialize = I('function() { this.setValue(""); }')
-                                )),
-                 selectizeInput(ns("municipality"), NULL, c(" "),
-                                options = list(
-                                  placeholder = 'Municipality',
-                                  onInitialize = I('function() { this.setValue(""); }')
-                                )),
-                 selectizeInput(ns("parish"), NULL, c(" "),
-                                multiple = FALSE,
-                                options = list(
-                                  placeholder = 'Parish',
-                                  onInitialize = I('function() { this.setValue(""); }')
-                                )),
+                 htmlOutput(ns("geomenu")),
+                 actionButton(ns("location_button"),
+                              "Select location",
+                              icon=icon("globe")),
+                 bsModal(ns("location_modal"), "Property Location",
+                         ns("location_button"),
+                         leafletOutput(ns("map")),
+                         size = "large"),
                  offset = 1
           ),
         ),
@@ -71,35 +62,8 @@ ui_search <- function(id)
 
 server_search  <- function(input, output, session) {
   
-  # updates the municipality list, after selecting a new district
-  observeEvent(input$district, {
-    municipality_list <- c(NULL)
-    df <- municipality_sh %>% filter(CCA_1 == input$district)
-    
-    if (nrow(df) > 0) {
-      municipality_list <- df$CCA_2
-      names(municipality_list) <- df$name
-    }
-    
-    updateSelectInput(session, "municipality", choices = municipality_list)
-    updateSelectInput(session, "parish", choices = c(NULL), selected = "")
-  })
-  
-  
-  # updates the parish list, after selecting a new municipality
-  observeEvent(input$municipality, {
-    parish_list <- c(NULL)
-    df <- parish_sh %>% filter(CCA_2 == input$municipality)
-    
-    if (nrow(df) > 0) {
-      parish_list <- df$CCA_3
-      names(parish_list) <- df$name
-    }
-    
-    updateSelectInput(session, "parish", choices = parish_list)
-  })
-  
   rv <- reactiveValues(
+    code = NULL,
     queryOutput = data.frame(
       'Url' = NULL,
       'Agency' = NULL,
@@ -109,6 +73,183 @@ server_search  <- function(input, output, session) {
       'Predicted Price' = NULL
     )
   )
+
+  observeEvent(input$district, {
+    rv$code <- input$district
+  }, ignoreInit = TRUE)
+  
+  observeEvent(input$municipality, {
+    rv$code <- ifelse(is.empty(input$municipality), input$district, input$municipality)
+  }, ignoreInit = TRUE)
+  
+  observeEvent(input$parish, {
+    rv$code <- ifelse(is.empty(input$parish), input$municipality, input$parish)
+  }, ignoreInit = TRUE)
+  
+  observeEvent(input$map_shape_click$id, {
+    rv$code <- input$map_shape_click$id
+  })
+  
+  output$geomenu <- renderUI(
+    switch(
+      location_type(rv$code),
+      country = {
+        tags$div(
+          selectizeInput(session$ns("district"), "Location", district_list,
+                         options = list(
+                           placeholder = 'District',
+                           onInitialize = I('function() { this.setValue(""); }')
+                         )
+          )
+        )
+      },
+      district = {
+        district_code <- rv$code
+        
+        tmp <- municipality_sh %>% filter(CCA_1 == district_code)
+        municipality_list <- setNames(tmp$CCA_2, tmp$name)
+        
+        tags$div(
+          selectizeInput(session$ns("district"), "Location", district_list,
+                         selected = district_code
+          ),
+          selectizeInput(session$ns("municipality"), NULL, municipality_list,
+                         options = list(
+                           placeholder = 'Municipality',
+                           onInitialize = I('function() { this.setValue(""); }')
+                         )
+          )
+        )
+      },
+      municipality = {
+        municipality_code <- rv$code
+        district_code <-  stringr::str_sub(municipality_code, end = -3)
+        
+        tmp <- parish_sh %>% filter(CCA_2 == municipality_code)
+        parish_list <- setNames(tmp$CCA_3, tmp$name)
+        
+        tmp <- municipality_sh %>% filter(CCA_1 == district_code)
+        municipality_list <- setNames(tmp$CCA_2, tmp$name)
+        
+        tags$div(
+          selectizeInput(session$ns("district"), "Location", district_list,
+                         selected = district_code
+          ),
+          selectizeInput(session$ns("municipality"), NULL, municipality_list,
+                         selected = municipality_code
+          ),
+          selectizeInput(session$ns("parish"), NULL, parish_list,
+                         options = list(
+                           placeholder = 'Parish',
+                           onInitialize = I('function() { this.setValue(""); }')
+                         )
+          )
+        )
+      },
+      parish = {
+        parish_code <- rv$code
+        municipality_code <- stringr::str_sub(parish_code, end = -3)
+        district_code <-  stringr::str_sub(municipality_code, end = -3)
+        
+        tmp <- parish_sh %>% filter(CCA_2 == municipality_code)
+        parish_list <- setNames(tmp$CCA_3, tmp$name)
+        
+        tmp <- municipality_sh %>% filter(CCA_1 == district_code)
+        municipality_list <- setNames(tmp$CCA_2, tmp$name)
+        
+        tags$div(
+          selectizeInput(session$ns("district"), "Location", district_list,
+                         selected = district_code
+          ),
+          selectizeInput(session$ns("municipality"), NULL, municipality_list,
+                         selected = municipality_code
+          ),
+          selectizeInput(session$ns("parish"), NULL, parish_list,
+                         selected = parish_code
+          )
+        )
+      }
+    )
+  )
+  
+  observeEvent(input$zoom_out, {
+    if(!is.empty(rv$code))
+      rv$code <- stringr::str_sub(rv$code, end = -3)
+  })
+  
+  # map of the parish to select the coordinates
+  output$map <- renderLeaflet({
+    leaflet(options = leafletOptions(
+      attributionControl = FALSE,
+      scrollWheelZoom = FALSE
+    )) %>%
+      addTiles() %>%
+      addPolygons(
+        data = district_sh, layerId = ~id,
+        label = ~name,
+        fillColor = "orange", fillOpacity = 0.75,
+        color = "#444444", opacity = 1,
+        weight = 1, smoothFactor = 0.5,
+        highlightOptions = highlightOptions(
+          color = "white",
+          weight = 2,
+          bringToFront = TRUE)
+      ) %>%
+      addControl(
+        layerId = "rleaflet_control",
+        actionButton(session$ns("zoom_out"), "Zoom Out", style = "
+          font-weight: bold;
+          font-size: small;
+          border-radius: 0px;
+          border: 1px solid black;"
+        ),
+        position = "topright"
+      )
+  })
+  
+  observeEvent(c(
+    rv$code,
+    input$location_button
+  ), {
+    code <- rv$code
+    loc_type <- location_type(code)
+    proxy <- leafletProxy("map")
+    
+    map_sh <- switch(
+      loc_type,
+      country = district_sh,
+      district = municipality_sh[municipality_sh$CCA_1 == code, ],
+      municipality = parish_sh[parish_sh$CCA_2 == code, ],
+      parish = parish_sh[parish_sh$CCA_3 == code, ]
+    )
+    
+    proxy %>% clearShapes()
+    proxy %>% clearMarkers()
+    proxy %>%
+      addPolygons(
+        data = map_sh, group = "Polygons",
+        smoothFactor = 0.5, opacity = 0,
+        fillOpacity = 0.75, fillColor = "orange"
+      )
+    
+    proxy %>% addPolygons(
+      data = map_sh, layerId = ~id, label = ~name,
+      color = "#444444", weight = 1, smoothFactor = 0.5,
+      opacity = 1.0, fillOpacity = 0,
+      highlightOptions = highlightOptions(
+        color = "white", weight = 2,
+        bringToFront = TRUE
+      )
+    )
+    
+    bb <- sf::st_bbox(map_sh)
+    proxy %>% fitBounds(
+      lat1 = bb[[2]],
+      lng1 = bb[[1]],
+      lat2 = bb[[4]],
+      lng2 = bb[[3]])
+  })
+  
   
   searchResult <- eventReactive(input$search, {
     

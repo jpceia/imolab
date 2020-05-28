@@ -38,11 +38,11 @@ MIN_DATAPOINTS <- 5
 SAMPLING_THRESHOLD <- 2500
 MIN_DATAPOINTS_MSG <- "Filter too narrow: not enough datapoints"
 
-DB_HOST <- "#{DB_HOST}"
+DB_HOST <- "imolab.cismlmr8glba.eu-central-1.rds.amazonaws.com"
 DB_PORT <- 3306
 DB_NAME <- "rentalgo"
 DB_USER <- "admin"
-DB_PWD <- "***REMOVED***"
+DB_PWD <- "ZRtIonWeFNGHv8dk"
 DB_TABLE <- "imovirtual_prod"
 
 for(conn in dbListConnections(dbDriver(drv = "MySQL")))
