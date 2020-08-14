@@ -507,7 +507,7 @@ shinyServer(function(input, output, session) {
     leafletProxy("map") %>%
       addControl(
         tags$div(
-          tags$style(css),
+          tags$style(type = "text/css", css),
           tags$div(tags$strong("Lower Quartile"), format_value(target, stats$low)),
           tags$div(tags$strong("Median"),         format_value(target, stats$mid)),
           tags$div(tags$strong("Upper Quartile"), format_value(target, stats$top)),

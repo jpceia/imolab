@@ -33,7 +33,7 @@ source("mod_search.R")
 # ----------------------------------------------------------------------------------------
 
 
-SEARCH_TAB <- FALSE
+SEARCH_TAB <- TRUE
 SPINNER_TYPE <- 8
 MIN_DATAPOINTS <- 5
 SAMPLING_THRESHOLD <- 2500
