@@ -18,6 +18,7 @@ library(formattable)
 library(RMySQL)
 
 require(jsonlite)
+require(config)
 require(scales)
 require(httr)
 require(sf)
@@ -38,12 +39,19 @@ MIN_DATAPOINTS <- 5
 SAMPLING_THRESHOLD <- 2500
 MIN_DATAPOINTS_MSG <- "Filter too narrow: not enough datapoints"
 
-DB_HOST <- "imolab.cismlmr8glba.eu-central-1.rds.amazonaws.com"
-DB_PORT <- 3306
-DB_NAME <- "rentalgo"
-DB_USER <- "admin"
-DB_PWD <- "ZRtIonWeFNGHv8dk"
-DB_TABLE <- "imovirtual_prod"
+Sys.setenv(R_CONFIG_ACTIVE = "default")
+config <- config::get(file = file.path(getCurrentFileLocation(), "config.yml"))
+
+DB_HOST <- config$db_host
+DB_PORT <- config$db_port
+DB_NAME <- config$db_name
+DB_USER <- config$db_username
+DB_PWD  <- config$db_password
+DB_TABLE<- config$db_table
+
+
+APPRAISAL_URL <- config$appraisal_url
+
 
 for(conn in dbListConnections(dbDriver(drv = "MySQL")))
 {
@@ -169,3 +177,4 @@ district_list <- setNames(district_sh$id, district_sh$name)
 # ------------------------------- Loading the main Dataset -------------------------------
 
 dataset <- data.table(load_dataset())
+print(dataset)
