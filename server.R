@@ -434,7 +434,7 @@ shinyServer(function(input, output, session) {
       district = "MunicipalityID",
       municipality = "ParishID",
       parish = NULL,
-      shiny::validate(FALSE, "")
+      shiny::req(FALSE)
     )
     
     target_col <- input$target_col
