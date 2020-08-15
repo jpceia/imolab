@@ -39,17 +39,17 @@ SAMPLING_THRESHOLD <- 2500
 MIN_DATAPOINTS_MSG <- "Filter too narrow: not enough datapoints"
 
 Sys.setenv(R_CONFIG_ACTIVE = "default")
-config <- config::get(file = file.path(getCurrentFileLocation(), "config.yml"))
+cfg <- config::get(file = file.path(getCurrentFileLocation(), "config.yml"))
 
-DB_HOST <- config$db_host
-DB_PORT <- config$db_port
-DB_NAME <- config$db_name
-DB_USER <- config$db_username
-DB_PWD  <- config$db_password
-DB_TABLE<- config$db_table
+DB_HOST <- cfg$db_host
+DB_PORT <- cfg$db_port
+DB_NAME <- cfg$db_name
+DB_USER <- cfg$db_username
+DB_PWD  <- cfg$db_password
+DB_TABLE<- cfg$db_table
 
 
-APPRAISAL_URL <- config$appraisal_url
+APPRAISAL_URL <- cfg$appraisal_url
 
 
 for(conn in dbListConnections(dbDriver(drv = "MySQL")))
