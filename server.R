@@ -342,12 +342,12 @@ shinyServer(function(input, output, session) {
         selected <- "Municipality"
       },
       municipality = {
-        levels <- c("Parish")
+        levels <- c("Parish", "Point")
         selected <- "Parish"
       },
       parish = {
-        levels <- c("Parish")
-        selected <- "Parish"
+        levels <- c("Point")
+        selected <- "Point"
       }
     )
     
@@ -355,70 +355,121 @@ shinyServer(function(input, output, session) {
                    levels, selected = selected)
   })
   
+  output$corr_agg_prop_input <- renderUI({
+    agg_col <- input$agg_level
+    shiny::req(!is.empty(agg_col))
+    
+    if(agg_col != "Point") {
+      checkboxInput("agg_prop_type", "Aggregate different property types")
+    }
+  })
+  
   output$CorrelationTextTargetName <- renderText({
     target1 <- target_name(input$target1)
     target2 <- target_name(input$target2)
     paste(target1, "vs", target2, ", by", input$agg_level)
   })
-  
+    
   output$CorrelationPlot <- renderHighchart({
     agg_col <- input$agg_level
     target1 <- input$target1
     target2 <- input$target2
     
-    if(input$agg_prop_type)
+    shiny::req(!is.empty(agg_col))
+    
+    if(agg_col == "Point")
     {
       js <- "
-        function () {
-          return '  <strong>' + this.point.%s + '</strong><br>' + 
-                 '<strong>' + '%s:</strong> ' + this.point.x + '<br>' + 
-                 '<strong>' + '%s:</strong> ' + this.point.y; }"
-      rv$df[
+      function () {
+        return '<span style=\"color:' + this.series.color + '\">\u25CF</span> ' + this.series.name + '<br><br>' + 
+               '<strong>' + '%s:</strong> ' + this.point.x + '<br>' + 
+               '<strong>' + '%s:</strong> ' + this.point.y; }"
+      
+      df <- rv$df[
         ,
-        as.list(setNames(
-          c(
-            .N,
-            median(base::get(target2), na.rm = TRUE),
-            median(base::get(target1), na.rm = TRUE)
-          ),
-          c("count", "X", "Y")
-        )),
+        list(
+          X = base::get(target2),
+          Y = base::get(target1),
+          Property.Type = Property.Type
+        ),
+      ]
+      
+      hc_args <- list(x = quote(X), y = quote(Y), group = quote(Property.Type))
+      js <- sprintf(js, target2, target1)
+    }
+    else if(input$agg_prop_type)
+    {
+      js <- "
+      function () {
+        return '  <strong>' + this.point.%s + '</strong><br>' + 
+                 '<strong>' + '%s:</strong> ' + this.point.x + '<br>' + 
+               '<strong>' + '%s:</strong> ' + this.point.y; }"
+      
+      df  <- rv$df[
+        ,
+        list(
+          count = .N,
+          X = median(base::get(target2), na.rm = TRUE),
+          Y = median(base::get(target1), na.rm = TRUE)
+        ),
         agg_col
       ][
         count >= MIN_DATAPOINTS
-      ] %>%
-        hchart("scatter", hcaes(X, Y)) %>%
-        hc_xAxis(title = list(text = target2)) %>%
-        hc_yAxis(title = list(text = target1)) %>%
-        hc_tooltip(formatter=JS(sprintf(js, agg_col, target2, target1)))
+      ]
+      
+      hc_args <- list(x = quote(X), y = quote(Y))
+      js <- sprintf(js, agg_col, target2, target1)
     }
     else
     {
       js <- "
-        function () {
-          return '  <strong>' + this.point.%s + '</strong>' +
-                 '<span style=\"color:' + this.series.color + '\">\u25CF</span> ' + this.series.name + '<br><br>' + 
-                 '<strong>' + '%s:</strong> ' + this.point.x + '<br>' + 
-                 '<strong>' + '%s:</strong> ' + this.point.y; }"
-      rv$df[
+      function () {
+        return '  <strong>' + this.point.%s + '</strong>' +
+               '<span style=\"color:' + this.series.color + '\">\u25CF</span> ' + this.series.name + '<br><br>' + 
+               '<strong>' + '%s:</strong> ' + this.point.x + '<br>' + 
+               '<strong>' + '%s:</strong> ' + this.point.y; }"
+      
+      df <- rv$df[
         ,
-        as.list(setNames(
-          c(
-            .N,
-            median(base::get(target2), na.rm = TRUE),
-            median(base::get(target1), na.rm = TRUE)
-          ),
-          c("count", "X", "Y")
-        )),
+        list(
+          count = .N,
+          X = median(base::get(target2), na.rm = TRUE),
+          Y = median(base::get(target1), na.rm = TRUE)
+        ),
         c(agg_col, "Property.Type")
       ][
         count >= MIN_DATAPOINTS
-      ] %>%
-        hchart("scatter", hcaes(X, Y, group = Property.Type)) %>%
-        hc_xAxis(title = list(text = target2)) %>%
-        hc_yAxis(title = list(text = target1)) %>%
-        hc_tooltip(formatter=JS(sprintf(js, agg_col, target2, target1)))
+      ]
+      
+      hc_args <- list(x = quote(X), y = quote(Y), group = quote(Property.Type))
+      js <- sprintf(js, agg_col, target2, target1)
     }
+    
+    # filter nans in X and Y
+    probs <- c(0.25, 0.50, 0.75)
+    Q_X <- quantile(df$X, probs = probs, na.rm = TRUE)
+    Q_Y <- quantile(df$Y, probs = probs, na.rm = TRUE)
+    N_SIGMA <- 5 / 1.349
+    
+    df <- df[
+      !is.na(X) && !is.na(Y) &&
+        (X > Q_X[[2]] - (Q_X[[3]] - Q_X[[1]]) * N_SIGMA) &&
+        (X > Q_X[[2]] - (Q_X[[3]] - Q_X[[1]]) * N_SIGMA) &&
+        (Y > Q_Y[[2]] - (Q_Y[[3]] - Q_Y[[1]]) * N_SIGMA) &&
+        (Y < Q_Y[[2]] + (Q_Y[[3]] - Q_Y[[1]]) * N_SIGMA)
+      ]
+    
+    MAX_POINTS <- 500
+    if(nrow(df) > MAX_POINTS)
+      df <- df[sample(.N, MAX_POINTS)]
+    
+    
+    df %>%
+      hchart("scatter", do.call(hcaes, hc_args)) %>%
+      hc_xAxis(title = list(text = target2)) %>%
+      hc_yAxis(title = list(text = target1)) %>%
+      hc_tooltip(formatter=JS(js))
+
   })
   
   

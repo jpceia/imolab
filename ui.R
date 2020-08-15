@@ -173,7 +173,7 @@ body <- dashboardBody(
                    selectizeInput("target2", "Target2",
                                   target_list, selected = "Area"),
                    htmlOutput("corr_level_input"),
-                   checkboxInput("agg_prop_type", "Aggregate different property types")
+                   htmlOutput("corr_agg_prop_input")
             ),
             column(8, highchartOutput("CorrelationPlot") %>% withSpinner(type=SPINNER_TYPE))
           ),
