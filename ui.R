@@ -23,12 +23,9 @@ sideBar <- dashboardSidebar(
   sidebarMenu(
     id = "sidebarmenu",
     # menuItem("Home", tabName = "homeTab"),
-    ifelse(
-      SEARCH_TAB,
-      menuItem("Search", icon = icon("search-dollar"),
-               tabName = NS("mod_search")("investmentSearchTab")),
-      ""
-    ),
+    menuItem("Search", icon = icon("search-dollar"),
+             tabName = NS("mod_search")("investmentSearchTab")),
+
     menuItem("Appraisal", icon = icon("brain"),
              tabName = NS("mod_appraisal")("appraisalTab")),
              #badgeLabel = "Beta",
