@@ -195,8 +195,8 @@ shinyServer(function(input, output, session) {
   F_catBoxPlot <- function(cat_col, target_col = "price_m2") {
     
     df <- rv$df[
-      !is.na(get(cat_col)) &
-      !is.na(get(target_col))
+      !is.na(base::get(cat_col)) &
+      !is.na(base::get(target_col))
     ]
     
     if (is.numeric(df[[cat_col]]))
@@ -207,15 +207,15 @@ shinyServer(function(input, output, session) {
     df[
       ,
       .(
-        min = quantile(get(target_col), probs = 0.05),
-        low = quantile(get(target_col), probs = 0.25),
-        mid = quantile(get(target_col), probs = 0.50),
-        top = quantile(get(target_col), probs = 0.75),
-        max = quantile(get(target_col), probs = 0.95)
+        min = quantile(base::get(target_col), probs = 0.05),
+        low = quantile(base::get(target_col), probs = 0.25),
+        mid = quantile(base::get(target_col), probs = 0.50),
+        top = quantile(base::get(target_col), probs = 0.75),
+        max = quantile(base::get(target_col), probs = 0.95)
       ),
       cat_col
     ][
-      !is.na(get(cat_col))
+      !is.na(base::get(cat_col))
     ] %>% ggplot(
       aes_string(
         x = cat_col,
@@ -243,8 +243,8 @@ shinyServer(function(input, output, session) {
   F_catCount <- function(cat_col, target_col = "price_m2") {
     
     df <- rv$df[
-      !is.na(get(cat_col)) &
-      !is.na(get(target_col))
+      !is.na(base::get(cat_col)) &
+      !is.na(base::get(target_col))
     ]
     
     if (is.numeric(df[[cat_col]]))
@@ -257,7 +257,7 @@ shinyServer(function(input, output, session) {
       .(count = .N),
       cat_col
     ][
-      !is.na(get(cat_col))
+      !is.na(base::get(cat_col))
     ] %>%
     ggplot(aes_string(
         x = cat_col,
@@ -281,16 +281,16 @@ shinyServer(function(input, output, session) {
   F_catTable <- function(cat_col,  target_col = "price_m2") {
     
     rv$df[
-      !is.na(get(cat_col)) & !is.na(get(target_col)),
+      !is.na(base::get(cat_col)) & !is.na(base::get(target_col)),
       .(
         count = .N,
-        "25%" = currency(quantile(get(target_col), probs=0.25), "", 2),
-        median= currency(quantile(get(target_col), probs=0.50), "", 2),
-        "75%" = currency(quantile(get(target_col), probs=0.75), "", 2)
+        "25%" = currency(quantile(base::get(target_col), probs=0.25), "", 2),
+        median= currency(quantile(base::get(target_col), probs=0.50), "", 2),
+        "75%" = currency(quantile(base::get(target_col), probs=0.75), "", 2)
       ),
       cat_col
     ][
-      rev(order(get(cat_col)))
+      rev(order(base::get(cat_col)))
     ] %>%
       formattable(
         align = c("l", "r", "r", "r", "r"),
@@ -378,8 +378,8 @@ shinyServer(function(input, output, session) {
         as.list(setNames(
           c(
             .N,
-            median(get(target2), na.rm = TRUE),
-            median(get(target1), na.rm = TRUE)
+            median(base::get(target2), na.rm = TRUE),
+            median(base::get(target1), na.rm = TRUE)
           ),
           c("count", "X", "Y")
         )),
@@ -405,8 +405,8 @@ shinyServer(function(input, output, session) {
         as.list(setNames(
           c(
             .N,
-            median(get(target2), na.rm = TRUE),
-            median(get(target1), na.rm = TRUE)
+            median(base::get(target2), na.rm = TRUE),
+            median(base::get(target1), na.rm = TRUE)
           ),
           c("count", "X", "Y")
         )),
@@ -443,11 +443,11 @@ shinyServer(function(input, output, session) {
       ,
       .(
         count = .N,
-        min = quantile(get(target_col), probs = 0.05, na.rm = TRUE),
-        low = quantile(get(target_col), probs = 0.25, na.rm = TRUE),
-        mid = quantile(get(target_col), probs = 0.50, na.rm = TRUE),
-        top = quantile(get(target_col), probs = 0.75, na.rm = TRUE),
-        max = quantile(get(target_col), probs = 0.95, na.rm = TRUE)
+        min = quantile(base::get(target_col), probs = 0.05, na.rm = TRUE),
+        low = quantile(base::get(target_col), probs = 0.25, na.rm = TRUE),
+        mid = quantile(base::get(target_col), probs = 0.50, na.rm = TRUE),
+        top = quantile(base::get(target_col), probs = 0.75, na.rm = TRUE),
+        max = quantile(base::get(target_col), probs = 0.95, na.rm = TRUE)
       ),
       cat_col
     ]
@@ -477,11 +477,11 @@ shinyServer(function(input, output, session) {
     stats <- rv$df[
       filt[[1]],
       .(
-        min = quantile(get(target_col), probs = 0.05, na.rm = TRUE),
-        low = quantile(get(target_col), probs = 0.25, na.rm = TRUE),
-        mid = quantile(get(target_col), probs = 0.50, na.rm = TRUE),
-        top = quantile(get(target_col), probs = 0.75, na.rm = TRUE),
-        max = quantile(get(target_col), probs = 0.95, na.rm = TRUE)
+        min = quantile(base::get(target_col), probs = 0.05, na.rm = TRUE),
+        low = quantile(base::get(target_col), probs = 0.25, na.rm = TRUE),
+        mid = quantile(base::get(target_col), probs = 0.50, na.rm = TRUE),
+        top = quantile(base::get(target_col), probs = 0.75, na.rm = TRUE),
+        max = quantile(base::get(target_col), probs = 0.95, na.rm = TRUE)
       ),
       ]
     
@@ -618,7 +618,7 @@ shinyServer(function(input, output, session) {
     
     if(loc_type %in% c("municipality", "parish"))
     {
-      pts <- rv$df[,  median(get(target), na.rm = TRUE), by = .(Latitude, Longitude)]
+      pts <- rv$df[,  median(base::get(target), na.rm = TRUE), by = .(Latitude, Longitude)]
       pts <- pts[!is.na(V1)]
       
       if(nrow(pts) > SAMPLING_THRESHOLD)
