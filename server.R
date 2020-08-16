@@ -194,6 +194,19 @@ shinyServer(function(input, output, session) {
   
   F_catBoxPlot <- function(cat_col, target_col = "price_m2") {
     
+    target_name <- target_col
+    target_suffix <- ""
+    target_decimals <- 2
+    switch(
+      target_col,
+      price_m2={
+        target_name = "Price/m\u00b2"
+        target_suffix = " \u20ac/m\u00b2"
+      },
+      Area={
+        target_suffix = " \u00b2"
+      })
+    
     df <- rv$df[
       !is.na(base::get(cat_col)) &
       !is.na(base::get(target_col))
@@ -204,6 +217,8 @@ shinyServer(function(input, output, session) {
       df[[cat_col]] <- as.factor(df[[cat_col]])
     }
     
+    if(median(df[[target_col]], na.rm=TRUE) >= 100)
+      target_decimals <- 0
     
     df <- df[
       ,
@@ -222,26 +237,26 @@ shinyServer(function(input, output, session) {
     highchart() %>%
       hc_add_series(
         df, "boxplot",
-        color="black", fillColor="lightblue", whiskerLength='25%',
+        color="black", fillColor="skyblue", whiskerLength='25%',
         pointPadding=-0.2,
-        name=target_col,
+        name=target_name,
         hcaes(x=!!rlang::sym(cat_col))) %>%
-      hc_tooltip(valueDecimals=2) %>%
+      hc_tooltip(valueDecimals=target_decimals, valueSuffix=target_suffix) %>%
       hc_xAxis(type="category",
                title=list(
                  text=paste("<b>", cat_col, "</b>", sep=""),
                  useHTML=TRUE
                )
       ) %>%
-      hc_yAxis(min=0,
+      hc_yAxis(floor=0,
                title=list(
-                 text=paste("<b>", target_col, "</b>", sep=""),
+                 text=paste("<b>", target_name, "</b>", sep=""),
                  useHTML=TRUE
                 )
       ) %>%
       hc_legend(enabled=FALSE) %>%
       hc_chart(inverted=TRUE) %>%
-      hc_title(text=paste("<b><small>", target_col, "by", cat_col, "</small></b>", sep=" "),
+      hc_title(text=paste("<b><small>", target_name, "by", cat_col, "</small></b>", sep=" "),
                useHTML=TRUE)
   }
   
@@ -268,7 +283,7 @@ shinyServer(function(input, output, session) {
     highchart() %>%
       hc_add_series(
         df, "column",
-        color="lightblue", borderColor="black",
+        color="skyblue", borderColor="black",
         pointPadding=-0.2,
         name="Frequency",
         hcaes(x=!!rlang::sym(cat_col), y=count)) %>%
