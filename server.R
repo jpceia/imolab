@@ -415,6 +415,8 @@ shinyServer(function(input, output, session) {
         agg_col
       ][
         count >= MIN_DATAPOINTS
+      ][
+        !is.na(base::get(agg_col))
       ]
       
       hc_args <- list(x = quote(X), y = quote(Y))
@@ -439,6 +441,8 @@ shinyServer(function(input, output, session) {
         c(agg_col, "Property.Type")
       ][
         count >= MIN_DATAPOINTS
+      ][
+        !is.na(base::get(agg_col))
       ]
       
       hc_args <- list(x = quote(X), y = quote(Y), group = quote(Property.Type))
@@ -452,12 +456,13 @@ shinyServer(function(input, output, session) {
     N_SIGMA <- 5 / 1.349
     
     df <- df[
-      !is.na(X) && !is.na(Y) &&
-        (X > Q_X[[2]] - (Q_X[[3]] - Q_X[[1]]) * N_SIGMA) &&
-        (X > Q_X[[2]] - (Q_X[[3]] - Q_X[[1]]) * N_SIGMA) &&
-        (Y > Q_Y[[2]] - (Q_Y[[3]] - Q_Y[[1]]) * N_SIGMA) &&
-        (Y < Q_Y[[2]] + (Q_Y[[3]] - Q_Y[[1]]) * N_SIGMA)
-      ]
+      !is.na(X) &&
+      !is.na(Y) &&
+      (X > Q_X[[2]] - (Q_X[[3]] - Q_X[[1]]) * N_SIGMA) &&
+      (X > Q_X[[2]] - (Q_X[[3]] - Q_X[[1]]) * N_SIGMA) &&
+      (Y > Q_Y[[2]] - (Q_Y[[3]] - Q_Y[[1]]) * N_SIGMA) &&
+      (Y < Q_Y[[2]] + (Q_Y[[3]] - Q_Y[[1]]) * N_SIGMA)
+    ]
     
     MAX_POINTS <- 500
     if(nrow(df) > MAX_POINTS)
