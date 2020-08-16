@@ -204,40 +204,45 @@ shinyServer(function(input, output, session) {
       df[[cat_col]] <- as.factor(df[[cat_col]])
     }
     
-    df[
+    
+    df <- df[
       ,
       .(
-        min = quantile(base::get(target_col), probs = 0.05),
-        low = quantile(base::get(target_col), probs = 0.25),
-        mid = quantile(base::get(target_col), probs = 0.50),
-        top = quantile(base::get(target_col), probs = 0.75),
-        max = quantile(base::get(target_col), probs = 0.95)
+        low    = quantile(base::get(target_col), probs = 0.10),
+        q1     = quantile(base::get(target_col), probs = 0.25),
+        median = quantile(base::get(target_col), probs = 0.50),
+        q3     = quantile(base::get(target_col), probs = 0.75),
+        high   = quantile(base::get(target_col), probs = 0.90)
       ),
       cat_col
     ][
-      !is.na(base::get(cat_col))
-    ] %>% ggplot(
-      aes_string(
-        x = cat_col,
-        fill = cat_col,
-        ymin = 'min',
-        lower = 'low',
-        middle = 'mid', 
-        upper = 'top', 
-        ymax = 'max'
-      )
-    ) +
-      geom_errorbar(width = 0.2) +
-      geom_boxplot(stat = "identity") +
-      scale_x_discrete(drop = FALSE) +
-      scale_y_continuous(trans = 'log10') +
-      theme(
-        axis.text.y = element_text(size = 12),
-        axis.title.y = element_text(size = 12),
-        axis.text.x = element_text(size = 12),
-        legend.position = "none"
-      ) +
-      coord_flip()
+      order(-rank(base::get(cat_col)))
+    ]
+    
+    highchart() %>%
+      hc_add_series(
+        df, "boxplot",
+        color="black", fillColor="lightblue", whiskerLength='25%',
+        pointPadding=-0.2,
+        name=target_col,
+        hcaes(x=!!rlang::sym(cat_col))) %>%
+      hc_tooltip(valueDecimals=2) %>%
+      hc_xAxis(type="category",
+               title=list(
+                 text=paste("<b>", cat_col, "</b>", sep=""),
+                 useHTML=TRUE
+               )
+      ) %>%
+      hc_yAxis(min=0,
+               title=list(
+                 text=paste("<b>", target_col, "</b>", sep=""),
+                 useHTML=TRUE
+                )
+      ) %>%
+      hc_legend(enabled=FALSE) %>%
+      hc_chart(inverted=TRUE) %>%
+      hc_title(text=paste("<b><small>", target_col, "by", cat_col, "</small></b>", sep=" "),
+               useHTML=TRUE)
   }
   
   F_catCount <- function(cat_col, target_col = "price_m2") {
@@ -252,30 +257,27 @@ shinyServer(function(input, output, session) {
       df[[cat_col]] <- as.factor(df[[cat_col]])
     }
     
-    df[
+    df <- df[
       ,
       .(count = .N),
       cat_col
     ][
-      !is.na(base::get(cat_col))
-    ] %>%
-    ggplot(aes_string(
-        x = cat_col,
-        fill = cat_col,
-        y = 'count',
-        label = 'count'
-      )) +
-      geom_bar(stat = "identity", color = "black", lwd = 0.5) +
-      geom_text(stat = "identity", hjust = -0.3, check_overlap = TRUE) +
-      scale_x_discrete(drop = FALSE) +
-      theme(
-        axis.text.y = element_text(size = 12),
-        axis.title.y = element_blank(),
-        axis.text.x = element_text(size = 12),
-        axis.title.x = element_blank(),
-        legend.position = "none"
-      ) +
-      coord_flip()
+      order(-rank(base::get(cat_col)))
+    ]
+    
+    highchart() %>%
+      hc_add_series(
+        df, "column",
+        color="lightblue", borderColor="black",
+        pointPadding=-0.2,
+        name="Frequency",
+        hcaes(x=!!rlang::sym(cat_col), y=count)) %>%
+      hc_xAxis(type="category") %>%
+      hc_yAxis(min=0, title=list(text="<b>count</b>", useHTML=TRUE)) %>%
+      hc_legend(enabled=FALSE) %>%
+      hc_chart(inverted=TRUE) %>%
+      hc_title(text=paste("<b><small>Frequency by", cat_col, "</small></b>", sep=" "),
+               align="center", useHTML=TRUE)
   }
   
   F_catTable <- function(cat_col,  target_col = "price_m2") {
@@ -304,24 +306,24 @@ shinyServer(function(input, output, session) {
   
   output$CategoryTextTargetName <- renderText(target_name(input$target_col))
   
-  output$EnergyCertificateBoxPlot <- renderPlot(F_catBoxPlot("Energy.Certificate", input$target_col))
-  output$EnergyCertificateCount <- renderPlot(F_catCount("Energy.Certificate", input$target_col))
+  output$EnergyCertificateBoxPlot <- renderHighchart(F_catBoxPlot("Energy.Certificate", input$target_col))
+  output$EnergyCertificateCount <- renderHighchart(F_catCount("Energy.Certificate", input$target_col))
   output$EnergyCertificateTable <- renderFormattable(F_catTable("Energy.Certificate", input$target_col))
   
-  output$ConditionBoxPlot <- renderPlot(F_catBoxPlot("Condition", input$target_col))
-  output$ConditionCount <- renderPlot(F_catCount("Condition", input$target_col))
+  output$ConditionBoxPlot <- renderHighchart(F_catBoxPlot("Condition", input$target_col))
+  output$ConditionCount <- renderHighchart(F_catCount("Condition", input$target_col))
   output$ConditionTable <- renderFormattable(F_catTable("Condition", input$target_col))
   
-  output$BedroomsBoxPlot <- renderPlot(F_catBoxPlot("Bedrooms", input$target_col))
-  output$BedroomsCount <- renderPlot(F_catCount("Bedrooms", input$target_col))
+  output$BedroomsBoxPlot <- renderHighchart(F_catBoxPlot("Bedrooms", input$target_col))
+  output$BedroomsCount <- renderHighchart(F_catCount("Bedrooms", input$target_col))
   output$BedroomsTable <- renderFormattable(F_catTable("Bedrooms", input$target_col))
   
-  output$BathroomsBoxPlot <- renderPlot(F_catBoxPlot("Bathrooms", input$target_col))
-  output$BathroomsCount <- renderPlot(F_catCount("Bathrooms", input$target_col))
+  output$BathroomsBoxPlot <- renderHighchart(F_catBoxPlot("Bathrooms", input$target_col))
+  output$BathroomsCount <- renderHighchart(F_catCount("Bathrooms", input$target_col))
   output$BathroomsTable <- renderFormattable(F_catTable("Bathrooms", input$target_col))
   
-  output$ConstructionDecadeBoxPlot <- renderPlot(F_catBoxPlot("Construction.Decade", input$target_col))
-  output$ConstructionDecadeCount <- renderPlot(F_catCount("Construction.Decade", input$target_col))
+  output$ConstructionDecadeBoxPlot <- renderHighchart(F_catBoxPlot("Construction.Decade", input$target_col))
+  output$ConstructionDecadeCount <- renderHighchart(F_catCount("Construction.Decade", input$target_col))
   output$ConstructionDecadeTable <- renderFormattable(F_catTable("Construction.Decade", input$target_col))
 
   
