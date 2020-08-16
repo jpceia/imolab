@@ -196,7 +196,7 @@ body <- dashboardBody(
 shinyUI(
   dashboardPage(
     #skin = "blue",
-    dashboardHeader(title = "ImoLab"),
+    dashboardHeader(title = "Imobom"),
     sideBar,
     body
   )
