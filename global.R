@@ -60,17 +60,10 @@ for(conn in dbListConnections(dbDriver(drv = "MySQL")))
 
 prop_types <- c(
   'Apartment',
-  'House',
-  'Terrain',
-  'Store',
-  'Warehouse',
-  'Garage',
-  'Office',
-  'Building',
-  'Farm'
+  'House'
 )
 
-prop_types_ids <- c(1, 2, 4, 5, 6, 7, 8, 9, 11)
+prop_types_ids <- c(1, 2)
 
 
 condition_levels <- c(
@@ -87,12 +80,12 @@ condition_ids <- c(
 )
 
 condition_codes <- c(
-  "ruina",
-  "para_recuperar",
-  "usado",
-  "em_construcao",
-  "renovado",
-  "novo"
+  "Ruina",
+  "Para Recuperar",
+  "Usado",
+  "Em Construcao",
+  "Renovado",
+  "Novo"
 )
 
 
@@ -106,13 +99,21 @@ energy_certificate_ids <- c(
 )
 
 other_attrs <- list(
-  Elevator = 'Elevator',
-  Balcony = 'Balcony',
-  View = 'View',
-  Garden = 'Garden',
-  Swimming.Pool = 'Swimming Pool',
   Garage = 'Garage',
-  Parking = 'Parking'
+  Balcony = 'Balcony',
+  Elevator = 'Elevator',
+  View = 'View',
+  Equipped.Kitchen = 'Equipped Kitchen',
+  Suite = 'Suite',
+  Garden = 'Garden',
+  Air.conditioning = 'Air Conditioning',
+  Security = 'Security',
+  Parking = 'Parking',
+  Terrace = 'Terrace',
+  Electric.Shutters = 'Electric Shutters',
+  Central.heating = 'Central Heating',
+  Fireplace = 'Fireplace',
+  Pool = 'Pool'
 )
 
 bathrooms_levels <- 1:4
@@ -121,7 +122,7 @@ bedrooms_levels <- 0:10
 
 target_list <- list(
   'Price/m2' = 'price_m2',
-  'Area' = 'Area',
+  'Net Area' = 'Net.Area',
   'Construction Year' = 'Construction.Year'
 )
 

@@ -300,7 +300,7 @@ server_appraisal <- function(input, output, session) {
     shiny::validate(
       need(!is.empty(input$district),     label = "District"),
       need(!is.empty(input$municipality), label = "Municipality"),
-      need(!is.empty(input$net_area),     label = "Area")
+      need(!is.empty(input$net_area),     label = "Net Area")
     )
     
     coords <- input$map_click
@@ -314,34 +314,36 @@ server_appraisal <- function(input, output, session) {
     }
     
     body <- list(
-      Deal = input$deal,
-      `Property Type` = input$prop_type,
+      deal = input$deal,
+      property_type = input$prop_type,
       
-      DistrictID = input$district,
-      MunicipalityID = input$municipality,
-      ParishID = input$parish,
+      district_id = input$district,
+      municipality_id = input$municipality,
+      parish_id = input$parish,
+      latitude = lat,
+      longitude = lng,
       
-      Latitude = lat,
-      Longitude = lng,
+      bedrooms = input$bedrooms,
+      bathrooms = input$bathrooms,
+
+      net_area = input$net_area,
+      gross_area = input$gross_area,
+      terrain_area = input$terrain_area,
       
-      Bedrooms = input$bedrooms,
-      Bathrooms = input$bathrooms,
-      Condition = input$condition,
-      Area = input$net_area,
-      `Gross Area` = input$gross_area,
-      `Terrain Area` = input$terrain_area,
+      condition = input$condition,
+      energy_certificate = input$energy_certificate,
+      construction_year = input$construction_year,
       
-      `Energy Certificate` = input$energy_certificate,
-      `Construction Year` = input$construction_year
+      attributes = paste(input$attrs, collapse=', ')
     )
     
-    for(c in unlist(other_attrs, use.names = FALSE))
-    {
-      body[[c]] <- 1.0 * (c %in% input$attrs)
-    }
-    
-    body <- jsonlite::toJSON(list(body), auto_unbox = TRUE)
-    res <- httr::POST(APPRAISAL_URL, body=body, encode="json")
+    body <- jsonlite::toJSON(body, auto_unbox = TRUE)
+    res <- httr::POST(
+      APPRAISAL_URL,
+      add_headers(`Content-Type` = 'application/json'), 
+      body=body,
+      encode="json"
+    )
     
     print("Request:")
     print(body)
@@ -349,9 +351,17 @@ server_appraisal <- function(input, output, session) {
     print("Response:")
     print(content(res))
 
+    pred_price <- NA
+    if(input$deal == '1'){
+      pred_price <- content(res)$pred_price
+    }
+    else {
+      pred_price <- content(res)$pred_rent
+    }
+    
     appraisal <- list()
-    appraisal$price_m2 <- jsonlite::fromJSON(content(res)$data)$`0`$`pred-price_m2`
-    appraisal$price <- appraisal$price_m2 * input$net_area
+    appraisal$price <- pred_price
+    appraisal$price_m2 <- pred_price / input$net_area
     
     return(appraisal)
   }, ignoreInit = TRUE)

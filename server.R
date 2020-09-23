@@ -159,7 +159,7 @@ shinyServer(function(input, output, session) {
   )
   
   output$HistogramArea <- renderHighchart(
-    rv$df %>% hc_hist("Area", "m2", "", input$truncation)
+    rv$df %>% hc_hist("Net.Area", "m2", "", input$truncation)
   )
   
   # -------------------------------------- FORMATTABLE -------------------------------------
@@ -169,7 +169,7 @@ shinyServer(function(input, output, session) {
     table <- data.frame(
       quantile = percent(probs, 1),
       Price = currency(quantile(rv$df$Price, probs = probs), "", 0),
-      Area = currency(quantile(rv$df$Area, probs = probs), "", 0),
+      Net.Area = currency(quantile(rv$df$Net.Area, probs = probs), "", 0),
       price_m2 = currency(quantile(rv$df$price_m2, probs = probs), "", 0)
     )
     row.names(table) <- NULL
@@ -181,7 +181,7 @@ shinyServer(function(input, output, session) {
         quantile =  formatter(
           "span", style = ~formattable::style(color = "grey", font.weight = "bold")),
         Price = normalize_bar("lightpink", 0.2),
-        Area = normalize_bar("lightpink", 0.2),
+        Net.Area = normalize_bar("lightpink", 0.2),
         price_m2 = normalize_bar("lightblue", 0.2)
       )
     )
@@ -203,7 +203,7 @@ shinyServer(function(input, output, session) {
         target_name = "Price/m\u00b2"
         target_suffix = " \u20ac/m\u00b2"
       },
-      Area={
+      Net.Area={
         target_suffix = " \u00b2"
       })
     
@@ -329,9 +329,9 @@ shinyServer(function(input, output, session) {
   output$ConditionCount <- renderHighchart(F_catCount("Condition", input$target_col))
   output$ConditionTable <- renderFormattable(F_catTable("Condition", input$target_col))
   
-  output$BedroomsBoxPlot <- renderHighchart(F_catBoxPlot("Bedrooms", input$target_col))
-  output$BedroomsCount <- renderHighchart(F_catCount("Bedrooms", input$target_col))
-  output$BedroomsTable <- renderFormattable(F_catTable("Bedrooms", input$target_col))
+  output$TipologyBoxPlot <- renderHighchart(F_catBoxPlot("Tipology", input$target_col))
+  output$TipologyCount <- renderHighchart(F_catCount("Tipology", input$target_col))
+  output$TipologyTable <- renderFormattable(F_catTable("Tipology", input$target_col))
   
   output$BathroomsBoxPlot <- renderHighchart(F_catBoxPlot("Bathrooms", input$target_col))
   output$BathroomsCount <- renderHighchart(F_catCount("Bathrooms", input$target_col))
@@ -569,7 +569,7 @@ shinyServer(function(input, output, session) {
       
       #draw strong {
         display: inline-block;
-        width: 70px;
+        width: 80px;
         text-align: right;
         margin: 0px 6px 0px 0px;
       }

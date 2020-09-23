@@ -123,7 +123,7 @@ body <- dashboardBody(
           )
         ),
         tabPanel(
-          title = tags$strong("Area"),
+          title = tags$strong("Net Area"),
           fluidRow(
             box(
               highchartOutput("HistogramArea") %>% withSpinner(type=SPINNER_TYPE),
@@ -150,7 +150,7 @@ body <- dashboardBody(
       navbarPage("",
          categoryTab("EnergyCertificate",  "Energy Certificate"),
          categoryTab("Condition"),
-         categoryTab("Bedrooms",           "#Bedrooms"),
+         categoryTab("Tipology",           "Tipology"),
          categoryTab("Bathrooms",          "#Bathrooms"),
          categoryTab("ConstructionDecade", "Construction Decade")
       )
@@ -171,7 +171,7 @@ body <- dashboardBody(
                    selectizeInput("target1", "Target1",
                                   target_list, selected = "price_m2"),
                    selectizeInput("target2", "Target2",
-                                  target_list, selected = "Area"),
+                                  target_list, selected = "Net.Area"),
                    htmlOutput("corr_level_input"),
                    htmlOutput("corr_agg_prop_input")
             ),

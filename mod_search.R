@@ -68,7 +68,7 @@ server_search  <- function(input, output, session) {
       'Url' = NULL,
       'Agency' = NULL,
       'Title' = NULL,
-      'Area' = NULL,
+      'Net Area' = NULL,
       'Price' = NULL,
       'Predicted Price' = NULL
     )
@@ -257,20 +257,20 @@ server_search  <- function(input, output, session) {
     filter_query <- ''
     if(input$objective == "Buy")
     {
-      rank_query <- '(LOG10(%f / Area) - LOG10(`pred-price_m2`)) / LOG10(`std-price_m2`)'
-      pred_query <- '`pred-price_m2` * Area'
+      rank_query <- '(LOG10(%f / `Net Area`) - LOG10(`pred_Q1-price_m2`))'
+      pred_query <- '`pred-price_m2` * `Net Area`'
       filt_query <- 'Deal = 1'
     }
     else if(input$objective == "Rent")
     {
-      rank_query <- '(LOG10(%f / Area) - LOG10(`pred-price_m2`)) / LOG10(`std-price_m2`)'
-      pred_query <- '`pred-price_m2` * Area'
+      rank_query <- '(LOG10(%f / `Net Area`) - LOG10(`pred_Q1-price_m2`))'
+      pred_query <- '`pred-rent_m2` * `Net Area`'
       filt_query <- 'Deal = 0'
     }
     else if(input$objective == "Buy-to-Let")
     {
-      rank_query <- '(LOG10(%f / Area) - LOG10(`pred-rent_m2`)) / LOG10(`std-rent_m2`)'
-      pred_query <- '`pred-rent_m2` * Area'
+      rank_query <- '(LOG10(%f / `Net Area`) - LOG10(`pred_Q1-rent_m2`))'
+      pred_query <- '`pred-rent_m2` * `Net Area`'
       filt_query <- 'Deal = 1'
     }
     else
@@ -287,10 +287,14 @@ server_search  <- function(input, output, session) {
     
     if(length(input$prop_types) > 0)
     {
-      filt_query <- c(
-        filt_query,
-        sprintf("`Property Type` IN (%s)", paste(input$prop_types, collapse=", "))
-      )
+      if(("1" %in% input$prop_types) & !("2" %in% input$prop_types))
+      {
+        filt_query <- c(filt_query, "Apartment = 1")
+      }
+      else if(!("1" %in% input$prop_types) & ("2" %in% input$prop_types))
+      {
+        filt_query <- c(filt_query, "Apartment = 0")
+      }
     }
     
     if(!is.empty(input$district))
@@ -312,13 +316,12 @@ server_search  <- function(input, output, session) {
     
     query <- sprintf(
       "SELECT
-          Url AS Link,
-          Agency,
-          Title,
-          Area,
+          url AS Link,
+          title AS Title,
+          `Net Area`,
           Price,
           ROUND(%s, 0) AS `Predicted Price`
-       FROM VIEW_daily
+       FROM imovirtual_residential
        WHERE %s
        ORDER BY %s
        LIMIT 100", pred_query, filt_query, rank_query)
