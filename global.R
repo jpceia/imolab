@@ -68,9 +68,9 @@ prop_types_ids <- c(1, 2)
 
 condition_levels <- c(
   "Ruina",
-  "Para Recuperar",
+  "Para recuperar",
   "Usado",
-  "Em Construcao",
+  "Em construcao",
   "Renovado",
   "Novo"
 )
@@ -81,9 +81,9 @@ condition_ids <- c(
 
 condition_codes <- c(
   "Ruina",
-  "Para Recuperar",
+  "Para recuperar",
   "Usado",
-  "Em Construcao",
+  "Em construcao",
   "Renovado",
   "Novo"
 )
