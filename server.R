@@ -334,7 +334,7 @@ shinyServer(function(input, output, session) {
   output$ConditionCount <- renderHighchart(F_catCount("Condition", input$target_col))
   output$ConditionTable <- renderFormattable(F_catTable("Condition", input$target_col))
   
-  output$TipologyBoxPlot <- renderHighchart(F_catBoxPlot("Tipology", input$target_col))
+  output$BedroomsBoxPlot <- renderHighchart(F_catBoxPlot("Tipology", input$target_col))
   output$TipologyCount <- renderHighchart(F_catCount("Tipology", input$target_col))
   output$TipologyTable <- renderFormattable(F_catTable("Tipology", input$target_col))
   
