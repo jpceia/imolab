@@ -274,7 +274,7 @@ server_search  <- function(input, output, session) {
       rank_query <- '(LOG10(%f / `Net Area`) - LOG10(`pred_Q1-price_m2`))'
       pred_query <- '`pred-rent_m2` * `Net Area`'
       target_var <- 'Rent' 
-      roi_query  <- 'ROUND(1 - Price / `pred-rent_m2` * `Net Area`, 4) * 100
+      roi_query  <- 'ROUND(Price / (`pred-rent_m2` * `Net Area`) - 1, 4) * 100
                      AS Discount'
       filt_query <- 'Deal = 0'
     }
