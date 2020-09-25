@@ -16,14 +16,20 @@ ui_search <- function(id)
         fluidRow(
           column(4,
                  numericInput(ns("max_investment"), "Budget",
-                              100000, min=0),
+                              200000, min=0),
                  selectizeInput(ns("objective"), "Objective",
                                 c("Buy", "Rent", "Buy-to-Let")),
                  selectizeInput(ns("prop_types"), "Property Types",
                                 choices = setNames(prop_types_ids, prop_types),
                                 multiple = TRUE,
-                                selected = c(1, 2)),
-                 offset = 1
+                                selected = c(1, 2))
+          ),
+          column(4,
+                 selectizeInput(ns("condition"), "Condition",
+                                choices = condition_codes,
+                                multiple = TRUE,
+                                selected = NULL),
+                 numericInput(ns("maxArea"), "Maximum Area", 150, min=0)
           ),
           column(4,
                  htmlOutput(ns("geomenu")),
@@ -33,8 +39,7 @@ ui_search <- function(id)
                  bsModal(ns("location_modal"), "Property Location",
                          ns("location_button"),
                          leafletOutput(ns("map")),
-                         size = "large"),
-                 offset = 1
+                         size = "large")
           ),
         ),
         fluidRow(
@@ -304,6 +309,21 @@ server_search  <- function(input, output, session) {
       {
         filt_query <- c(filt_query, "Apartment = 0")
       }
+    }
+    
+    if(length(input$condition) > 0)
+    {
+      filt_query <- c(
+        filt_query,
+        paste("`Condition` IN (",
+              paste("'", input$condition, "'", sep="", collapse=","),
+              ")", sep=' ')
+      )
+    }
+    
+    if(!is.empty(input$maxArea))
+    {
+      filt_query <- c(filt_query, sprintf("`Net Area` <= %s", input$maxArea))
     }
     
     if(!is.empty(input$district))
