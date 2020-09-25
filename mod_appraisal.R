@@ -350,18 +350,11 @@ server_appraisal <- function(input, output, session) {
     
     print("Response:")
     print(content(res))
-
-    pred_price <- NA
-    if(input$deal == '1'){
-      pred_price <- content(res)$pred_price
-    }
-    else {
-      pred_price <- content(res)$pred_rent
-    }
     
     appraisal <- list()
-    appraisal$price <- pred_price
-    appraisal$price_m2 <- pred_price / input$net_area
+    appraisal$price <- content(res)$pred_deal 
+    appraisal$price_m2 <- appraisal$price / input$net_area
+    appraisal$coef <- content(res)$coef_deal
     
     return(appraisal)
   }, ignoreInit = TRUE)
