@@ -259,18 +259,27 @@ server_search  <- function(input, output, session) {
     {
       rank_query <- '(LOG10(%f / `Net Area`) - LOG10(`pred_Q1-price_m2`))'
       pred_query <- '`pred-price_m2` * `Net Area`'
+      target_var <- 'Price'
+      roi_query  <- 'ROUND(`pred-price_m2` * `Net Area` / Price - 1, 4) * 100
+                     AS ROI'
       filt_query <- 'Deal = 1'
     }
     else if(input$objective == "Rent")
     {
       rank_query <- '(LOG10(%f / `Net Area`) - LOG10(`pred_Q1-price_m2`))'
       pred_query <- '`pred-rent_m2` * `Net Area`'
+      target_var <- 'Rent' 
+      roi_query  <- 'ROUND(1 - Price / `pred-rent_m2` * `Net Area`, 4) * 100
+                     AS Discount'
       filt_query <- 'Deal = 0'
     }
     else if(input$objective == "Buy-to-Let")
     {
       rank_query <- '(LOG10(%f / `Net Area`) - LOG10(`pred_Q1-rent_m2`))'
       pred_query <- '`pred-rent_m2` * `Net Area`'
+      target_var <- 'Rent' 
+      roi_query <- 'ROUND(12 * `pred-rent_m2` * `Net Area` / Price, 4) * 100
+                    AS Yield'
       filt_query <- 'Deal = 1'
     }
     else
@@ -320,11 +329,14 @@ server_search  <- function(input, output, session) {
           title AS Title,
           `Net Area`,
           Price,
-          ROUND(%s, 0) AS `Predicted Price`
+          ROUND(%s, 0) AS `Predicted %s`,
+          %s
        FROM imovirtual_residential
        WHERE %s
        ORDER BY %s
-       LIMIT 100", pred_query, filt_query, rank_query)
+       LIMIT 100", pred_query, target_var, roi_query, filt_query, rank_query)
+    
+    print(query)
     
     conn <- dbConnect(MySQL(), user=DB_USER, password=DB_PWD, host=DB_HOST, dbname=DB_NAME, port=DB_PORT)
     df <- dbGetQuery(conn, query)
