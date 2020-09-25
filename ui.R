@@ -45,6 +45,7 @@ sideBar <- dashboardSidebar(
       condition = "['histogramsTab', 'categoriesTab', 'correlationTab', 'territoryTab'].indexOf(input.sidebarmenu) >= 0",
       radioButtons("deal", NULL, c("Sale", "Rent"), inline = TRUE),
       selectizeInput("prop_type", NULL, prop_types, selected = c("Apartment", "House"), multiple = TRUE),
+      selectizeInput("condition", "Condition", condition_codes, selected = NULL, multiple = TRUE),
       htmlOutput("geomenu")
     ),
     conditionalPanel(

@@ -124,6 +124,11 @@ shinyServer(function(input, output, session) {
       (Property.Type %in% input$prop_type)
     ]
     
+    if(length(input$condition) > 0)
+    {
+      df <- df[df$Condition %in% input$condition]
+    }
+    
     code <- rv$code
     
     rv$df <- switch(
